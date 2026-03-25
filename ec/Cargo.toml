@@ -1,0 +1,13 @@
+[package]
+name = "ec"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+log = "0.4.29"
+sayuri = "0.1.5"
+snafu = "0.9.0"
+
+[dependencies.nix]
+version = "0.31.2"
+features = ["fs"]
