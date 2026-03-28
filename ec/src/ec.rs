@@ -6,7 +6,9 @@ use snafu::prelude::*;
 
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
-    fw::{BatteryMode, FW_INFO, FW_REGISTRY, FwConfig, ShiftModeKind},
+    fw::{
+        BatteryMode, FW_INFO, FW_REGISTRY, FwConfig, ShiftModeKind, SuperBattery, SuperBatteryKind,
+    },
     models::{FanCount, MODEL_REGISTRY, ModelConfig},
 };
 
@@ -291,7 +293,7 @@ impl Ec {
             //         also uses charge control address given from config
             unsafe {
                 io.ec_write(addr, val)
-                    .whatever_context::<_, EcError>("set_battery_mode() failed to ec_read()")?;
+                    .whatever_context::<_, EcError>("set_battery_mode() failed to ec_write()")?;
             }
 
             Ok(())
@@ -302,15 +304,60 @@ impl Ec {
         }
     }
 
-    // pub fn super_battery(&self) -> Result<SuperBattery> {
-    //     let val = self
-    //         .io
-    //         .ec_read(self.fw.super_battery.addr.get()?)
-    //         .context("super_battery() failed to ec_read()")?;
-    //     let val = SuperBattery::try_from(val)
-    //         .context("super_battery() failed to BatteryMode::try_from")?;
-    //     Ok(val)
-    // }
+    pub fn super_battery(&self) -> Result<SuperBatteryKind> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("super_battery", fw.super_battery.addr);
+
+            let val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("super_battery() failed to ec_read()")?;
+
+            let val = val & fw.super_battery.mask == fw.super_battery.mask;
+
+            let kind = match val {
+                true => SuperBatteryKind::On,
+                false => SuperBatteryKind::Off,
+            };
+
+            Ok(kind)
+        } else {
+            Err(EcError::Unsupported {
+                name: "super_battery".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_super_battery(&mut self, kind: SuperBatteryKind) -> Result<()> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_mut() {
+            let addr = addr!("set_super_battery", fw.super_battery.addr);
+
+            let mut val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("set_super_battery() failed to ec_read()")?;
+
+            match kind {
+                SuperBatteryKind::Off => val &= !fw.super_battery.mask,
+                SuperBatteryKind::On => val |= fw.super_battery.mask,
+            }
+
+            // SAFETY: assert guarantees only valid values are written
+            //         also uses charge control address given from config
+            unsafe {
+                io.ec_write(addr, val)
+                    .whatever_context::<_, EcError>("set_super_battery() failed to ec_write()")?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "set_super_battery".to_owned(),
+            })
+        }
+    }
 
     // //
     // // Fan RPM

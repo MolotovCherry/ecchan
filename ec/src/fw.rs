@@ -304,6 +304,12 @@ pub enum SuperBatteryKind {
     On,
 }
 
+impl SuperBatteryKind {
+    pub fn enabled(&self) -> bool {
+        matches!(self, Self::On)
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BatteryMode {
     /// 50-60

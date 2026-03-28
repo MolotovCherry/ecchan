@@ -6,3 +6,4 @@ mod fw;
 mod models;
 
 pub use ec::*;
+pub use fw::SuperBatteryKind;
