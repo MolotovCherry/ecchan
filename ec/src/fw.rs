@@ -10,31 +10,23 @@
 //!
 //! After there's an update to the supported ec list on msi-ec,
 //! feel free to make a PR for inclusion here with corresponding links.
-//!
-//! This app only plans to support WMI2 devices.
 
-mod g2_10;
-
-use snafu::{Whatever, prelude::*};
+mod wmi2;
 
 /// A registry of supported fw configs.
 ///
 /// Once a config is made (following module docs),
 /// add it here to support it.
 #[rustfmt::skip]
-pub static REGISTRY: Registry<'static> = Registry(&[
-    g2_10::G2_10
+pub static FW_REGISTRY: Registry<'static> = Registry(&[
+    wmi2::g2_10::G2_10
 ]);
 
 pub struct Registry<'a>(&'a [FwConfig]);
 
 impl Registry<'_> {
-    pub fn get(&self, ec_version: &str) -> Result<FwConfig, Whatever> {
-        self.0
-            .iter()
-            .find(|fw| fw.supports_fw(ec_version))
-            .copied()
-            .with_whatever_context(|| format!("fw {ec_version} is unsupported"))
+    pub fn get(&self, ec_version: &str) -> Option<FwConfig> {
+        self.0.iter().find(|fw| fw.supports_fw(ec_version)).copied()
     }
 }
 
@@ -49,10 +41,10 @@ impl Addr {
         matches!(self, Addr::Unsupported)
     }
 
-    pub fn get(&self) -> Result<u8, Whatever> {
+    pub fn get(&self) -> Option<u8> {
         match self {
-            Self::Unsupported => whatever!("feature is not supported"),
-            Self::Addr(addr) => Ok(*addr),
+            Self::Unsupported => None,
+            Self::Addr(addr) => Some(*addr),
         }
     }
 }
@@ -91,17 +83,26 @@ pub struct ShiftMode {
 
 impl ShiftMode {
     pub fn get_modes(&self) -> Vec<ShiftModeKind> {
-        self.modes.iter().map(|(k, _)| *k).collect()
+        self.modes
+            .iter()
+            .map(|(k, _)| *k)
+            .filter(|m| !matches!(m, ShiftModeKind::Null))
+            .collect()
     }
 }
 
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ShiftModeKind {
+    /// User High / Extreme Performance (old: Sport Mode)
     ExtremePerformance,
+    /// User Medium / Balance / Silent (old: Comfort Mode)
     Balanced,
+    /// User_Low / Super Battery (old: ECO Mode)
     SuperBattery,
+    /// Turbo Mode
     Turbo,
+    /// Unspecified; This mode cannot be set
     Null,
 }
 
@@ -175,139 +176,18 @@ pub struct FwConfig {
     pub gpu: Thermal,
     pub leds: Leds,
     pub kbd_bl: KbdBl,
+    pub fan_rpm: FanRpm,
+    pub cpu_fan_curve: Curve7,
+    pub gpu_fan_curve: Curve6,
+    pub cpu_temp_curve: Curve7,
+    pub gpu_temp_curve: Curve7,
+    pub cpu_hysteresis_curve: Curve6,
+    pub gpu_hysteresis_curve: Curve6,
 }
 
 impl FwConfig {
     pub fn supports_fw(&self, ec_version: &str) -> bool {
         self.allowed_fw.contains(&ec_version)
-    }
-
-    pub fn supports_charge_control(&self) -> Result<(), Whatever> {
-        if !self.charge_control_addr.is_supported() {
-            whatever!("charge control is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_webcam(&self) -> Result<(), Whatever> {
-        if !self.webcam.addr.is_supported() {
-            whatever!("webcam is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_webcam_block(&self) -> Result<(), Whatever> {
-        if !self.webcam.block_addr.is_supported() {
-            whatever!("webcam block is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_fn_win_swap(&self) -> Result<(), Whatever> {
-        if !self.fn_win_swap.addr.is_supported() {
-            whatever!("fn win swap is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_cooler_boost(&self) -> Result<(), Whatever> {
-        if !self.cooler_boost.addr.is_supported() {
-            whatever!("cooler boost is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_shift_mode(&self) -> Result<(), Whatever> {
-        if !self.shift_mode.addr.is_supported() {
-            whatever!("shift mode is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_super_battery(&self) -> Result<(), Whatever> {
-        if !self.super_battery.addr.is_supported() {
-            whatever!("super battery is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_fan_mode(&self) -> Result<(), Whatever> {
-        if !self.fan_mode.addr.is_supported() {
-            whatever!("fan mode is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_cpu_rt_fan_speed(&self) -> Result<(), Whatever> {
-        if !self.cpu.rt_fan_speed_addr.is_supported() {
-            whatever!("cpu rt fan speed is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_cpu_rt_temp(&self) -> Result<(), Whatever> {
-        if !self.cpu.rt_temp_addr.is_supported() {
-            whatever!("cpu rt temp is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_gpu_rt_fan_speed(&self) -> Result<(), Whatever> {
-        if !self.gpu.rt_fan_speed_addr.is_supported() {
-            whatever!("gpu rt fan speed is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_gpu_rt_temp(&self) -> Result<(), Whatever> {
-        if !self.gpu.rt_temp_addr.is_supported() {
-            whatever!("gpu rt temp is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_micmute_led(&self) -> Result<(), Whatever> {
-        if !self.leds.micmute_led_addr.is_supported() {
-            whatever!("mic mute led is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_mute_led(&self) -> Result<(), Whatever> {
-        if !self.leds.mute_led_addr.is_supported() {
-            whatever!("mute led is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_kbd_bl(&self) -> Result<(), Whatever> {
-        if !self.kbd_bl.bl_mode_addr.is_supported() {
-            whatever!("kbd bl mode is not supported");
-        }
-
-        Ok(())
-    }
-
-    pub fn supports_kbd_bl_state(&self) -> Result<(), Whatever> {
-        if !self.kbd_bl.bl_state_addr.is_supported() {
-            whatever!("kbd bl state is not supported");
-        }
-
-        Ok(())
     }
 }
 
@@ -338,19 +218,61 @@ pub const FW_INFO: FwInfo = FwInfo {
 };
 
 //
+// Fan addresses are universal
+//
+
+/// Start address span 2 bytes, read as
+/// big endian
+///
+/// Formula: (take care for division by 0)
+/// 480000 / val = rpm
+#[derive(Debug, Copy, Clone)]
+pub struct FanRpm {
+    pub fan1_addr: u8,
+    pub fan2_addr: u8,
+    pub fan3_addr: u8,
+    pub fan4_addr: u8,
+}
+
+//
+// Curves
+//
+
+#[derive(Debug, Copy, Clone)]
+pub struct Curve6 {
+    pub node1_addr: u8,
+    pub node2_addr: u8,
+    pub node3_addr: u8,
+    pub node4_addr: u8,
+    pub node5_addr: u8,
+    pub node6_addr: u8,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct Curve7 {
+    pub node1_addr: u8,
+    pub node2_addr: u8,
+    pub node3_addr: u8,
+    pub node4_addr: u8,
+    pub node5_addr: u8,
+    pub node6_addr: u8,
+    pub node7_addr: u8,
+}
+
+//
 // Misc
 //
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Bit {
-    _0 = 0b00000001,
-    _1 = 0b00000010,
-    _2 = 0b00000100,
-    _3 = 0b00001000,
-    _4 = 0b00010000,
-    _5 = 0b00100000,
-    _6 = 0b01000000,
-    _7 = 0b10000000,
+    _0,
+    _1,
+    _2,
+    _3,
+    _4,
+    _5,
+    _6,
+    _7,
 }
 
 pub trait BitSet {
@@ -361,14 +283,14 @@ pub trait BitSet {
 impl BitSet for u8 {
     fn set_bit(&mut self, bit: Bit, state: bool) {
         if state {
-            *self |= bit as u8;
+            *self |= 1 << bit as u8;
         } else {
-            *self &= !(bit as u8);
+            *self &= !(1 << bit as u8);
         }
     }
 
     fn is_bit_set(self, bit: Bit) -> bool {
-        (self & bit as u8) != 0
+        (self & 1 << bit as u8) != 0
     }
 }
 

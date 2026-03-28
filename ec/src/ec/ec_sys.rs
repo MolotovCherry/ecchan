@@ -19,8 +19,6 @@ pub(super) type Result<T> = std::result::Result<T, EcSysError>;
 
 #[derive(Debug, Snafu)]
 pub enum EcSysError {
-    #[snafu(display("ec_sys requires root privileges"))]
-    RootRequired,
     #[snafu(display("ec_sys write_support is not enabled"))]
     NoWriteSupport,
     #[snafu(display("ec_sys module not loaded"))]
@@ -96,12 +94,6 @@ fn create_ec_io() -> Result<File> {
                 ErrorKind::NotFound => {
                     log::warn!("ec_sys is not loaded; certain functions will be disabled");
                     EcSysError::NotLoaded
-                }
-
-                ErrorKind::PermissionDenied => {
-                    log::error!("ec_sys requires root privileges; please re-run program as root");
-
-                    EcSysError::RootRequired
                 }
 
                 _ => EcSysError::OtherIo { source: e },

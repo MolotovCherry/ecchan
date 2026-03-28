@@ -8,7 +8,7 @@ use sayuri::sync::{Mutex, MutexGuard};
 use super::*;
 use crate::{
     Ec,
-    fw::{BatteryMode, REGISTRY, SuperBatteryKind},
+    fw::{BatteryMode, FW_REGISTRY, SuperBatteryKind},
 };
 
 #[rustfmt::skip]
@@ -75,7 +75,7 @@ fn get_ec() -> TestReset {
 
         let ec = Ec {
             io: Some(ec_sys),
-            fw: Some(REGISTRY.get("17Q1IMS1.10C").unwrap()),
+            fw: Some(FW_REGISTRY.get("17Q1IMS1.10C").unwrap()),
         };
 
         Mutex::new(ec)
