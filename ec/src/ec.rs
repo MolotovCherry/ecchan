@@ -92,8 +92,8 @@ impl Ec {
         Ok(this)
     }
 
-    fn fan_count(&self) -> u8 {
-        self.model.map(|m| m.fans).unwrap_or(Fan::One).as_num()
+    fn fan_count(&self) -> Fan {
+        self.model.map(|m| m.fans).unwrap_or(Fan::One)
     }
 
     fn has_dgpu(&self) -> bool {
@@ -451,8 +451,7 @@ impl Ec {
     }
 
     fn fan_supported(&self, fan: Fan) -> bool {
-        let how_many = self.fan_count();
-        how_many >= fan.as_num()
+        self.fan_count() > fan
     }
 
     pub fn fan1_supported(&self) -> bool {

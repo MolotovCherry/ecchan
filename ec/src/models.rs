@@ -43,24 +43,13 @@ impl ModelRegistry<'_> {
     }
 }
 
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Fan {
     #[default]
     One,
     Two,
     Three,
     Four,
-}
-
-impl Fan {
-    pub fn as_num(&self) -> u8 {
-        match self {
-            Fan::One => 1,
-            Fan::Two => 2,
-            Fan::Three => 3,
-            Fan::Four => 4,
-        }
-    }
 }
 
 #[derive(Debug, Copy, Clone)]
