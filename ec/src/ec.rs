@@ -7,9 +7,10 @@ use snafu::prelude::*;
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
-        BatteryMode, FW_INFO, FW_REGISTRY, FwConfig, ShiftModeKind, SuperBattery, SuperBatteryKind,
+        BatteryMode, Bit, BitSet, FW_INFO, FW_REGISTRY, FanModeKind, FwConfig, ShiftModeKind,
+        SuperBatteryKind, Threshold,
     },
-    models::{FanCount, MODEL_REGISTRY, ModelConfig},
+    models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
 
 macro_rules! addr {
@@ -91,8 +92,8 @@ impl Ec {
         Ok(this)
     }
 
-    fn fan_count(&self) -> FanCount {
-        self.model.map(|m| m.fan_count).unwrap_or(FanCount::One)
+    fn fan_count(&self) -> u8 {
+        self.model.map(|m| m.fans).unwrap_or(Fan::One).as_num()
     }
 
     fn has_dgpu(&self) -> bool {
@@ -112,45 +113,45 @@ impl Ec {
     }
 
     pub fn fw_version(&self) -> Result<String> {
-        let Some((io, _)) = self.sys.as_ref() else {
-            return Err(EcError::Unsupported {
+        if let Some((io, _)) = self.sys.as_ref() {
+            Self::_fw_version(&io)
+        } else {
+            Err(EcError::Unsupported {
                 name: "fw_version".to_owned(),
-            });
-        };
-
-        Self::_fw_version(&io)
+            })
+        }
     }
 
     pub fn fw_date(&self) -> Result<String> {
-        let Some((io, _)) = self.sys.as_ref() else {
-            return Err(EcError::Unsupported {
+        if let Some((io, _)) = self.sys.as_ref() {
+            let mut buf = [0; FW_INFO.date.len];
+            io.ec_read_seq(FW_INFO.date.addr, &mut buf)
+                .whatever_context::<_, EcError>("fw_date() failed to ec_read_seq()")?;
+            let s = str::from_utf8(&buf)
+                .whatever_context::<_, EcError>("fw_date() received non utf8 data")?;
+
+            Ok(s.to_owned())
+        } else {
+            Err(EcError::Unsupported {
                 name: "fw_date".to_owned(),
-            });
-        };
-
-        let mut buf = [0; FW_INFO.date.len];
-        io.ec_read_seq(FW_INFO.date.addr, &mut buf)
-            .whatever_context::<_, EcError>("fw_date() failed to ec_read_seq()")?;
-        let s = str::from_utf8(&buf)
-            .whatever_context::<_, EcError>("fw_date() received non utf8 data")?;
-
-        Ok(s.to_owned())
+            })
+        }
     }
 
     pub fn fw_time(&self) -> Result<String> {
-        let Some((io, _)) = self.sys.as_ref() else {
+        if let Some((io, _)) = self.sys.as_ref() {
+            let mut buf = [0; FW_INFO.time.len];
+            io.ec_read_seq(FW_INFO.time.addr, &mut buf)
+                .whatever_context::<_, EcError>("fw_time() failed to ec_read_seq()")?;
+            let s = str::from_utf8(&buf)
+                .whatever_context::<_, EcError>("fw_time() received non utf8 data")?;
+
+            Ok(s.to_owned())
+        } else {
             return Err(EcError::Unsupported {
                 name: "fw_time".to_owned(),
             });
-        };
-
-        let mut buf = [0; FW_INFO.time.len];
-        io.ec_read_seq(FW_INFO.time.addr, &mut buf)
-            .whatever_context::<_, EcError>("fw_time() failed to ec_read_seq()")?;
-        let s = str::from_utf8(&buf)
-            .whatever_context::<_, EcError>("fw_time() received non utf8 data")?;
-
-        Ok(s.to_owned())
+        }
     }
 
     //
@@ -233,6 +234,16 @@ impl Ec {
         }
     }
 
+    pub fn shift_mode_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.shift_mode.addr.is_supported()
+        } else {
+            false
+        }
+    }
+
     //
     // Battery
     //
@@ -247,20 +258,22 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_ref() {
             let addr = addr!("battery_mode", fw.charge_control_addr);
 
-            let val = io
+            let mut val = io
                 .ec_read(addr)
                 .whatever_context::<_, EcError>("battery_mode() failed to ec_read()")?;
 
             // pre-validate before doing bit ops
             if !matches!(val, 0x8A..=0xE4) {
-                whatever!("got 0x{val:0>2X} ({val}), but it does not represent valid battery mode");
+                whatever!("got invalid value: 0x{val:0>2X} ({val})");
             }
 
-            let mode = match 0x7F & val {
+            val.unset_bit(Bit::_7);
+
+            let mode = match val {
                 60 => BatteryMode::Healthy,
                 80 => BatteryMode::Balanced,
                 100 => BatteryMode::Mobility,
-                c @ 10..=100 => BatteryMode::Custom(c),
+                c @ 10..=100 => BatteryMode::Custom(Threshold::from_end(c).unwrap()),
                 _ => unreachable!(),
             };
 
@@ -278,15 +291,17 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_battery_mode", fw.charge_control_addr);
 
-            let val = match mode {
-                BatteryMode::Healthy => 60,
-                BatteryMode::Balanced => 80,
-                BatteryMode::Mobility => 100,
-                BatteryMode::Custom(c) => c,
-            };
+            let mut val = mode.as_end();
 
-            let val = val | 1 << 7;
+            // just for a sanity check
+            assert!(
+                matches!(val, 10..=100),
+                "{val} is not within the allowed end threshold limit 10..=100"
+            );
 
+            val.set_bit(Bit::_7);
+
+            // another sanity check
             assert!(matches!(val, 0x8A..=0xE4));
 
             // SAFETY: assert guarantees only valid values are written
@@ -304,6 +319,16 @@ impl Ec {
         }
     }
 
+    pub fn battery_mode_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.charge_control_addr.is_supported()
+        } else {
+            false
+        }
+    }
+
     pub fn super_battery(&self) -> Result<SuperBatteryKind> {
         if false {
             todo!("ec drv");
@@ -314,7 +339,7 @@ impl Ec {
                 .ec_read(addr)
                 .whatever_context::<_, EcError>("super_battery() failed to ec_read()")?;
 
-            let val = val & fw.super_battery.mask == fw.super_battery.mask;
+            let val = (val & fw.super_battery.mask) == fw.super_battery.mask;
 
             let kind = match val {
                 true => SuperBatteryKind::On,
@@ -335,17 +360,15 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_super_battery", fw.super_battery.addr);
 
-            let mut val = io
+            let raw = io
                 .ec_read(addr)
                 .whatever_context::<_, EcError>("set_super_battery() failed to ec_read()")?;
 
-            match kind {
-                SuperBatteryKind::Off => val &= !fw.super_battery.mask,
-                SuperBatteryKind::On => val |= fw.super_battery.mask,
-            }
+            let val = match kind {
+                SuperBatteryKind::Off => raw & !fw.super_battery.mask,
+                SuperBatteryKind::On => raw | fw.super_battery.mask,
+            };
 
-            // SAFETY: assert guarantees only valid values are written
-            //         also uses charge control address given from config
             unsafe {
                 io.ec_write(addr, val)
                     .whatever_context::<_, EcError>("set_super_battery() failed to ec_write()")?;
@@ -359,37 +382,184 @@ impl Ec {
         }
     }
 
-    // //
-    // // Fan RPM
-    // //
+    pub fn super_battery_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.super_battery.addr.is_supported()
+        } else {
+            false
+        }
+    }
 
-    // fn fan_rpm(&self, addr: u8) -> Result<u16> {
-    //     let mut rpm = [0; 2];
+    //
+    // Fan RPM
+    //
 
-    //     self.io
-    //         .ec_read_seq(addr, &mut rpm)
-    //         .context("fan_rpm() failed to ec_read()")?;
+    fn fan_rpm(&self, fan: Fan) -> Result<u16> {
+        let supported = match fan {
+            Fan::One => self.fan1_supported(),
+            Fan::Two => self.fan2_supported(),
+            Fan::Three => self.fan3_supported(),
+            Fan::Four => self.fan4_supported(),
+        };
 
-    //     let rpm = u16::from_be_bytes(rpm).to_rpm();
+        if !supported {
+            return Err(EcError::Unsupported {
+                name: "fan_rpm".to_owned(),
+            });
+        }
 
-    //     Ok(rpm)
-    // }
+        let Some((io, fw)) = self.sys.as_ref() else {
+            return Err(EcError::Unsupported {
+                name: "fan_rpm".to_owned(),
+            });
+        };
 
-    // pub fn fan1_rpm(&self) -> Result<u16> {
-    //     self.fan_rpm(FAN1_RPM)
-    // }
+        let addr = match fan {
+            Fan::One => fw.fan_rpm.fan1_addr,
+            Fan::Two => fw.fan_rpm.fan2_addr,
+            Fan::Three => fw.fan_rpm.fan3_addr,
+            Fan::Four => fw.fan_rpm.fan4_addr,
+        };
 
-    // pub fn fan2_rpm(&self) -> Result<u16> {
-    //     self.fan_rpm(FAN2_RPM)
-    // }
+        let mut rpm = [0; 2];
 
-    // pub fn fan3_rpm(&self) -> Result<u16> {
-    //     self.fan_rpm(FAN3_RPM)
-    // }
+        io.ec_read_seq(addr, &mut rpm)
+            .whatever_context::<_, EcError>("fan_rpm() failed to ec_read()")?;
 
-    // pub fn fan4_rpm(&self) -> Result<u16> {
-    //     self.fan_rpm(FAN4_RPM)
-    // }
+        let raw = u16::from_be_bytes(rpm);
+        let rpm = 480000u32.checked_div(raw as u32).unwrap_or(0);
+
+        Ok(rpm as u16)
+    }
+
+    pub fn fan1_rpm(&self) -> Result<u16> {
+        self.fan_rpm(Fan::One)
+    }
+
+    pub fn fan2_rpm(&self) -> Result<u16> {
+        self.fan_rpm(Fan::Two)
+    }
+
+    pub fn fan3_rpm(&self) -> Result<u16> {
+        self.fan_rpm(Fan::Three)
+    }
+
+    pub fn fan4_rpm(&self) -> Result<u16> {
+        self.fan_rpm(Fan::Four)
+    }
+
+    fn fan_supported(&self, fan: Fan) -> bool {
+        let how_many = self.fan_count();
+        how_many >= fan.as_num()
+    }
+
+    pub fn fan1_supported(&self) -> bool {
+        self.fan_supported(Fan::One)
+    }
+
+    pub fn fan2_supported(&self) -> bool {
+        self.fan_supported(Fan::Two)
+    }
+
+    pub fn fan3_supported(&self) -> bool {
+        self.fan_supported(Fan::Three)
+    }
+
+    pub fn fan4_supported(&self) -> bool {
+        self.fan_supported(Fan::Four)
+    }
+
+    //
+    // Fan Modes
+    //
+
+    /// Supported fan modes
+    pub fn fan_modes(&self) -> Result<Vec<FanModeKind>> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            Ok(fw.fan_mode.get_modes())
+        } else {
+            Err(EcError::Unsupported {
+                name: "fan_modes".to_owned(),
+            })
+        }
+    }
+
+    pub fn fan_mode(&self) -> Result<FanModeKind> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("fan_mode", fw.fan_mode.addr);
+
+            let val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("fan_mode() failed to ec_read()")?;
+
+            let mode = fw
+                .fan_mode
+                .modes
+                .iter()
+                .find(|(_, v)| val == *v)
+                .map(|&(mode, _)| mode);
+
+            let Some(mode) = mode else {
+                whatever!("got invalid value: 0x{val:0>2X} ({val})");
+            };
+
+            Ok(mode)
+        } else {
+            Err(EcError::Unsupported {
+                name: "fan_mode".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_fan_mode(&mut self, mode: FanModeKind) -> Result<()> {
+        if matches!(mode, FanModeKind::Null) {
+            whatever!("fan mode cannot be null");
+        }
+
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_mut() {
+            let addr = addr!("set_fan_mode", fw.fan_mode.addr);
+
+            let val = fw
+                .fan_mode
+                .modes
+                .iter()
+                .find(|(m, _)| mode == *m)
+                .map(|&(_, v)| v);
+
+            let Some(val) = val else {
+                whatever!("{mode:?} is not supported");
+            };
+
+            unsafe {
+                io.ec_write(addr, val)
+                    .whatever_context::<_, EcError>("set_fan_mode() failed to ec_write()")?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "set_fan_mode".to_owned(),
+            })
+        }
+    }
+
+    pub fn fan_mode_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.fan_mode.addr.is_supported()
+        } else {
+            false
+        }
+    }
 
     // //
     // // Temps

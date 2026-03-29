@@ -126,12 +126,16 @@ pub struct FanMode {
 
 impl FanMode {
     pub fn get_modes(&self) -> Vec<FanModeKind> {
-        self.modes.iter().map(|(k, _)| *k).collect()
+        self.modes
+            .iter()
+            .map(|(k, _)| *k)
+            .filter(|m| !matches!(m, FanModeKind::Null))
+            .collect()
     }
 }
 
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum FanModeKind {
     Auto,
     Silent,
@@ -276,17 +280,27 @@ pub enum Bit {
 }
 
 pub trait BitSet {
-    fn set_bit(&mut self, bit: Bit, state: bool);
+    fn set_bit_state(&mut self, bit: Bit, state: bool);
+    fn set_bit(&mut self, bit: Bit);
+    fn unset_bit(&mut self, bit: Bit);
     fn is_bit_set(self, bit: Bit) -> bool;
 }
 
 impl BitSet for u8 {
-    fn set_bit(&mut self, bit: Bit, state: bool) {
+    fn set_bit_state(&mut self, bit: Bit, state: bool) {
         if state {
             *self |= 1 << bit as u8;
         } else {
             *self &= !(1 << bit as u8);
         }
+    }
+
+    fn set_bit(&mut self, bit: Bit) {
+        self.set_bit_state(bit, true);
+    }
+
+    fn unset_bit(&mut self, bit: Bit) {
+        self.set_bit_state(bit, false);
     }
 
     fn is_bit_set(self, bit: Bit) -> bool {
@@ -311,6 +325,39 @@ impl SuperBatteryKind {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Threshold(u8);
+
+impl Threshold {
+    /// Valid values: 0..=90
+    /// Note: 90 means total charge of 100..=100
+    pub fn from_start(val: u8) -> Option<Self> {
+        match val {
+            0..=90 => Some(Self(val + 10)),
+            _ => None,
+        }
+    }
+
+    /// Valid values: 10..=100
+    /// Note: 100 means 100..=100
+    pub fn from_end(val: u8) -> Option<Self> {
+        match val {
+            10..=100 => Some(Self(val)),
+            _ => None,
+        }
+    }
+
+    /// Note: 90 means total charge of 100..=100
+    pub fn as_start(&self) -> u8 {
+        self.0 - 10
+    }
+
+    /// Note: 100 means 100..=100
+    pub fn as_end(&self) -> u8 {
+        self.0
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BatteryMode {
     /// 50-60
     Healthy,
@@ -318,5 +365,63 @@ pub enum BatteryMode {
     Balanced,
     /// 100
     Mobility,
-    Custom(u8),
+    /// Custom end threshold. Charges between N-10..=N
+    /// Valid values: 10..=100
+    ///
+    /// Note: 100 means 100..=100
+    Custom(Threshold),
+}
+
+impl BatteryMode {
+    /// The start threshold. Charges between N..=N+10
+    /// Valid values: 0..=90
+    ///
+    /// Note: 90 means total charge of 100..=100
+    pub fn from_start_threshold(val: u8) -> Option<Self> {
+        let this = match val {
+            50 => Self::Healthy,
+            70 => Self::Balanced,
+            90 => Self::Mobility,
+            0..=90 => Self::Custom(Threshold::from_start(val).unwrap()),
+            _ => return None,
+        };
+
+        Some(this)
+    }
+
+    /// The end threshold. Charges between N-10..=N
+    /// Valid values: 10..=100
+    ///
+    /// Note: 100 means 100..=100
+    pub fn from_end_threshold(val: u8) -> Option<Self> {
+        let this = match val {
+            60 => Self::Healthy,
+            80 => Self::Balanced,
+            100 => Self::Mobility,
+            10..=100 => Self::Custom(Threshold::from_end(val).unwrap()),
+            _ => return None,
+        };
+
+        Some(this)
+    }
+
+    /// Note: 90 means total charge of 100..=100
+    pub fn as_start(&self) -> u8 {
+        match *self {
+            Self::Healthy => 50,
+            Self::Balanced => 70,
+            Self::Mobility => 90,
+            Self::Custom(t) => t.as_start(),
+        }
+    }
+
+    /// Note: 100 means 100..=100
+    pub fn as_end(&self) -> u8 {
+        match *self {
+            Self::Healthy => 60,
+            Self::Balanced => 80,
+            Self::Mobility => 100,
+            Self::Custom(t) => t.as_end(),
+        }
+    }
 }

@@ -236,7 +236,7 @@ impl EcSys {
             }
         };
 
-        val.set_bit(bit, state);
+        val.set_bit_state(bit, state);
 
         match unsafe { self.ec_write(addr, val) } {
             Ok(_) => Ok(()),

@@ -44,7 +44,7 @@ impl ModelRegistry<'_> {
 }
 
 #[derive(Debug, Copy, Clone, Default)]
-pub enum FanCount {
+pub enum Fan {
     #[default]
     One,
     Two,
@@ -52,9 +52,21 @@ pub enum FanCount {
     Four,
 }
 
+impl Fan {
+    pub fn as_num(&self) -> u8 {
+        match self {
+            Fan::One => 1,
+            Fan::Two => 2,
+            Fan::Three => 3,
+            Fan::Four => 4,
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct ModelConfig {
     pub name: &'static str,
     pub has_dgpu: bool,
-    pub fan_count: FanCount,
+    /// The highest number fan, i.e. how many fans total there are
+    pub fans: Fan,
 }
