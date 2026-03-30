@@ -8,7 +8,7 @@ use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
         BatteryMode, Bit, BitSet, FW_INFO, FW_REGISTRY, FanModeKind, FwConfig, ShiftModeKind,
-        SuperBatteryKind, Threshold,
+        SuperBatteryKind, Threshold, WebcamKind,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
@@ -555,6 +555,132 @@ impl Ec {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
             fw.fan_mode.addr.is_supported()
+        } else {
+            false
+        }
+    }
+
+    //
+    // Webcam
+    //
+
+    pub fn webcam(&self) -> Result<WebcamKind> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("webcam", fw.webcam.addr);
+
+            let raw = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("webcam() failed to ec_read()")?;
+
+            let webcam = match raw.is_bit_set(fw.webcam.bit) {
+                true => WebcamKind::On,
+                false => WebcamKind::Off,
+            };
+
+            Ok(webcam)
+        } else {
+            Err(EcError::Unsupported {
+                name: "webcam".to_owned(),
+            })
+        }
+    }
+
+    pub fn webcam_block(&self) -> Result<WebcamKind> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("webcam_block", fw.webcam.block_addr);
+
+            let raw = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("webcam_block() failed to ec_read()")?;
+
+            let webcam = match raw.is_bit_set(fw.webcam.bit) {
+                true => WebcamKind::On,
+                false => WebcamKind::Off,
+            };
+
+            Ok(webcam)
+        } else {
+            Err(EcError::Unsupported {
+                name: "webcam_block".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_webcam(&mut self, state: WebcamKind) -> Result<()> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_mut() {
+            let addr = addr!("set_webcam", fw.webcam.addr);
+
+            let mut val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("set_webcam() failed to ec_read()")?;
+
+            match state {
+                WebcamKind::On => val.set_bit(fw.webcam.bit),
+                WebcamKind::Off => val.unset_bit(fw.webcam.bit),
+            }
+
+            unsafe {
+                io.ec_write(addr, val)
+                    .whatever_context::<_, EcError>("set_webcam() failed to ec_write()")?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "set_webcam".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_webcam_block(&mut self, state: WebcamKind) -> Result<()> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_mut() {
+            let addr = addr!("set_webcam_block", fw.webcam.block_addr);
+
+            let mut val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("set_webcam_block() failed to ec_read()")?;
+
+            match state {
+                WebcamKind::On => val.set_bit(fw.webcam.bit),
+                WebcamKind::Off => val.unset_bit(fw.webcam.bit),
+            }
+
+            unsafe {
+                io.ec_write(addr, val)
+                    .whatever_context::<_, EcError>("set_webcam_block() failed to ec_write()")?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "set_webcam_block".to_owned(),
+            })
+        }
+    }
+
+    pub fn webcam_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.webcam.addr.is_supported()
+        } else {
+            false
+        }
+    }
+
+    pub fn webcam_block_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.webcam.block_addr.is_supported()
         } else {
             false
         }

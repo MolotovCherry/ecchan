@@ -425,3 +425,19 @@ impl BatteryMode {
         }
     }
 }
+
+//
+// Webcam
+//
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum WebcamKind {
+    On,
+    Off,
+}
+
+impl WebcamKind {
+    pub fn enabled(&self) -> bool {
+        matches!(self, Self::On)
+    }
+}
