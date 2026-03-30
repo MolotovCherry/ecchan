@@ -457,3 +457,19 @@ impl CoolerBoostKind {
         matches!(self, Self::On)
     }
 }
+
+//
+// Fn Win Swap
+//
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum FnDirection {
+    Left,
+    Right,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum WinDirection {
+    Left,
+    Right,
+}

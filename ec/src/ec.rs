@@ -8,7 +8,8 @@ use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
         BatteryMode, Bit, BitSet, CoolerBoost, CoolerBoostKind, FW_INFO, FW_REGISTRY, FanModeKind,
-        FwConfig, ShiftModeKind, SuperBatteryKind, Threshold, WebcamKind,
+        FnDirection, FwConfig, ShiftModeKind, SuperBatteryKind, Threshold, WebcamKind,
+        WinDirection,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
@@ -570,11 +571,11 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_ref() {
             let addr = addr!("webcam", fw.webcam.addr);
 
-            let raw = io
-                .ec_read(addr)
-                .whatever_context::<_, EcError>("webcam() failed to ec_read()")?;
+            let set = io
+                .ec_read_bit(addr, fw.webcam.bit)
+                .whatever_context::<_, EcError>("webcam() failed to ec_read_bit()")?;
 
-            let webcam = match raw.is_bit_set(fw.webcam.bit) {
+            let webcam = match set {
                 true => WebcamKind::On,
                 false => WebcamKind::Off,
             };
@@ -593,11 +594,11 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_ref() {
             let addr = addr!("webcam_block", fw.webcam.block_addr);
 
-            let raw = io
-                .ec_read(addr)
-                .whatever_context::<_, EcError>("webcam_block() failed to ec_read()")?;
+            let set = io
+                .ec_read_bit(addr, fw.webcam.bit)
+                .whatever_context::<_, EcError>("webcam_block() failed to ec_read_bit()")?;
 
-            let webcam = match raw.is_bit_set(fw.webcam.bit) {
+            let webcam = match set {
                 true => WebcamKind::On,
                 false => WebcamKind::Off,
             };
@@ -616,18 +617,11 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_webcam", fw.webcam.addr);
 
-            let mut val = io
-                .ec_read(addr)
-                .whatever_context::<_, EcError>("set_webcam() failed to ec_read()")?;
-
-            match state {
-                WebcamKind::On => val.set_bit(fw.webcam.bit),
-                WebcamKind::Off => val.unset_bit(fw.webcam.bit),
-            }
+            let val = state.enabled();
 
             unsafe {
-                io.ec_write(addr, val)
-                    .whatever_context::<_, EcError>("set_webcam() failed to ec_write()")?;
+                io.ec_write_bit(addr, fw.webcam.bit, val)
+                    .whatever_context::<_, EcError>("set_webcam() failed to ec_write_bit()")?;
             }
 
             Ok(())
@@ -644,18 +638,13 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_webcam_block", fw.webcam.block_addr);
 
-            let mut val = io
-                .ec_read(addr)
-                .whatever_context::<_, EcError>("set_webcam_block() failed to ec_read()")?;
-
-            match state {
-                WebcamKind::On => val.set_bit(fw.webcam.bit),
-                WebcamKind::Off => val.unset_bit(fw.webcam.bit),
-            }
+            let val = state.enabled();
 
             unsafe {
-                io.ec_write(addr, val)
-                    .whatever_context::<_, EcError>("set_webcam_block() failed to ec_write()")?;
+                io.ec_write_bit(addr, fw.webcam.bit, val)
+                    .whatever_context::<_, EcError>(
+                        "set_webcam_block() failed to ec_write_bit()",
+                    )?;
             }
 
             Ok(())
@@ -696,11 +685,11 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_ref() {
             let addr = addr!("cooler_boost", fw.cooler_boost.addr);
 
-            let raw = io
-                .ec_read(addr)
-                .whatever_context::<_, EcError>("cooler_boost() failed to ec_read()")?;
+            let set = io
+                .ec_read_bit(addr, fw.cooler_boost.bit)
+                .whatever_context::<_, EcError>("cooler_boost() failed to ec_read_bit()")?;
 
-            let cooler_boost = match raw.is_bit_set(fw.cooler_boost.bit) {
+            let cooler_boost = match set {
                 true => CoolerBoostKind::On,
                 false => CoolerBoostKind::Off,
             };
@@ -719,18 +708,13 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_cooler_boost", fw.cooler_boost.addr);
 
-            let mut val = io
-                .ec_read(addr)
-                .whatever_context::<_, EcError>("set_cooler_boost() failed to ec_read()")?;
-
-            match state {
-                CoolerBoostKind::On => val.set_bit(fw.cooler_boost.bit),
-                CoolerBoostKind::Off => val.unset_bit(fw.cooler_boost.bit),
-            }
+            let set = state.enabled();
 
             unsafe {
-                io.ec_write(addr, val)
-                    .whatever_context::<_, EcError>("set_cooler_boost() failed to ec_write()")?;
+                io.ec_write_bit(addr, fw.cooler_boost.bit, set)
+                    .whatever_context::<_, EcError>(
+                        "set_cooler_boost() failed to ec_write_bit()",
+                    )?;
             }
 
             Ok(())
@@ -748,6 +732,116 @@ impl Ec {
             fw.cooler_boost.addr.is_supported()
         } else {
             false
+        }
+    }
+
+    //
+    // Fn Win Key Swap
+    //
+
+    pub fn fn_key(&self) -> Result<FnDirection> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("fn_key", fw.fn_win_swap.addr);
+
+            let mut set = io
+                .ec_read_bit(addr, fw.fn_win_swap.bit)
+                .whatever_context::<_, EcError>("fn_key() failed to ec_read_bit()")?;
+
+            set ^= fw.fn_win_swap.invert; // invert the direction for some laptops
+            set = !set; // fn key position is the opposite of win key
+
+            let fn_win_swap = match set {
+                true => FnDirection::Left,
+                false => FnDirection::Right,
+            };
+
+            Ok(fn_win_swap)
+        } else {
+            Err(EcError::Unsupported {
+                name: "fn_key".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_fn_key(&mut self, dir: FnDirection) -> Result<()> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_mut() {
+            let addr = addr!("set_fn_key", fw.fn_win_swap.addr);
+
+            let mut val = matches!(dir, FnDirection::Left);
+            val ^= fw.fn_win_swap.invert; // invert the direction for some laptops
+            val = !val; // fn key position is the opposite of win key
+
+            unsafe {
+                io.ec_write_bit(addr, fw.fn_win_swap.bit, val)
+                    .whatever_context::<_, EcError>("set_fn_key() failed to ec_write_bit()")?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "set_fn_key".to_owned(),
+            })
+        }
+    }
+
+    pub fn fn_win_swap_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.fn_win_swap.addr.is_supported()
+        } else {
+            false
+        }
+    }
+
+    pub fn win_key(&self) -> Result<WinDirection> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("win_key", fw.fn_win_swap.addr);
+
+            let mut val = io
+                .ec_read_bit(addr, fw.fn_win_swap.bit)
+                .whatever_context::<_, EcError>("win_key() failed to ec_read_bit()")?;
+
+            val ^= fw.fn_win_swap.invert; // invert the direction for some laptops
+
+            let fn_win_swap = match val {
+                true => WinDirection::Left,
+                false => WinDirection::Right,
+            };
+
+            Ok(fn_win_swap)
+        } else {
+            Err(EcError::Unsupported {
+                name: "win_key".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_win_key(&mut self, dir: WinDirection) -> Result<()> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_mut() {
+            let addr = addr!("set_win_key", fw.fn_win_swap.addr);
+
+            let mut val = matches!(dir, WinDirection::Left);
+            val ^= fw.fn_win_swap.invert; // invert the direction for some laptops
+
+            unsafe {
+                io.ec_write_bit(addr, fw.fn_win_swap.bit, val)
+                    .whatever_context::<_, EcError>("set_win_key() failed to ec_write_bit()")?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "set_win_key".to_owned(),
+            })
         }
     }
 
