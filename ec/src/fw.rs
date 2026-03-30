@@ -441,3 +441,19 @@ impl WebcamKind {
         matches!(self, Self::On)
     }
 }
+
+//
+// Cooler Boost
+//
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum CoolerBoostKind {
+    On,
+    Off,
+}
+
+impl CoolerBoostKind {
+    pub fn enabled(&self) -> bool {
+        matches!(self, Self::On)
+    }
+}

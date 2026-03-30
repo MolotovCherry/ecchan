@@ -7,8 +7,8 @@ use snafu::prelude::*;
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
-        BatteryMode, Bit, BitSet, FW_INFO, FW_REGISTRY, FanModeKind, FwConfig, ShiftModeKind,
-        SuperBatteryKind, Threshold, WebcamKind,
+        BatteryMode, Bit, BitSet, CoolerBoost, CoolerBoostKind, FW_INFO, FW_REGISTRY, FanModeKind,
+        FwConfig, ShiftModeKind, SuperBatteryKind, Threshold, WebcamKind,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
@@ -681,6 +681,71 @@ impl Ec {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
             fw.webcam.block_addr.is_supported()
+        } else {
+            false
+        }
+    }
+
+    //
+    // Cooler Boost
+    //
+
+    pub fn cooler_boost(&self) -> Result<CoolerBoostKind> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("cooler_boost", fw.cooler_boost.addr);
+
+            let raw = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("cooler_boost() failed to ec_read()")?;
+
+            let cooler_boost = match raw.is_bit_set(fw.cooler_boost.bit) {
+                true => CoolerBoostKind::On,
+                false => CoolerBoostKind::Off,
+            };
+
+            Ok(cooler_boost)
+        } else {
+            Err(EcError::Unsupported {
+                name: "cooler_boost".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_cooler_boost(&mut self, state: CoolerBoostKind) -> Result<()> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_mut() {
+            let addr = addr!("set_cooler_boost", fw.cooler_boost.addr);
+
+            let mut val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("set_cooler_boost() failed to ec_read()")?;
+
+            match state {
+                CoolerBoostKind::On => val.set_bit(fw.cooler_boost.bit),
+                CoolerBoostKind::Off => val.unset_bit(fw.cooler_boost.bit),
+            }
+
+            unsafe {
+                io.ec_write(addr, val)
+                    .whatever_context::<_, EcError>("set_cooler_boost() failed to ec_write()")?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "set_cooler_boost".to_owned(),
+            })
+        }
+    }
+
+    pub fn cooler_boost_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.cooler_boost.addr.is_supported()
         } else {
             false
         }
