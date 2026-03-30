@@ -112,12 +112,6 @@ pub struct SuperBattery {
     pub mask: u8,
 }
 
-impl SuperBattery {
-    pub fn is_supported(&self) -> bool {
-        self.addr.is_supported()
-    }
-}
-
 #[derive(Debug, Copy, Clone)]
 pub struct FanMode {
     pub addr: Addr,
