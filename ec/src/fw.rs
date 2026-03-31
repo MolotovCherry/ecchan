@@ -145,7 +145,7 @@ pub struct Thermal {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Leds {
-    pub micmute_led_addr: Addr,
+    pub mic_mute_led_addr: Addr,
     pub mute_led_addr: Addr,
     pub bit: Bit,
 }
@@ -466,4 +466,20 @@ pub enum FnDirection {
 pub enum WinDirection {
     Left,
     Right,
+}
+
+//
+// LEDs
+//
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum MicMuteLed {
+    On,
+    Off,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum MuteLed {
+    On,
+    Off,
 }

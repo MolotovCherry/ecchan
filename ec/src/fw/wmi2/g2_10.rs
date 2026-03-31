@@ -127,7 +127,7 @@ pub const G2_10: FwConfig = FwConfig {
         rt_fan_speed_addr: Addr::Addr(0x89),
     },
     leds: Leds {
-        micmute_led_addr: Addr::Addr(0x2C),
+        mic_mute_led_addr: Addr::Addr(0x2C),
         mute_led_addr: Addr::Addr(0x2D),
         bit: Bit::_1,
     },

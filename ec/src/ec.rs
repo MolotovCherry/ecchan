@@ -8,8 +8,8 @@ use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
         BatteryMode, Bit, BitSet, CoolerBoost, CoolerBoostKind, FW_INFO, FW_REGISTRY, FanModeKind,
-        FnDirection, FwConfig, ShiftModeKind, SuperBatteryKind, Threshold, WebcamKind,
-        WinDirection,
+        FnDirection, FwConfig, MicMuteLed, MuteLed, ShiftModeKind, SuperBatteryKind, Threshold,
+        WebcamKind, WinDirection,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
@@ -842,6 +842,126 @@ impl Ec {
             Err(EcError::Unsupported {
                 name: "set_win_key".to_owned(),
             })
+        }
+    }
+
+    //
+    // LEDs
+    //
+
+    pub fn mic_mute_led(&self) -> Result<MicMuteLed> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("mic_mute_led", fw.leds.mic_mute_led_addr);
+
+            let val = io
+                .ec_read_bit(addr, fw.leds.bit)
+                .whatever_context::<_, EcError>("mic_mute_led() failed to ec_read_bit()")?;
+
+            let led = match val {
+                true => MicMuteLed::On,
+                false => MicMuteLed::Off,
+            };
+
+            Ok(led)
+        } else {
+            Err(EcError::Unsupported {
+                name: "mic_mute_led".to_owned(),
+            })
+        }
+    }
+
+    pub fn mute_led(&self) -> Result<MuteLed> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("mute_led", fw.leds.mute_led_addr);
+
+            let val = io
+                .ec_read_bit(addr, fw.leds.bit)
+                .whatever_context::<_, EcError>("mute_led() failed to ec_read_bit()")?;
+
+            let led = match val {
+                true => MuteLed::On,
+                false => MuteLed::Off,
+            };
+
+            Ok(led)
+        } else {
+            Err(EcError::Unsupported {
+                name: "mute_led".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_mic_mute_led(&mut self, state: MicMuteLed) -> Result<()> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_mut() {
+            let addr = addr!("set_mic_mute_led", fw.leds.mic_mute_led_addr);
+
+            let state = match state {
+                MicMuteLed::On => true,
+                MicMuteLed::Off => false,
+            };
+
+            unsafe {
+                io.ec_write_bit(addr, fw.leds.bit, state)
+                    .whatever_context::<_, EcError>(
+                        "set_mic_mute_led() failed to ec_write_bit()",
+                    )?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "set_mic_mute_led".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_mute_led(&mut self, state: MuteLed) -> Result<()> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_mut() {
+            let addr = addr!("set_mute_led", fw.leds.mute_led_addr);
+
+            let state = match state {
+                MuteLed::On => true,
+                MuteLed::Off => false,
+            };
+
+            unsafe {
+                io.ec_write_bit(addr, fw.leds.bit, state)
+                    .whatever_context::<_, EcError>("set_mute_led() failed to ec_write_bit()")?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "set_mute_led".to_owned(),
+            })
+        }
+    }
+
+    pub fn mic_mute_led_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.leds.mic_mute_led_addr.is_supported()
+        } else {
+            false
+        }
+    }
+
+    pub fn mute_led_supported(&self) -> bool {
+        if false {
+            todo!("ec drv");
+        } else if let Some((_, fw)) = self.sys.as_ref() {
+            fw.leds.mute_led_addr.is_supported()
+        } else {
+            false
         }
     }
 
