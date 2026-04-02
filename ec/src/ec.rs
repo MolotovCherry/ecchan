@@ -965,6 +965,82 @@ impl Ec {
         }
     }
 
+    //
+    // Thermal
+    //
+
+    pub fn cpu_rt_fan_speed(&self) -> Result<u8> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("cpu_rt_fan_speed", fw.cpu.rt_fan_speed_addr);
+
+            let val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("cpu_rt_fan_speed() failed to ec_read()")?;
+
+            Ok(val)
+        } else {
+            Err(EcError::Unsupported {
+                name: "cpu_rt_fan_speed".to_owned(),
+            })
+        }
+    }
+
+    pub fn cpu_rt_temp(&self) -> Result<u8> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("cpu_rt_temp", fw.cpu.rt_temp_addr);
+
+            let val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("cpu_rt_temp() failed to ec_read()")?;
+
+            Ok(val)
+        } else {
+            Err(EcError::Unsupported {
+                name: "cpu_rt_temp".to_owned(),
+            })
+        }
+    }
+
+    pub fn gpu_rt_fan_speed(&self) -> Result<u8> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("gpu_rt_fan_speed", fw.gpu.rt_fan_speed_addr);
+
+            let val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("gpu_rt_fan_speed() failed to ec_read()")?;
+
+            Ok(val)
+        } else {
+            Err(EcError::Unsupported {
+                name: "gpu_rt_fan_speed".to_owned(),
+            })
+        }
+    }
+
+    pub fn gpu_rt_temp(&self) -> Result<u8> {
+        if false {
+            todo!("ec drv");
+        } else if let Some((io, fw)) = self.sys.as_ref() {
+            let addr = addr!("gpu_rt_temp", fw.gpu.rt_temp_addr);
+
+            let val = io
+                .ec_read(addr)
+                .whatever_context::<_, EcError>("gpu_rt_temp() failed to ec_read()")?;
+
+            Ok(val)
+        } else {
+            Err(EcError::Unsupported {
+                name: "gpu_rt_temp".to_owned(),
+            })
+        }
+    }
+
     // //
     // // Temps
     // //
