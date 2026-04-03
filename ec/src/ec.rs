@@ -7,9 +7,9 @@ use snafu::prelude::*;
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
-        BatteryMode, Bit, BitSet, CoolerBoost, CoolerBoostKind, FW_INFO, FW_REGISTRY, FanModeKind,
-        FnDirection, FwConfig, MicMuteLed, MuteLed, ShiftModeKind, SuperBatteryKind, Threshold,
-        WebcamKind, WinDirection,
+        BatteryMode, Bit, BitSet, CoolerBoostKind, Curve6, Curve7, CurveKind, FW_INFO, FW_REGISTRY,
+        FanModeKind, FnDirection, FwConfig, MicMuteLed, MuteLed, ShiftModeKind, SuperBatteryKind,
+        Threshold, WebcamKind, WinDirection,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
@@ -1041,121 +1041,325 @@ impl Ec {
         }
     }
 
-    // //
-    // // Temps
-    // //
+    //
+    // Fan curves
+    //
 
-    // pub fn cpu_temp(&self) -> Result<u8> {
-    //     let val = self
-    //         .io
-    //         .ec_read(CPU_TEMP)
-    //         .context("cpu_temp() failed to ec_read()")?;
+    fn read_curve<const N: usize, T: From<[u8; N]>>(addr: u8, io: &EcSys) -> Result<T> {
+        let mut buf = [0; N];
+        io.ec_read_seq(addr, &mut buf)
+            .whatever_context::<_, EcError>("read_curve() failed to ec_read_seq()")?;
 
-    //     Ok(val)
-    // }
+        Ok(T::from(buf))
+    }
 
-    // pub fn gpu_temp(&self) -> Result<u8> {
-    //     let val = self
-    //         .io
-    //         .ec_read(GPU_TEMP)
-    //         .context("gpu_temp() failed to ec_read()")?;
+    unsafe fn set_curve<const N: usize, T: Into<[u8; N]>>(
+        io: &mut EcSys,
+        addr: u8,
+        curve: T,
+    ) -> Result<()> {
+        let buf = curve.into();
+        unsafe {
+            io.ec_write_seq(addr, &buf)
+                .whatever_context::<_, EcError>("set_curve() failed to ec_write_seq()")?;
+        }
 
-    //     Ok(val)
-    // }
+        Ok(())
+    }
 
-    // //
-    // // Fan Curves
-    // //
+    pub fn cpu_fan_curve(&self) -> Result<Curve7> {
+        if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.cpu_fan_curve.kind, CurveKind::Curve7) {
+                whatever!("wrong curve kind");
+            }
 
-    // fn fan_curve(&self, addr: u8) -> Result<u8> {
-    //     let val = self
-    //         .io
-    //         .ec_read(addr)
-    //         .context("fan_curve() failed to ec_read()")?;
+            let addr = addr!("cpu_fan_curve", fw.cpu_fan_curve.addr);
 
-    //     Ok(val)
-    // }
+            let curve = Self::read_curve(addr, io)?;
+            Ok(curve)
+        } else {
+            Err(EcError::Unsupported {
+                name: "cpu_fan_curve".to_owned(),
+            })
+        }
+    }
 
-    // fn set_fan_curve(&self, addr: u8, percentage: u8) -> Result<u8> {
-    //     if percentage > CPU_FAN_MAX || percentage > GPU_FAN_MAX {
-    //         whatever!("fan speed cannot exceed {percentage}%");
-    //     }
+    pub fn cpu_temp_curve(&self) -> Result<Curve7> {
+        if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.cpu_temp_curve.kind, CurveKind::Curve7) {
+                whatever!("wrong curve kind");
+            }
 
-    //     todo!()
-    // }
+            let addr = addr!("cpu_temp_curve", fw.cpu_temp_curve.addr);
 
-    // pub fn gpu_fan_curve(&self) -> Result<GpuFanCurve> {
-    //     let (p1, p2, p3, p4, p5, p6) = (
-    //         self.fan_curve(GPU_FAN_CURVE_1)?,
-    //         self.fan_curve(GPU_FAN_CURVE_2)?,
-    //         self.fan_curve(GPU_FAN_CURVE_3)?,
-    //         self.fan_curve(GPU_FAN_CURVE_4)?,
-    //         self.fan_curve(GPU_FAN_CURVE_5)?,
-    //         self.fan_curve(GPU_FAN_CURVE_6)?,
-    //     );
+            let curve = Self::read_curve(addr, io)?;
+            Ok(curve)
+        } else {
+            Err(EcError::Unsupported {
+                name: "cpu_temp_curve".to_owned(),
+            })
+        }
+    }
 
-    //     let gpu = GpuFanCurve::new(p1, p2, p3, p4, p5, p6).context("fan point exceeded max max")?;
+    pub fn cpu_hysteresis_curve(&self) -> Result<Curve6> {
+        if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.cpu_hysteresis_curve.kind, CurveKind::Curve6) {
+                whatever!("wrong curve kind");
+            }
 
-    //     Ok(gpu)
-    // }
+            let addr = addr!("cpu_hysteresis_curve", fw.cpu_hysteresis_curve.addr);
 
-    // pub fn cpu_fan_curve(&self) -> Result<CpuFanCurve> {
-    //     let (p1, p2, p3, p4, p5, p6) = (
-    //         self.fan_curve(CPU_FAN_CURVE_1)?,
-    //         self.fan_curve(CPU_FAN_CURVE_2)?,
-    //         self.fan_curve(CPU_FAN_CURVE_3)?,
-    //         self.fan_curve(CPU_FAN_CURVE_4)?,
-    //         self.fan_curve(CPU_FAN_CURVE_5)?,
-    //         self.fan_curve(CPU_FAN_CURVE_6)?,
-    //     );
+            let curve = Self::read_curve(addr, io)?;
+            Ok(curve)
+        } else {
+            Err(EcError::Unsupported {
+                name: "cpu_hysteresis_curve".to_owned(),
+            })
+        }
+    }
 
-    //     let cpu = CpuFanCurve::new(p1, p2, p3, p4, p5, p6).context("fan point exceeded max max")?;
+    pub fn gpu_fan_curve(&self) -> Result<Curve6> {
+        if !self.has_dgpu() {
+            whatever!("no dgpu available");
+        }
 
-    //     Ok(cpu)
-    // }
+        if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.gpu_fan_curve.kind, CurveKind::Curve6) {
+                whatever!("wrong curve kind");
+            }
 
-    // //
-    // // Utils
-    // //
+            let addr = addr!("gpu_fan_curve", fw.gpu_fan_curve.addr);
 
-    // // Raw ec dump
-    // pub fn ec_dump_raw(&self) -> Result<[u8; 256]> {
-    //     let mut dump = [0; 256];
-    //     self.io
-    //         .ec_read_seq(0x00, &mut dump)
-    //         .context("ec_dump_raw() failed to ec_read_seq()")?;
-    //     Ok(dump)
-    // }
+            let curve = Self::read_curve(addr, io)?;
+            Ok(curve)
+        } else {
+            Err(EcError::Unsupported {
+                name: "gpu_fan_curve".to_owned(),
+            })
+        }
+    }
+
+    pub fn gpu_temp_curve(&self) -> Result<Curve7> {
+        if !self.has_dgpu() {
+            whatever!("no dgpu available");
+        }
+
+        if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.gpu_temp_curve.kind, CurveKind::Curve7) {
+                whatever!("wrong curve kind");
+            }
+
+            let addr = addr!("gpu_temp_curve", fw.gpu_temp_curve.addr);
+
+            let curve = Self::read_curve(addr, io)?;
+            Ok(curve)
+        } else {
+            Err(EcError::Unsupported {
+                name: "gpu_temp_curve".to_owned(),
+            })
+        }
+    }
+
+    pub fn gpu_hysteresis_curve(&self) -> Result<Curve7> {
+        if !self.has_dgpu() {
+            whatever!("no dgpu available");
+        }
+
+        if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.gpu_hysteresis_curve.kind, CurveKind::Curve6) {
+                whatever!("wrong curve kind");
+            }
+
+            let addr = addr!("gpu_hysteresis_curve", fw.gpu_hysteresis_curve.addr);
+
+            let curve = Self::read_curve(addr, io)?;
+            Ok(curve)
+        } else {
+            Err(EcError::Unsupported {
+                name: "gpu_hysteresis_curve".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_cpu_fan_curve(&mut self, curve: Curve7) -> Result<()> {
+        if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.cpu_fan_curve.kind, CurveKind::Curve7) {
+                whatever!("wrong curve kind");
+            }
+
+            let addr = addr!("cpu_fan_curve", fw.cpu_fan_curve.addr);
+
+            unsafe {
+                Self::set_curve(io, addr, curve)?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "cpu_fan_curve".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_cpu_temp_curve(&mut self, curve: Curve7) -> Result<()> {
+        if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.cpu_temp_curve.kind, CurveKind::Curve7) {
+                whatever!("wrong curve kind");
+            }
+
+            let addr = addr!("cpu_temp_curve", fw.cpu_temp_curve.addr);
+
+            unsafe {
+                Self::set_curve(io, addr, curve)?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "cpu_temp_curve".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_cpu_hysteresis_curve(&mut self, curve: Curve6) -> Result<()> {
+        if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.cpu_hysteresis_curve.kind, CurveKind::Curve6) {
+                whatever!("wrong curve kind");
+            }
+
+            let addr = addr!("cpu_hysteresis_curve", fw.cpu_hysteresis_curve.addr);
+
+            unsafe {
+                Self::set_curve(io, addr, curve)?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "cpu_hysteresis_curve".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_gpu_fan_curve(&mut self, curve: Curve6) -> Result<()> {
+        if !self.has_dgpu() {
+            whatever!("no dgpu available");
+        }
+
+        if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.gpu_fan_curve.kind, CurveKind::Curve6) {
+                whatever!("wrong curve kind");
+            }
+
+            let addr = addr!("gpu_fan_curve", fw.gpu_fan_curve.addr);
+
+            unsafe {
+                Self::set_curve(io, addr, curve)?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "gpu_fan_curve".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_gpu_temp_curve(&mut self, curve: Curve7) -> Result<()> {
+        if !self.has_dgpu() {
+            whatever!("no dgpu available");
+        }
+
+        if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.gpu_temp_curve.kind, CurveKind::Curve7) {
+                whatever!("wrong curve kind");
+            }
+
+            let addr = addr!("gpu_temp_curve", fw.gpu_temp_curve.addr);
+
+            unsafe {
+                Self::set_curve(io, addr, curve)?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "gpu_temp_curve".to_owned(),
+            })
+        }
+    }
+
+    pub fn set_gpu_hysteresis_curve(&mut self, curve: Curve7) -> Result<()> {
+        if !self.has_dgpu() {
+            whatever!("no dgpu available");
+        }
+
+        if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.gpu_hysteresis_curve.kind, CurveKind::Curve6) {
+                whatever!("wrong curve kind");
+            }
+
+            let addr = addr!("gpu_hysteresis_curve", fw.gpu_hysteresis_curve.addr);
+
+            unsafe {
+                Self::set_curve(io, addr, curve)?;
+            }
+
+            Ok(())
+        } else {
+            Err(EcError::Unsupported {
+                name: "gpu_hysteresis_curve".to_owned(),
+            })
+        }
+    }
+
+    //
+    // Utils
+    //
+
+    // Raw ec dump
+    pub fn ec_dump_raw(&self) -> Result<[u8; 256]> {
+        if let Some((io, _)) = self.sys.as_ref() {
+            let mut dump = [0; 256];
+            io.ec_read_seq(0x00, &mut dump)
+                .whatever_context::<_, EcError>("ec_dump_raw() failed to ec_read_seq()")?;
+            Ok(dump)
+        } else {
+            Err(EcError::Unsupported {
+                name: "ec_dump_raw".to_owned(),
+            })
+        }
+    }
 
     // Pretty formatted ec dump
-    // pub fn ec_dump_pretty(&self) -> Result<String> {
-    //     const HEADER: &str = "|      | _0 _1 _2 _3 _4 _5 _6 _7 _8 _9 _A _B _C _D _E _F\n\
-    //         |------+------------------------------------------------\n";
+    pub fn ec_dump_pretty(&self) -> Result<String> {
+        const HEADER: &str = "|      | _0 _1 _2 _3 _4 _5 _6 _7 _8 _9 _A _B _C _D _E _F\n\
+            |------+------------------------------------------------\n";
 
-    //     let mut buf = HEADER.to_string();
+        let mut buf = HEADER.to_string();
 
-    //     let dump = self.ec_dump_raw()?;
-    //     let mut ascii_buf = ['\0'; 16];
+        let dump = self.ec_dump_raw()?;
+        let mut ascii_buf = ['\0'; 16];
 
-    //     let mut dump_idx = 0;
-    //     for h in 0..0x10 {
-    //         buf.push_str(&format!("| 0x{h:X}_ |"));
+        let mut dump_idx = 0;
+        for h in 0..0x10 {
+            buf.push_str(&format!("| 0x{h:X}_ |"));
 
-    //         for (i, byte) in dump.into_iter().skip(dump_idx).take(0x10).enumerate() {
-    //             buf.push_str(&format!(" {byte:0>2X}"));
-    //             ascii_buf[i] = match byte {
-    //                 0x20..=0x7E => byte as char,
-    //                 _ => '.',
-    //             };
+            for (i, byte) in dump.into_iter().skip(dump_idx).take(0x10).enumerate() {
+                buf.push_str(&format!(" {byte:0>2X}"));
+                ascii_buf[i] = match byte {
+                    0x20..=0x7E => byte as char,
+                    _ => '.',
+                };
 
-    //             dump_idx += 1;
-    //         }
+                dump_idx += 1;
+            }
 
-    //         buf.push_str(" |");
-    //         buf.extend(ascii_buf);
-    //         buf.push_str("|\n");
-    //     }
+            buf.push_str(" |");
+            buf.extend(ascii_buf);
+            buf.push_str("|\n");
+        }
 
-    //     Ok(buf)
-    // }
+        Ok(buf)
+    }
 }

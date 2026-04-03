@@ -175,12 +175,12 @@ pub struct FwConfig {
     pub leds: Leds,
     pub kbd_bl: KbdBl,
     pub fan_rpm: FanRpm,
-    pub cpu_fan_curve: Curve7,
-    pub gpu_fan_curve: Curve6,
-    pub cpu_temp_curve: Curve7,
-    pub gpu_temp_curve: Curve7,
-    pub cpu_hysteresis_curve: Curve6,
-    pub gpu_hysteresis_curve: Curve6,
+    pub cpu_fan_curve: Curve,
+    pub cpu_temp_curve: Curve,
+    pub cpu_hysteresis_curve: Curve,
+    pub gpu_fan_curve: Curve,
+    pub gpu_temp_curve: Curve,
+    pub gpu_hysteresis_curve: Curve,
 }
 
 impl FwConfig {
@@ -237,24 +237,96 @@ pub struct FanRpm {
 //
 
 #[derive(Debug, Copy, Clone)]
+pub enum CurveKind {
+    Curve6,
+    Curve7,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct Curve {
+    pub addr: Addr,
+    pub kind: CurveKind,
+}
+
+#[derive(Debug, Copy, Clone)]
 pub struct Curve6 {
-    pub node1_addr: u8,
-    pub node2_addr: u8,
-    pub node3_addr: u8,
-    pub node4_addr: u8,
-    pub node5_addr: u8,
-    pub node6_addr: u8,
+    pub n1: u8,
+    pub n2: u8,
+    pub n3: u8,
+    pub n4: u8,
+    pub n5: u8,
+    pub n6: u8,
+}
+
+impl From<[u8; 6]> for Curve6 {
+    fn from(value: [u8; 6]) -> Self {
+        let [n1, n2, n3, n4, n5, n6] = value;
+
+        Curve6 {
+            n1,
+            n2,
+            n3,
+            n4,
+            n5,
+            n6,
+        }
+    }
+}
+
+impl From<Curve6> for [u8; 6] {
+    #[rustfmt::skip]
+    fn from(value: Curve6) -> Self {
+        [
+            value.n1,
+            value.n2,
+            value.n3,
+            value.n4,
+            value.n5,
+            value.n6,
+        ]
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct Curve7 {
-    pub node1_addr: u8,
-    pub node2_addr: u8,
-    pub node3_addr: u8,
-    pub node4_addr: u8,
-    pub node5_addr: u8,
-    pub node6_addr: u8,
-    pub node7_addr: u8,
+    pub n1: u8,
+    pub n2: u8,
+    pub n3: u8,
+    pub n4: u8,
+    pub n5: u8,
+    pub n6: u8,
+    pub n7: u8,
+}
+
+impl From<[u8; 7]> for Curve7 {
+    fn from(value: [u8; 7]) -> Self {
+        let [n1, n2, n3, n4, n5, n6, n7] = value;
+
+        Curve7 {
+            n1,
+            n2,
+            n3,
+            n4,
+            n5,
+            n6,
+            n7,
+        }
+    }
+}
+
+impl From<Curve7> for [u8; 7] {
+    #[rustfmt::skip]
+    fn from(value: Curve7) -> Self {
+        [
+            value.n1,
+            value.n2,
+            value.n3,
+            value.n4,
+            value.n5,
+            value.n6,
+            value.n7,
+        ]
+    }
 }
 
 //

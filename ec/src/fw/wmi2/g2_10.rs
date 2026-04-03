@@ -1,5 +1,5 @@
 use crate::fw::{
-    Addr, Bit, CoolerBoost, Curve6, Curve7, FanMode, FanModeKind, FanRpm, FnWinSwap, FwConfig,
+    Addr, Bit, CoolerBoost, Curve, CurveKind, FanMode, FanModeKind, FanRpm, FnWinSwap, FwConfig,
     KbdBl, Leds, ShiftMode, ShiftModeKind, SuperBattery, Thermal, Webcam,
 };
 
@@ -145,55 +145,34 @@ pub const G2_10: FwConfig = FwConfig {
         fan3_addr: 0xCC,
         fan4_addr: 0xCE,
     },
-    cpu_fan_curve: Curve7 {
-        node1_addr: 0x72,
-        node2_addr: 0x73,
-        node3_addr: 0x74,
-        node4_addr: 0x75,
-        node5_addr: 0x76,
-        node6_addr: 0x77,
-        node7_addr: 0x78,
+    // 0x72-0x78
+    cpu_fan_curve: Curve {
+        addr: Addr::Addr(0x72),
+        kind: CurveKind::Curve7,
     },
-    gpu_fan_curve: Curve6 {
-        node1_addr: 0x8A,
-        node2_addr: 0x8B,
-        node3_addr: 0x8C,
-        node4_addr: 0x8D,
-        node5_addr: 0x8E,
-        node6_addr: 0x8F,
+    // 0x69-0x6F
+    cpu_temp_curve: Curve {
+        addr: Addr::Addr(0x69),
+        kind: CurveKind::Curve7,
     },
-    cpu_temp_curve: Curve7 {
-        node1_addr: 0x69,
-        node2_addr: 0x6A,
-        node3_addr: 0x6B,
-        node4_addr: 0x6C,
-        node5_addr: 0x6D,
-        node6_addr: 0x6E,
-        node7_addr: 0x6F,
+    // 0x7A-0x7F
+    cpu_hysteresis_curve: Curve {
+        addr: Addr::Addr(0x7A),
+        kind: CurveKind::Curve6,
     },
-    gpu_temp_curve: Curve7 {
-        node1_addr: 0x81,
-        node2_addr: 0x82,
-        node3_addr: 0x83,
-        node4_addr: 0x84,
-        node5_addr: 0x85,
-        node6_addr: 0x86,
-        node7_addr: 0x87,
+    // 0x8A-0x8F
+    gpu_fan_curve: Curve {
+        addr: Addr::Addr(0x8A),
+        kind: CurveKind::Curve6,
     },
-    cpu_hysteresis_curve: Curve6 {
-        node1_addr: 0x7A,
-        node2_addr: 0x7B,
-        node3_addr: 0x7C,
-        node4_addr: 0x7D,
-        node5_addr: 0x7E,
-        node6_addr: 0x7F,
+    // 0x81-0x87
+    gpu_temp_curve: Curve {
+        addr: Addr::Addr(0x81),
+        kind: CurveKind::Curve7,
     },
-    gpu_hysteresis_curve: Curve6 {
-        node1_addr: 0x92,
-        node2_addr: 0x93,
-        node3_addr: 0x94,
-        node4_addr: 0x95,
-        node5_addr: 0x96,
-        node6_addr: 0x97,
+    // 0x92-0x97
+    gpu_hysteresis_curve: Curve {
+        addr: Addr::Addr(0x92),
+        kind: CurveKind::Curve6,
     },
 };
