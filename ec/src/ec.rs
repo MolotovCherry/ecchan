@@ -9,7 +9,7 @@ use crate::{
     fw::{
         BatteryMode, Bit, BitSet, CoolerBoostKind, Curve6, Curve7, CurveKind, FW_INFO, FW_REGISTRY,
         FanModeKind, FnDirection, FwConfig, MicMuteLed, MuteLed, ShiftModeKind, SuperBatteryKind,
-        Threshold, WebcamKind, WinDirection,
+        Threshold, WebcamKind, WinDirection, WmiVer,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
@@ -84,7 +84,7 @@ impl Ec {
             },
         };
 
-        let model = MODEL_REGISTRY.get();
+        let model = MODEL_REGISTRY.find();
 
         // TODO: ec drv
 
@@ -115,7 +115,7 @@ impl Ec {
 
     pub fn fw_version(&self) -> Result<String> {
         if let Some((io, _)) = self.sys.as_ref() {
-            Self::_fw_version(&io)
+            Self::_fw_version(io)
         } else {
             Err(EcError::Unsupported {
                 name: "fw_version".to_owned(),
@@ -214,7 +214,7 @@ impl Ec {
             let val = fw
                 .shift_mode
                 .modes
-                .into_iter()
+                .iter()
                 .find(|(m, _)| *m == mode)
                 .map(|(_, v)| *v);
 
@@ -452,7 +452,7 @@ impl Ec {
     }
 
     fn fan_supported(&self, fan: Fan) -> bool {
-        self.fan_count() > fan
+        self.fan_count() >= fan
     }
 
     pub fn fan1_supported(&self) -> bool {
@@ -1069,6 +1069,10 @@ impl Ec {
 
     pub fn cpu_fan_curve(&self) -> Result<Curve7> {
         if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.cpu_fan_curve.kind, CurveKind::Curve7) {
                 whatever!("wrong curve kind");
             }
@@ -1086,6 +1090,10 @@ impl Ec {
 
     pub fn cpu_temp_curve(&self) -> Result<Curve7> {
         if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.cpu_temp_curve.kind, CurveKind::Curve7) {
                 whatever!("wrong curve kind");
             }
@@ -1103,6 +1111,10 @@ impl Ec {
 
     pub fn cpu_hysteresis_curve(&self) -> Result<Curve6> {
         if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.cpu_hysteresis_curve.kind, CurveKind::Curve6) {
                 whatever!("wrong curve kind");
             }
@@ -1124,6 +1136,10 @@ impl Ec {
         }
 
         if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.gpu_fan_curve.kind, CurveKind::Curve6) {
                 whatever!("wrong curve kind");
             }
@@ -1145,6 +1161,10 @@ impl Ec {
         }
 
         if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.gpu_temp_curve.kind, CurveKind::Curve7) {
                 whatever!("wrong curve kind");
             }
@@ -1160,12 +1180,15 @@ impl Ec {
         }
     }
 
-    pub fn gpu_hysteresis_curve(&self) -> Result<Curve7> {
+    pub fn gpu_hysteresis_curve(&self) -> Result<Curve6> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
         }
 
         if let Some((io, fw)) = self.sys.as_ref() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
             if !matches!(fw.gpu_hysteresis_curve.kind, CurveKind::Curve6) {
                 whatever!("wrong curve kind");
             }
@@ -1183,6 +1206,10 @@ impl Ec {
 
     pub fn set_cpu_fan_curve(&mut self, curve: Curve7) -> Result<()> {
         if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.cpu_fan_curve.kind, CurveKind::Curve7) {
                 whatever!("wrong curve kind");
             }
@@ -1203,6 +1230,10 @@ impl Ec {
 
     pub fn set_cpu_temp_curve(&mut self, curve: Curve7) -> Result<()> {
         if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.cpu_temp_curve.kind, CurveKind::Curve7) {
                 whatever!("wrong curve kind");
             }
@@ -1223,6 +1254,10 @@ impl Ec {
 
     pub fn set_cpu_hysteresis_curve(&mut self, curve: Curve6) -> Result<()> {
         if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.cpu_hysteresis_curve.kind, CurveKind::Curve6) {
                 whatever!("wrong curve kind");
             }
@@ -1247,6 +1282,10 @@ impl Ec {
         }
 
         if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.gpu_fan_curve.kind, CurveKind::Curve6) {
                 whatever!("wrong curve kind");
             }
@@ -1271,6 +1310,10 @@ impl Ec {
         }
 
         if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.gpu_temp_curve.kind, CurveKind::Curve7) {
                 whatever!("wrong curve kind");
             }
@@ -1289,12 +1332,16 @@ impl Ec {
         }
     }
 
-    pub fn set_gpu_hysteresis_curve(&mut self, curve: Curve7) -> Result<()> {
+    pub fn set_gpu_hysteresis_curve(&mut self, curve: Curve6) -> Result<()> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
         }
 
         if let Some((io, fw)) = self.sys.as_mut() {
+            if !matches!(fw.ver, WmiVer::Wmi2) {
+                whatever!("only wmi2 is supported");
+            }
+
             if !matches!(fw.gpu_hysteresis_curve.kind, CurveKind::Curve6) {
                 whatever!("wrong curve kind");
             }

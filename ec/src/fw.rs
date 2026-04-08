@@ -163,6 +163,7 @@ pub struct KbdBl {
 #[derive(Debug, Copy, Clone)]
 pub struct FwConfig {
     pub allowed_fw: &'static [&'static str],
+    pub ver: WmiVer,
     pub charge_control_addr: Addr,
     pub webcam: Webcam,
     pub fn_win_swap: FnWinSwap,
@@ -248,7 +249,7 @@ pub struct Curve {
     pub kind: CurveKind,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub struct Curve6 {
     pub n1: u8,
     pub n2: u8,
@@ -287,7 +288,7 @@ impl From<Curve6> for [u8; 6] {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub struct Curve7 {
     pub n1: u8,
     pub n2: u8,
@@ -349,7 +350,7 @@ pub trait BitSet {
     fn set_bit_state(&mut self, bit: Bit, state: bool);
     fn set_bit(&mut self, bit: Bit);
     fn unset_bit(&mut self, bit: Bit);
-    fn is_bit_set(self, bit: Bit) -> bool;
+    fn bit_set(self, bit: Bit) -> bool;
 }
 
 impl BitSet for u8 {
@@ -369,7 +370,7 @@ impl BitSet for u8 {
         self.set_bit_state(bit, false);
     }
 
-    fn is_bit_set(self, bit: Bit) -> bool {
+    fn bit_set(self, bit: Bit) -> bool {
         (self & 1 << bit as u8) != 0
     }
 }
@@ -554,4 +555,14 @@ pub enum MicMuteLed {
 pub enum MuteLed {
     On,
     Off,
+}
+
+//
+// Format
+//
+
+#[derive(Debug, Copy, Clone)]
+pub enum WmiVer {
+    Wmi1,
+    Wmi2,
 }

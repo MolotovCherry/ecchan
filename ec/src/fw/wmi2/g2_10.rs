@@ -1,6 +1,6 @@
 use crate::fw::{
     Addr, Bit, CoolerBoost, Curve, CurveKind, FanMode, FanModeKind, FanRpm, FnWinSwap, FwConfig,
-    KbdBl, Leds, ShiftMode, ShiftModeKind, SuperBattery, Thermal, Webcam,
+    KbdBl, Leds, ShiftMode, ShiftModeKind, SuperBattery, Thermal, Webcam, WmiVer,
 };
 
 pub const G2_10: FwConfig = FwConfig {
@@ -80,6 +80,7 @@ pub const G2_10: FwConfig = FwConfig {
         "182LIMS1.111", // New ec version for Vector A18 HX A9WHG
         "182KIMS1.113", // Raider A18 HX A7VIG
     ],
+    ver: WmiVer::Wmi2,
     charge_control_addr: Addr::Addr(0xD7),
     webcam: Webcam {
         addr: Addr::Addr(0x2E),

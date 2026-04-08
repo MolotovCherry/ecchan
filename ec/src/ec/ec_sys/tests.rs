@@ -1,18 +1,27 @@
 use std::{
-    ops::{Deref, DerefMut},
-    sync::LazyLock,
+    array,
+    fs::File,
+    io::Write as _,
+    ops::{Deref, DerefMut, RangeInclusive},
+    os::unix::fs::FileExt,
+    sync::{
+        LazyLock,
+        atomic::{AtomicBool, Ordering},
+    },
 };
 
+use nix::sys::memfd::{MFdFlags, memfd_create};
 use sayuri::sync::{Mutex, MutexGuard};
 
 use super::*;
 use crate::{
     Ec,
-    fw::{BatteryMode, FW_REGISTRY, SuperBatteryKind},
+    fw::{BatteryMode, Curve6, Curve7, FW_REGISTRY, SuperBatteryKind},
+    models::MODEL_REGISTRY,
 };
 
 #[rustfmt::skip]
-const EC_BIN: [u8; 256] = [
+static EC_BIN: [u8; 256] = [
     //           _0    _1    _2    _3    _4    _5    _6    _7    _8    _9    _A    _B    _C    _D    _E    _F
     /* 0x0_ */ 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     /* 0x1_ */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -32,7 +41,68 @@ const EC_BIN: [u8; 256] = [
     /* 0xF_ */ 0x00, 0x00, 0x70, 0x00, 0x23, 0x44, 0x3a, 0x00, 0x44, 0x3a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
 
-/// EcIo Test Backend
+// EcIo Test Backend
+
+macro_rules! get_io {
+    ($test_reset:expr) => {
+        &$test_reset.sys.as_ref().unwrap().0
+    };
+}
+
+macro_rules! get_io_mut {
+    ($test_reset:expr) => {
+        &mut $test_reset.sys.as_mut().unwrap().0
+    };
+}
+
+pub struct EcTestFile {
+    inner: File,
+    writes: [AtomicBool; 256],
+    reads: [AtomicBool; 256],
+}
+
+impl EcTestFile {
+    fn new() -> Self {
+        let dummy = memfd_create("ec-test.bin", MFdFlags::empty())
+            .context(OtherErrnoSnafu)
+            .unwrap();
+        let mut file = File::from(dummy);
+
+        file.write_all(&EC_BIN).context(OtherIoSnafu).unwrap();
+
+        Self {
+            inner: file,
+            writes: array::from_fn(|_| AtomicBool::default()),
+            reads: array::from_fn(|_| AtomicBool::default()),
+        }
+    }
+
+    fn reset(&self) {
+        self.inner.write_all_at(&EC_BIN, 0).unwrap();
+        for (r, w) in self.writes.iter().zip(self.reads.iter()) {
+            r.store(false, Ordering::Relaxed);
+            w.store(false, Ordering::Relaxed);
+        }
+    }
+}
+
+impl FileExt for EcTestFile {
+    fn read_at(&self, buf: &mut [u8], offset: u64) -> io::Result<usize> {
+        for r in &self.reads[offset as usize..offset as usize + buf.len()] {
+            r.store(true, Ordering::Relaxed);
+        }
+
+        self.inner.read_at(buf, offset)
+    }
+
+    fn write_at(&self, buf: &[u8], offset: u64) -> io::Result<usize> {
+        for w in &self.writes[offset as usize..offset as usize + buf.len()] {
+            w.store(true, Ordering::Relaxed);
+        }
+
+        self.inner.write_at(buf, offset)
+    }
+}
 
 struct TestReset(MutexGuard<'static, Ec>);
 
@@ -52,30 +122,21 @@ impl DerefMut for TestReset {
 
 impl Drop for TestReset {
     fn drop(&mut self) {
-        self.0.io.as_ref().unwrap().file.set_len(0).unwrap();
-        self.0
-            .io
-            .as_ref()
-            .unwrap()
-            .file
-            .write_all_at(&EC_BIN, 0x00)
-            .unwrap();
+        self.0.sys.as_ref().unwrap().0.file.reset();
     }
 }
 
 fn get_ec() -> TestReset {
     static EC: LazyLock<Mutex<Ec>> = LazyLock::new(|| {
-        let ec_sys = EcSys::new_dummy("ec-test.bin").unwrap();
+        let file = EcTestFile::new();
 
-        ec_sys
-            .file
-            .write_all_at(&EC_BIN, 0)
-            .context(OtherIoSnafu)
-            .unwrap();
+        let ec_sys = EcSys { file };
+        let fw = FW_REGISTRY.get("17Q1IMS1.10C").unwrap();
+        let model = MODEL_REGISTRY.get_from_name("Titan GT77 12UHS").unwrap();
 
         let ec = Ec {
-            io: Some(ec_sys),
-            fw: Some(FW_REGISTRY.get("17Q1IMS1.10C").unwrap()),
+            sys: Some((ec_sys, fw)),
+            model: Some(model),
         };
 
         Mutex::new(ec)
@@ -84,22 +145,46 @@ fn get_ec() -> TestReset {
     TestReset(EC.lock())
 }
 
-fn patch_cmp(ec: &mut TestReset, addr: u8, vals: &[u8]) {
-    let addr = addr as usize;
+/// NOTE: this will taint all reads due to ec_dump, so drop TestReset after this to reset reads
+#[track_caller]
+fn patch_cmp(ec: &TestReset, addr: u8, vals: &[u8]) {
+    let addr_u = addr as usize;
 
     assert!(
-        addr.checked_add(vals.len().saturating_sub(1))
-            .unwrap_or(usize::MAX)
-            <= 0xFF,
+        addr_u.saturating_add(vals.len().saturating_sub(1)) <= 0xFF,
         "addr + vals.len overflowed"
     );
 
     let dump = ec.ec_dump_raw().unwrap();
     let mut bin = EC_BIN;
 
-    bin[addr..addr + vals.len()].copy_from_slice(vals);
+    bin[addr_u..addr_u + vals.len()].copy_from_slice(vals);
+
+    let range = addr..=addr + vals.len().saturating_sub(1) as u8;
 
     assert_eq!(dump, bin);
+
+    let writes = &ec.sys.as_ref().unwrap().0.file.writes;
+    for (addr, w) in writes.iter().enumerate() {
+        let addr = addr as u8;
+        let v = w.load(Ordering::Relaxed);
+        assert_eq!(v, range.contains(&addr), "illegal write at 0x{addr:>02X}");
+    }
+}
+
+#[track_caller]
+fn assert_read(ec: &Ec, addr: u8) {
+    assert_read_range(ec, addr..=addr);
+}
+
+#[track_caller]
+fn assert_read_range(ec: &Ec, range: RangeInclusive<u8>) {
+    let reads = &ec.sys.as_ref().unwrap().0.file.reads;
+    for (addr, r) in reads.iter().enumerate() {
+        let addr = addr as u8;
+        let v = r.load(Ordering::Relaxed);
+        assert_eq!(v, range.contains(&addr), "illegal write at 0x{addr:>02X}");
+    }
 }
 
 //
@@ -109,18 +194,21 @@ fn patch_cmp(ec: &mut TestReset, addr: u8, vals: &[u8]) {
 #[test]
 fn test_read_1() {
     let ec = get_ec();
-    let val = ec.io.as_ref().unwrap().ec_read(0x2F).unwrap();
+    let io = get_io!(ec);
+    let val = io.ec_read(0x2F).unwrap();
+    assert_read(&ec, 0x2F);
     assert_eq!(0x5B, val);
 }
 
 #[test]
 fn test_write_1() {
     let mut ec = get_ec();
+    let io = get_io_mut!(ec);
     unsafe {
-        ec.io.as_mut().unwrap().ec_write(0x2F, 0xFB).unwrap();
+        io.ec_write(0x2F, 0xFB).unwrap();
     }
 
-    patch_cmp(&mut ec, 0x2F, &[0xFB]);
+    patch_cmp(&ec, 0x2F, &[0xFB]);
 }
 
 //
@@ -130,13 +218,15 @@ fn test_write_1() {
 #[test]
 fn test_end_seq_read_1() {
     let mut ec = get_ec();
+    let io = get_io_mut!(ec);
 
     unsafe {
-        ec.io.as_mut().unwrap().ec_write(0xFF, 0xFE).unwrap();
+        io.ec_write(0xFF, 0xFE).unwrap();
     }
 
     let mut buf = [0];
-    ec.io.as_ref().unwrap().ec_read_seq(0xFF, &mut buf).unwrap();
+    io.ec_read_seq(0xFF, &mut buf).unwrap();
+    assert_read(&ec, 0xFF);
     assert_eq!(0xFE, buf[0]);
 }
 
@@ -144,32 +234,32 @@ fn test_end_seq_read_1() {
 #[should_panic = "addr 0xFF + buf len 2 overflows"]
 fn test_end_seq_read_2() {
     let ec = get_ec();
+    let io = get_io!(ec);
+
     let mut buf = [0, 0];
-    ec.io.as_ref().unwrap().ec_read_seq(0xFF, &mut buf).unwrap();
+    io.ec_read_seq(0xFF, &mut buf).unwrap();
 }
 
 #[test]
 fn test_end_write_seq_1() {
     let mut ec = get_ec();
+    let io = get_io_mut!(ec);
 
     unsafe {
-        ec.io.as_mut().unwrap().ec_write_seq(0xFF, &[0x44]).unwrap();
+        io.ec_write_seq(0xFF, &[0x44]).unwrap();
     }
 
-    patch_cmp(&mut ec, 0xFF, &[0x44]);
+    patch_cmp(&ec, 0xFF, &[0x44]);
 }
 
 #[test]
 #[should_panic = "addr 0xFF + buf len 2 overflows"]
 fn test_end_seq_write_2() {
     let mut ec = get_ec();
+    let io = get_io_mut!(ec);
 
     unsafe {
-        ec.io
-            .as_mut()
-            .unwrap()
-            .ec_write_seq(0xFF, &[0xCE, 0xDE])
-            .unwrap();
+        io.ec_write_seq(0xFF, &[0xCE, 0xDE]).unwrap();
     }
 }
 
@@ -180,24 +270,26 @@ fn test_end_seq_write_2() {
 #[test]
 fn test_seq_read_4() {
     let ec = get_ec();
+    let io = get_io!(ec);
+
     let mut buf = [0; 4];
-    ec.io.as_ref().unwrap().ec_read_seq(0xF2, &mut buf).unwrap();
+    io.ec_read_seq(0xF2, &mut buf).unwrap();
+    assert_read_range(&ec, 0xF2..=0xF5);
     assert_eq!([0x70, 0x00, 0x23, 0x44], buf);
 }
 
 #[test]
 fn test_seq_write_4() {
     let mut ec = get_ec();
+    let io = get_io_mut!(ec);
+
+    let vals = &[0x01, 0x02, 0x03, 0x04];
 
     unsafe {
-        ec.io
-            .as_mut()
-            .unwrap()
-            .ec_write_seq(0xF2, &[0x01, 0x02, 0x03, 0x04])
-            .unwrap();
+        io.ec_write_seq(0xF2, vals).unwrap();
     }
 
-    patch_cmp(&mut ec, 0xF2, &[0x01, 0x02, 0x03, 0x04]);
+    patch_cmp(&ec, 0xF2, vals);
 }
 
 //
@@ -207,51 +299,60 @@ fn test_seq_write_4() {
 #[test]
 fn test_read_bit() {
     let ec = get_ec();
+    let io = get_io!(ec);
 
-    let set = ec.io.as_ref().unwrap().ec_read_bit(0x2E, Bit::_6).unwrap();
+    let set = io.ec_read_bit(0x2E, Bit::_6).unwrap();
+    assert_read(&ec, 0x2E);
     assert!(set, "bit 6 set");
 
-    let set = ec.io.as_ref().unwrap().ec_read_bit(0x2E, Bit::_7).unwrap();
+    let set = io.ec_read_bit(0x2E, Bit::_7).unwrap();
+    assert_read(&ec, 0x2E);
     assert!(!set, "bit 7 not set");
 }
 
 #[test]
 fn test_write_bit() {
     let mut ec = get_ec();
+    let io = get_io!(ec);
 
-    let set = ec.io.as_ref().unwrap().ec_read_bit(0x2E, Bit::_6).unwrap();
+    let set = io.ec_read_bit(0x2E, Bit::_6).unwrap();
+    assert_read(&ec, 0x2E);
     assert!(set, "bit 6 set");
 
+    let io = get_io_mut!(ec);
+
     unsafe {
-        ec.io
-            .as_mut()
-            .unwrap()
-            .ec_write_bit(0x2E, Bit::_6, false)
-            .unwrap();
+        io.ec_write_bit(0x2E, Bit::_6, false).unwrap();
     }
 
-    let set = ec.io.as_ref().unwrap().ec_read_bit(0x2E, Bit::_6).unwrap();
+    let set = io.ec_read_bit(0x2E, Bit::_6).unwrap();
+    assert_read(&ec, 0x2E);
     assert!(!set, "bit 6 not set");
 
-    patch_cmp(&mut ec, 0x2E, &[0x0B]);
+    patch_cmp(&ec, 0x2E, &[0x0B]);
+
+    drop(ec);
 
     //
 
-    let set = ec.io.as_ref().unwrap().ec_read_bit(0x2E, Bit::_7).unwrap();
+    let mut ec = get_ec();
+    let io = get_io!(ec);
+
+    let set = io.ec_read_bit(0x2E, Bit::_7).unwrap();
+    assert_read(&ec, 0x2E);
     assert!(!set, "bit 7 not set");
 
+    let io = get_io_mut!(ec);
+
     unsafe {
-        ec.io
-            .as_mut()
-            .unwrap()
-            .ec_write_bit(0x2E, Bit::_7, true)
-            .unwrap();
+        io.ec_write_bit(0x2E, Bit::_7, true).unwrap();
     }
 
-    let set = ec.io.as_ref().unwrap().ec_read_bit(0x2E, Bit::_7).unwrap();
+    let set = io.ec_read_bit(0x2E, Bit::_7).unwrap();
+    assert_read(&ec, 0x2E);
     assert!(set, "bit 7 set");
 
-    patch_cmp(&mut ec, 0x2E, &[0x8B]);
+    patch_cmp(&ec, 0x2E, &[0xCB]);
 }
 
 //
@@ -263,6 +364,8 @@ fn test_firmware_version() {
     let ec = get_ec();
     let version = ec.fw_version().unwrap();
     assert_eq!(version, "17Q1IMS1.10C");
+
+    assert_read_range(&ec, 0xA0..=0xAB);
 }
 
 #[test]
@@ -270,6 +373,8 @@ fn test_firmware_date() {
     let ec = get_ec();
     let date = ec.fw_date().unwrap();
     assert_eq!(date, "06132023");
+
+    assert_read_range(&ec, 0xAC..=0xB3);
 }
 
 #[test]
@@ -277,6 +382,8 @@ fn test_firmware_time() {
     let ec = get_ec();
     let time = ec.fw_time().unwrap();
     assert_eq!(time, "13:35:33");
+
+    assert_read_range(&ec, 0xB4..=0xBB);
 }
 
 //
@@ -288,6 +395,8 @@ fn test_battery_mode() {
     let ec = get_ec();
     let mode = ec.battery_mode().unwrap();
     assert_eq!(BatteryMode::Healthy, mode);
+
+    assert_read(&ec, 0xD7);
 }
 
 #[test]
@@ -295,6 +404,8 @@ fn test_super_battery() {
     let ec = get_ec();
     let mode = ec.super_battery().unwrap();
     assert_eq!(SuperBatteryKind::On, mode);
+
+    assert_read(&ec, 0xEB);
 }
 
 //
@@ -306,6 +417,8 @@ fn test_fan1_rpm() {
     let ec = get_ec();
     let mode = ec.fan1_rpm().unwrap();
     assert_eq!(1441, mode);
+
+    assert_read_range(&ec, 0xC8..=0xC9);
 }
 
 #[test]
@@ -313,6 +426,8 @@ fn test_fan2_rpm() {
     let ec = get_ec();
     let mode = ec.fan2_rpm().unwrap();
     assert_eq!(1745, mode);
+
+    assert_read_range(&ec, 0xCA..=0xCB);
 }
 
 #[test]
@@ -320,6 +435,8 @@ fn test_fan3_rpm() {
     let ec = get_ec();
     let mode = ec.fan3_rpm().unwrap();
     assert_eq!(0, mode);
+
+    assert_read_range(&ec, 0xCC..=0xCD);
 }
 
 #[test]
@@ -327,24 +444,48 @@ fn test_fan4_rpm() {
     let ec = get_ec();
     let mode = ec.fan4_rpm().unwrap();
     assert_eq!(0, mode);
+
+    assert_read_range(&ec, 0xCE..=0xCF);
 }
 
 //
-// Temps
+// Thermal
 //
 
 #[test]
-fn test_cpu_temp() {
+fn test_cpu_rt_temp() {
     let ec = get_ec();
-    let temp = ec.cpu_temp().unwrap();
+    let temp = ec.cpu_rt_temp().unwrap();
     assert_eq!(43, temp);
+
+    assert_read(&ec, 0x68);
 }
 
 #[test]
-fn test_gpu_temp() {
+fn test_gpu_rt_temp() {
     let ec = get_ec();
-    let temp = ec.gpu_temp().unwrap();
+    let temp = ec.gpu_rt_temp().unwrap();
     assert_eq!(46, temp);
+
+    assert_read(&ec, 0x80);
+}
+
+#[test]
+fn test_cpu_rt_fan_speed() {
+    let ec = get_ec();
+    let temp = ec.cpu_rt_fan_speed().unwrap();
+    assert_eq!(25, temp);
+
+    assert_read(&ec, 0x71);
+}
+
+#[test]
+fn test_gpu_rt_fan_speed() {
+    let ec = get_ec();
+    let temp = ec.gpu_rt_fan_speed().unwrap();
+    assert_eq!(30, temp);
+
+    assert_read(&ec, 0x89);
 }
 
 //
@@ -355,34 +496,178 @@ fn test_gpu_temp() {
 fn test_cpu_fan_curve() {
     let ec = get_ec();
     let curve = ec.cpu_fan_curve().unwrap();
-    assert_eq!(CpuFanCurve(25, 25, 35, 55, 65, 70), curve);
+    assert_eq!(
+        Curve7 {
+            n1: 25,
+            n2: 25,
+            n3: 35,
+            n4: 55,
+            n5: 65,
+            n6: 70,
+            n7: 80
+        },
+        curve
+    );
+
+    assert_read_range(&ec, 0x72..=0x78);
 }
 
 #[test]
 fn test_gpu_fan_curve() {
     let ec = get_ec();
     let curve = ec.gpu_fan_curve().unwrap();
-    assert_eq!(GpuFanCurve(0, 30, 40, 55, 60, 70), curve);
+
+    assert_eq!(
+        Curve6 {
+            n1: 0,
+            n2: 30,
+            n3: 40,
+            n4: 55,
+            n5: 60,
+            n6: 70,
+        },
+        curve
+    );
+
+    assert_read_range(&ec, 0x8A..=0x8F);
 }
 
 #[test]
-#[should_panic = "fan point exceeded max"]
-fn test_cpu_fan_curve_overflow() {
-    let mut ec = get_ec();
-    unsafe {
-        ec.io.ec_write(CPU_FAN_CURVE_1, 0xFF).unwrap();
-    }
+fn test_cpu_temp_curve() {
+    let ec = get_ec();
+    let curve = ec.cpu_temp_curve().unwrap();
+    assert_eq!(
+        Curve7 {
+            n1: 0,
+            n2: 55,
+            n3: 64,
+            n4: 70,
+            n5: 76,
+            n6: 82,
+            n7: 88
+        },
+        curve
+    );
 
-    ec.cpu_fan_curve().unwrap();
+    assert_read_range(&ec, 0x69..=0x6F);
 }
 
 #[test]
-#[should_panic = "fan point exceeded max"]
-fn test_gpu_fan_curve_overflow() {
-    let mut ec = get_ec();
-    unsafe {
-        ec.io.ec_write(GPU_FAN_CURVE_1, 0xFF).unwrap();
-    }
+fn test_gpu_temp_curve() {
+    let ec = get_ec();
+    let curve = ec.gpu_temp_curve().unwrap();
 
-    ec.gpu_fan_curve().unwrap();
+    assert_eq!(
+        Curve7 {
+            n1: 0,
+            n2: 52,
+            n3: 58,
+            n4: 64,
+            n5: 70,
+            n6: 76,
+            n7: 82
+        },
+        curve
+    );
+
+    assert_read_range(&ec, 0x81..=0x87);
+}
+
+#[test]
+fn test_cpu_hysteresis_curve() {
+    let ec = get_ec();
+    let curve = ec.cpu_hysteresis_curve().unwrap();
+    assert_eq!(
+        Curve6 {
+            n1: 10,
+            n2: 3,
+            n3: 3,
+            n4: 3,
+            n5: 3,
+            n6: 3,
+        },
+        curve
+    );
+
+    assert_read_range(&ec, 0x7A..=0x7F);
+}
+
+#[test]
+fn test_gpu_hysteresis_curve() {
+    let ec = get_ec();
+    let curve = ec.gpu_hysteresis_curve().unwrap();
+
+    assert_eq!(
+        Curve6 {
+            n1: 7,
+            n2: 3,
+            n3: 3,
+            n4: 3,
+            n5: 3,
+            n6: 3,
+        },
+        curve
+    );
+
+    assert_read_range(&ec, 0x92..=0x97);
+}
+
+#[test]
+#[should_panic = "no dgpu available"]
+fn test_gpu_fan_curve_unsupported() {
+    let mut ec = get_ec();
+    ec.model.as_mut().unwrap().has_dgpu = false;
+    let res = ec.gpu_fan_curve();
+    ec.model.as_mut().unwrap().has_dgpu = true;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "no dgpu available"]
+fn test_gpu_temp_curve_unsupported() {
+    let mut ec = get_ec();
+    ec.model.as_mut().unwrap().has_dgpu = false;
+    let res = ec.gpu_temp_curve();
+    ec.model.as_mut().unwrap().has_dgpu = true;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "no dgpu available"]
+fn test_gpu_hysteresis_curve_unsupported() {
+    let mut ec = get_ec();
+    ec.model.as_mut().unwrap().has_dgpu = false;
+    let res = ec.gpu_hysteresis_curve();
+    ec.model.as_mut().unwrap().has_dgpu = true;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "no dgpu available"]
+fn test_set_gpu_fan_curve_unsupported() {
+    let mut ec = get_ec();
+    ec.model.as_mut().unwrap().has_dgpu = false;
+    let res = ec.set_gpu_fan_curve(Default::default());
+    ec.model.as_mut().unwrap().has_dgpu = true;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "no dgpu available"]
+fn test_set_gpu_temp_curve_unsupported() {
+    let mut ec = get_ec();
+    ec.model.as_mut().unwrap().has_dgpu = false;
+    let res = ec.set_gpu_temp_curve(Default::default());
+    ec.model.as_mut().unwrap().has_dgpu = true;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "no dgpu available"]
+fn test_set_gpu_hysteresis_curve_unsupported() {
+    let mut ec = get_ec();
+    ec.model.as_mut().unwrap().has_dgpu = false;
+    let res = ec.set_gpu_hysteresis_curve(Default::default());
+    ec.model.as_mut().unwrap().has_dgpu = true;
+    res.unwrap();
 }

@@ -13,7 +13,8 @@ pub static MODEL_REGISTRY: ModelRegistry<'static> = ModelRegistry(&[
 pub struct ModelRegistry<'a>(&'a [ModelConfig]);
 
 impl ModelRegistry<'_> {
-    pub fn get(&self) -> Option<ModelConfig> {
+    /// Find the ModelConfig for this computer model as read from BIOS
+    pub fn find(&self) -> Option<ModelConfig> {
         // Get the SMBIOS header and DMI table from sysfs.
         let buf = fs::read("/sys/firmware/dmi/tables/smbios_entry_point").ok()?;
         let dmi = fs::read("/sys/firmware/dmi/tables/DMI").ok()?;
@@ -26,20 +27,16 @@ impl ModelRegistry<'_> {
             };
 
             match table {
-                Structure::System(system) => {
-                    #[rustfmt::skip]
-                    return MODEL_REGISTRY
-                        .0
-                        .iter()
-                        .find(|i| i.name == system.product)
-                        .copied();
-                }
-
+                Structure::System(system) => return MODEL_REGISTRY.get_from_name(system.product),
                 _ => continue,
             }
         }
 
         None
+    }
+
+    pub fn get_from_name(&self, name: &str) -> Option<ModelConfig> {
+        MODEL_REGISTRY.0.iter().find(|i| i.name == name).copied()
     }
 }
 

@@ -1,16 +1,14 @@
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
-use std::{
-    fs::File,
-    io::{self, ErrorKind, Read, Write},
-    os::unix::fs::FileExt as _,
-};
+#[cfg(not(test))]
+use std::fs::File;
+#[cfg(test)]
+use tests::EcTestFile as File;
 
-use nix::{
-    errno::Errno,
-    sys::memfd::{MFdFlags, memfd_create},
-};
+use std::{io, os::unix::fs::FileExt as _};
+
+use nix::errno::Errno;
 use snafu::prelude::*;
 
 use crate::fw::{Bit, BitSet as _};
@@ -35,7 +33,11 @@ pub enum EcSysError {
     },
 }
 
+#[allow(clippy::assertions_on_constants)]
+#[cfg(not(test))]
 fn create_ec_io() -> Result<File> {
+    use io::ErrorKind;
+
     assert!(cfg!(not(test)), "this cannot be called in test mode");
 
     use std::fs::OpenOptions;
@@ -52,7 +54,7 @@ fn create_ec_io() -> Result<File> {
         .create_new(false)
         .open(EC_WRITE_SUPPORT);
 
-    let mut file = match res {
+    let file = match res {
         Ok(f) => f,
         Err(e) => {
             let err = match e.kind() {
@@ -68,11 +70,11 @@ fn create_ec_io() -> Result<File> {
         }
     };
 
-    let mut buf = String::new();
-    file.read_to_string(&mut buf)
+    let mut buf = [0; 1];
+    file.read_exact_at(&mut buf, 0)
         .map_err(|e| EcSysError::OtherIo { source: e })?;
 
-    let write_enabled = buf.trim() == "Y";
+    let write_enabled = &buf == b"Y";
     if !write_enabled {
         log::error!("ec_sys write_support is disabled; please enable it");
         return Err(EcSysError::NoWriteSupport);
@@ -111,6 +113,8 @@ pub struct EcSys {
 }
 
 impl EcSys {
+    #[allow(clippy::assertions_on_constants)]
+    #[cfg(not(test))]
     pub(super) fn new() -> Result<Self> {
         assert!(cfg!(not(test)), "this cannot be called in test mode");
 
@@ -123,17 +127,9 @@ impl EcSys {
         Ok(this)
     }
 
-    fn new_dummy(name: &str) -> Result<Self> {
-        let dummy = memfd_create(name, MFdFlags::empty()).context(OtherErrnoSnafu)?;
-        let mut file = File::from(dummy);
-
-        file.write_all(&[0; 256]).context(OtherIoSnafu)?;
-
-        log::info!("using dummy io; ec reads/writes will do nothing");
-
-        let this = Self { file };
-
-        Ok(this)
+    #[cfg(test)]
+    pub(super) fn new() -> Result<Self> {
+        unreachable!("this cannot be called in test mode");
     }
 
     pub fn ec_read(&self, addr: u8) -> Result<u8> {
@@ -154,7 +150,7 @@ impl EcSys {
 
     pub fn ec_read_seq(&self, addr: u8, buf: &mut [u8]) -> Result<()> {
         let len = buf.len().saturating_sub(1);
-        if (addr as usize).checked_add(len).unwrap_or(usize::MAX) > 0xFF {
+        if (addr as usize).saturating_add(len) > 0xFF {
             whatever!("addr 0x{addr:X} + buf len {} overflows", buf.len());
         }
 
@@ -180,7 +176,7 @@ impl EcSys {
             }
         };
 
-        Ok(val.is_bit_set(bit))
+        Ok(val.bit_set(bit))
     }
 
     //
@@ -208,7 +204,7 @@ impl EcSys {
     /// Improper usage of this function will result in permanent hardware damage or a bricked computer
     pub unsafe fn ec_write_seq(&mut self, addr: u8, vals: &[u8]) -> Result<()> {
         let len = vals.len().saturating_sub(1);
-        if (addr as usize).checked_add(len).unwrap_or(usize::MAX) > 0xFF {
+        if (addr as usize).saturating_add(len) > 0xFF {
             whatever!("addr 0x{addr:X} + buf len {} overflows", vals.len());
         }
 
