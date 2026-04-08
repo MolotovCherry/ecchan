@@ -145,15 +145,29 @@ fn get_ec() -> TestReset {
     TestReset(EC.lock())
 }
 
-/// NOTE: this will taint all reads due to ec_dump, so drop TestReset after this to reset reads
+/// Empty vals means assert nothing was written
 #[track_caller]
-fn patch_cmp(ec: &TestReset, addr: u8, vals: &[u8]) {
+fn assert_wrote(ec: &TestReset, addr: u8, vals: &[u8]) {
     let addr_u = addr as usize;
 
     assert!(
         addr_u.saturating_add(vals.len().saturating_sub(1)) <= 0xFF,
         "addr + vals.len overflowed"
     );
+
+    // cache old reads since ec_dump_raw will taint it
+    let old_read: [bool; 256] = ec
+        .sys
+        .as_ref()
+        .unwrap()
+        .0
+        .file
+        .reads
+        .iter()
+        .map(|b| b.load(Ordering::Relaxed))
+        .collect::<Vec<bool>>()
+        .try_into()
+        .unwrap();
 
     let dump = ec.ec_dump_raw().unwrap();
     let mut bin = EC_BIN;
@@ -168,7 +182,32 @@ fn patch_cmp(ec: &TestReset, addr: u8, vals: &[u8]) {
     for (addr, w) in writes.iter().enumerate() {
         let addr = addr as u8;
         let v = w.load(Ordering::Relaxed);
-        assert_eq!(v, range.contains(&addr), "illegal write at 0x{addr:>02X}");
+
+        if vals.is_empty() {
+            assert!(!v, "illegal write at 0x{addr:>02X}");
+        } else {
+            assert_eq!(v, range.contains(&addr), "illegal write at 0x{addr:>02X}");
+        }
+    }
+
+    // restore old read values to untaint
+    for (i, b) in ec.sys.as_ref().unwrap().0.file.reads.iter().enumerate() {
+        b.store(old_read[i], Ordering::Relaxed);
+    }
+}
+
+#[track_caller]
+fn assert_unwritten(ec: &TestReset) {
+    assert_wrote(ec, 0x00, &[]);
+}
+
+#[track_caller]
+fn assert_unread(ec: &TestReset) {
+    let reads = &ec.sys.as_ref().unwrap().0.file.reads;
+    for (addr, r) in reads.iter().enumerate() {
+        let addr = addr as u8;
+        let v = r.load(Ordering::Relaxed);
+        assert!(!v, "illegal read at 0x{addr:>02X}");
     }
 }
 
@@ -183,7 +222,7 @@ fn assert_read_range(ec: &Ec, range: RangeInclusive<u8>) {
     for (addr, r) in reads.iter().enumerate() {
         let addr = addr as u8;
         let v = r.load(Ordering::Relaxed);
-        assert_eq!(v, range.contains(&addr), "illegal write at 0x{addr:>02X}");
+        assert_eq!(v, range.contains(&addr), "illegal read at 0x{addr:>02X}");
     }
 }
 
@@ -198,6 +237,7 @@ fn test_read_1() {
     let val = io.ec_read(0x2F).unwrap();
     assert_read(&ec, 0x2F);
     assert_eq!(0x5B, val);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -208,7 +248,8 @@ fn test_write_1() {
         io.ec_write(0x2F, 0xFB).unwrap();
     }
 
-    patch_cmp(&ec, 0x2F, &[0xFB]);
+    assert_wrote(&ec, 0x2F, &[0xFB]);
+    assert_unread(&ec);
 }
 
 //
@@ -228,6 +269,7 @@ fn test_end_seq_read_1() {
     io.ec_read_seq(0xFF, &mut buf).unwrap();
     assert_read(&ec, 0xFF);
     assert_eq!(0xFE, buf[0]);
+    assert_wrote(&ec, 0xFF, &[0xFE]);
 }
 
 #[test]
@@ -238,6 +280,7 @@ fn test_end_seq_read_2() {
 
     let mut buf = [0, 0];
     io.ec_read_seq(0xFF, &mut buf).unwrap();
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -249,7 +292,8 @@ fn test_end_write_seq_1() {
         io.ec_write_seq(0xFF, &[0x44]).unwrap();
     }
 
-    patch_cmp(&ec, 0xFF, &[0x44]);
+    assert_wrote(&ec, 0xFF, &[0x44]);
+    assert_unread(&ec);
 }
 
 #[test]
@@ -276,6 +320,7 @@ fn test_seq_read_4() {
     io.ec_read_seq(0xF2, &mut buf).unwrap();
     assert_read_range(&ec, 0xF2..=0xF5);
     assert_eq!([0x70, 0x00, 0x23, 0x44], buf);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -289,7 +334,8 @@ fn test_seq_write_4() {
         io.ec_write_seq(0xF2, vals).unwrap();
     }
 
-    patch_cmp(&ec, 0xF2, vals);
+    assert_wrote(&ec, 0xF2, vals);
+    assert_unread(&ec);
 }
 
 //
@@ -308,6 +354,8 @@ fn test_read_bit() {
     let set = io.ec_read_bit(0x2E, Bit::_7).unwrap();
     assert_read(&ec, 0x2E);
     assert!(!set, "bit 7 not set");
+
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -329,7 +377,7 @@ fn test_write_bit() {
     assert_read(&ec, 0x2E);
     assert!(!set, "bit 6 not set");
 
-    patch_cmp(&ec, 0x2E, &[0x0B]);
+    assert_wrote(&ec, 0x2E, &[0x0B]);
 
     drop(ec);
 
@@ -352,7 +400,7 @@ fn test_write_bit() {
     assert_read(&ec, 0x2E);
     assert!(set, "bit 7 set");
 
-    patch_cmp(&ec, 0x2E, &[0xCB]);
+    assert_wrote(&ec, 0x2E, &[0xCB]);
 }
 
 //
@@ -366,6 +414,7 @@ fn test_firmware_version() {
     assert_eq!(version, "17Q1IMS1.10C");
 
     assert_read_range(&ec, 0xA0..=0xAB);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -375,6 +424,7 @@ fn test_firmware_date() {
     assert_eq!(date, "06132023");
 
     assert_read_range(&ec, 0xAC..=0xB3);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -384,6 +434,7 @@ fn test_firmware_time() {
     assert_eq!(time, "13:35:33");
 
     assert_read_range(&ec, 0xB4..=0xBB);
+    assert_unwritten(&ec);
 }
 
 //
@@ -397,6 +448,7 @@ fn test_battery_mode() {
     assert_eq!(BatteryMode::Healthy, mode);
 
     assert_read(&ec, 0xD7);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -406,6 +458,7 @@ fn test_super_battery() {
     assert_eq!(SuperBatteryKind::On, mode);
 
     assert_read(&ec, 0xEB);
+    assert_unwritten(&ec);
 }
 
 //
@@ -419,6 +472,7 @@ fn test_fan1_rpm() {
     assert_eq!(1441, mode);
 
     assert_read_range(&ec, 0xC8..=0xC9);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -428,6 +482,7 @@ fn test_fan2_rpm() {
     assert_eq!(1745, mode);
 
     assert_read_range(&ec, 0xCA..=0xCB);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -437,6 +492,7 @@ fn test_fan3_rpm() {
     assert_eq!(0, mode);
 
     assert_read_range(&ec, 0xCC..=0xCD);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -446,6 +502,7 @@ fn test_fan4_rpm() {
     assert_eq!(0, mode);
 
     assert_read_range(&ec, 0xCE..=0xCF);
+    assert_unwritten(&ec);
 }
 
 //
@@ -459,6 +516,7 @@ fn test_cpu_rt_temp() {
     assert_eq!(43, temp);
 
     assert_read(&ec, 0x68);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -468,6 +526,7 @@ fn test_gpu_rt_temp() {
     assert_eq!(46, temp);
 
     assert_read(&ec, 0x80);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -477,6 +536,7 @@ fn test_cpu_rt_fan_speed() {
     assert_eq!(25, temp);
 
     assert_read(&ec, 0x71);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -486,6 +546,7 @@ fn test_gpu_rt_fan_speed() {
     assert_eq!(30, temp);
 
     assert_read(&ec, 0x89);
+    assert_unwritten(&ec);
 }
 
 //
@@ -510,6 +571,7 @@ fn test_cpu_fan_curve() {
     );
 
     assert_read_range(&ec, 0x72..=0x78);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -530,6 +592,7 @@ fn test_gpu_fan_curve() {
     );
 
     assert_read_range(&ec, 0x8A..=0x8F);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -550,6 +613,7 @@ fn test_cpu_temp_curve() {
     );
 
     assert_read_range(&ec, 0x69..=0x6F);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -571,6 +635,7 @@ fn test_gpu_temp_curve() {
     );
 
     assert_read_range(&ec, 0x81..=0x87);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -590,6 +655,7 @@ fn test_cpu_hysteresis_curve() {
     );
 
     assert_read_range(&ec, 0x7A..=0x7F);
+    assert_unwritten(&ec);
 }
 
 #[test]
@@ -610,6 +676,7 @@ fn test_gpu_hysteresis_curve() {
     );
 
     assert_read_range(&ec, 0x92..=0x97);
+    assert_unwritten(&ec);
 }
 
 #[test]
