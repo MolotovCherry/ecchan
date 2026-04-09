@@ -149,9 +149,9 @@ impl Ec {
 
             Ok(s.to_owned())
         } else {
-            return Err(EcError::Unsupported {
+            Err(EcError::Unsupported {
                 name: "fw_time".to_owned(),
-            });
+            })
         }
     }
 
@@ -219,7 +219,7 @@ impl Ec {
                 .map(|(_, v)| *v);
 
             let Some(val) = val else {
-                whatever!("{mode:?} is not supported");
+                whatever!("{mode:?} mode is not supported");
             };
 
             unsafe {
@@ -407,13 +407,13 @@ impl Ec {
 
         if !supported {
             return Err(EcError::Unsupported {
-                name: "fan_rpm".to_owned(),
+                name: format!("{fan:?}"),
             });
         }
 
         let Some((io, fw)) = self.sys.as_ref() else {
             return Err(EcError::Unsupported {
-                name: "fan_rpm".to_owned(),
+                name: format!("{fan:?}"),
             });
         };
 
@@ -535,7 +535,7 @@ impl Ec {
                 .map(|&(_, v)| v);
 
             let Some(val) = val else {
-                whatever!("{mode:?} is not supported");
+                whatever!("{mode:?} mode is not supported");
             };
 
             unsafe {

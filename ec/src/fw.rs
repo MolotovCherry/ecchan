@@ -38,7 +38,7 @@ pub enum Addr {
 
 impl Addr {
     pub fn is_supported(&self) -> bool {
-        matches!(self, Addr::Unsupported)
+        matches!(self, Addr::Addr(_))
     }
 
     pub fn get(&self) -> Option<u8> {
