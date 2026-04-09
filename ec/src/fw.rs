@@ -11,6 +11,8 @@
 //! After there's an update to the supported ec list on msi-ec,
 //! feel free to make a PR for inclusion here with corresponding links.
 
+use std::ops::{BitAnd, BitOrAssign, BitXor, Not, Shl, ShlAssign};
+
 mod wmi2;
 
 /// A registry of supported fw configs.
@@ -330,14 +332,14 @@ impl From<Curve7> for [u8; 7] {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Bit {
-    _0,
-    _1,
-    _2,
-    _3,
-    _4,
-    _5,
-    _6,
-    _7,
+    _0 = 0b00000001, // 1
+    _1 = 0b00000010, // 2
+    _2 = 0b00000100, // 4
+    _3 = 0b00001000, // 8
+    _4 = 0b00010000, // 16
+    _5 = 0b00100000, // 32
+    _6 = 0b01000000, // 64
+    _7 = 0b10000000, // 128
 }
 
 pub trait BitSet {
@@ -347,12 +349,42 @@ pub trait BitSet {
     fn bit_set(self, bit: Bit) -> bool;
 }
 
+impl BitXor<Bit> for u8 {
+    type Output = Self;
+
+    fn bitxor(self, rhs: Bit) -> Self::Output {
+        self ^ rhs as u8
+    }
+}
+
+impl BitOrAssign<Bit> for u8 {
+    fn bitor_assign(&mut self, rhs: Bit) {
+        *self = *self | rhs as u8;
+    }
+}
+
+impl Not for Bit {
+    type Output = u8;
+
+    fn not(self) -> Self::Output {
+        !(self as u8)
+    }
+}
+
+impl BitAnd<Bit> for u8 {
+    type Output = Self;
+
+    fn bitand(self, rhs: Bit) -> Self::Output {
+        self & rhs as u8
+    }
+}
+
 impl BitSet for u8 {
     fn set_bit_state(&mut self, bit: Bit, state: bool) {
         if state {
-            *self |= 1 << bit as u8;
+            *self |= bit; // 1 << n
         } else {
-            *self &= !(1 << bit as u8);
+            *self &= !bit; // 1 << n
         }
     }
 
@@ -365,7 +397,7 @@ impl BitSet for u8 {
     }
 
     fn bit_set(self, bit: Bit) -> bool {
-        (self & 1 << bit as u8) != 0
+        (self & bit) != 0
     }
 }
 

@@ -571,9 +571,13 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_ref() {
             let addr = addr!("webcam", fw.webcam.addr);
 
-            let set = io
-                .ec_read_bit(addr, fw.webcam.bit)
-                .whatever_context::<_, EcError>("webcam() failed to ec_read_bit()")?;
+            let set = {
+                let v = io
+                    .ec_read_bit(addr, fw.webcam.bit)
+                    .whatever_context::<_, EcError>("webcam() failed to ec_read_bit()")?;
+
+                v ^ false
+            };
 
             let webcam = match set {
                 true => WebcamKind::On,
@@ -594,9 +598,13 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_ref() {
             let addr = addr!("webcam_block", fw.webcam.block_addr);
 
-            let set = io
-                .ec_read_bit(addr, fw.webcam.bit)
-                .whatever_context::<_, EcError>("webcam_block() failed to ec_read_bit()")?;
+            let set = {
+                let v = io
+                    .ec_read_bit(addr, fw.webcam.bit)
+                    .whatever_context::<_, EcError>("webcam_block() failed to ec_read_bit()")?;
+
+                v ^ true
+            };
 
             let webcam = match set {
                 true => WebcamKind::On,
@@ -617,7 +625,7 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_webcam", fw.webcam.addr);
 
-            let val = state.enabled();
+            let val = state.enabled() ^ false;
 
             unsafe {
                 io.ec_write_bit(addr, fw.webcam.bit, val)
@@ -638,7 +646,7 @@ impl Ec {
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_webcam_block", fw.webcam.block_addr);
 
-            let val = state.enabled();
+            let val = state.enabled() ^ true;
 
             unsafe {
                 io.ec_write_bit(addr, fw.webcam.bit, val)

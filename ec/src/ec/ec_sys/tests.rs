@@ -11,6 +11,7 @@ macro_rules! get_io_mut {
 }
 
 mod battery;
+mod cooler_boost;
 mod curves;
 mod ec;
 mod fan_mode;
@@ -19,6 +20,7 @@ mod fan_supported;
 mod fw;
 mod shift_mode;
 mod thermal;
+mod webcam;
 
 use std::{
     array,
