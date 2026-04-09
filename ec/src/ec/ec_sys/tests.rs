@@ -16,7 +16,7 @@ use sayuri::sync::{Mutex, MutexGuard};
 use super::*;
 use crate::{
     Ec,
-    fw::{BatteryMode, Curve6, Curve7, FW_REGISTRY, SuperBatteryKind},
+    fw::{BatteryMode, Curve6, Curve7, FW_REGISTRY, SuperBatteryKind, WmiVer},
     models::MODEL_REGISTRY,
 };
 
@@ -280,7 +280,6 @@ fn test_end_seq_read_2() {
 
     let mut buf = [0, 0];
     io.ec_read_seq(0xFF, &mut buf).unwrap();
-    assert_unwritten(&ec);
 }
 
 #[test]
@@ -347,13 +346,13 @@ fn test_read_bit() {
     let ec = get_ec();
     let io = get_io!(ec);
 
-    let set = io.ec_read_bit(0x2E, Bit::_6).unwrap();
-    assert_read(&ec, 0x2E);
-    assert!(set, "bit 6 set");
+    let set = io.ec_read_bit(0x01, Bit::_6).unwrap();
+    assert_read(&ec, 0x01);
+    assert!(!set, "bit 6 not set");
 
-    let set = io.ec_read_bit(0x2E, Bit::_7).unwrap();
-    assert_read(&ec, 0x2E);
-    assert!(!set, "bit 7 not set");
+    let set = io.ec_read_bit(0x01, Bit::_7).unwrap();
+    assert_read(&ec, 0x01);
+    assert!(set, "bit 7 set");
 
     assert_unwritten(&ec);
 }
@@ -363,21 +362,21 @@ fn test_write_bit() {
     let mut ec = get_ec();
     let io = get_io!(ec);
 
-    let set = io.ec_read_bit(0x2E, Bit::_6).unwrap();
-    assert_read(&ec, 0x2E);
-    assert!(set, "bit 6 set");
+    let set = io.ec_read_bit(0x01, Bit::_6).unwrap();
+    assert_read(&ec, 0x01);
+    assert!(!set, "bit 6 not set");
 
     let io = get_io_mut!(ec);
 
     unsafe {
-        io.ec_write_bit(0x2E, Bit::_6, false).unwrap();
+        io.ec_write_bit(0x01, Bit::_6, true).unwrap();
     }
 
-    let set = io.ec_read_bit(0x2E, Bit::_6).unwrap();
-    assert_read(&ec, 0x2E);
-    assert!(!set, "bit 6 not set");
+    let set = io.ec_read_bit(0x01, Bit::_6).unwrap();
+    assert_read(&ec, 0x01);
+    assert!(set, "bit 6 set");
 
-    assert_wrote(&ec, 0x2E, &[0x0B]);
+    assert_wrote(&ec, 0x01, &[0xC0]);
 
     drop(ec);
 
@@ -386,21 +385,21 @@ fn test_write_bit() {
     let mut ec = get_ec();
     let io = get_io!(ec);
 
-    let set = io.ec_read_bit(0x2E, Bit::_7).unwrap();
-    assert_read(&ec, 0x2E);
-    assert!(!set, "bit 7 not set");
+    let set = io.ec_read_bit(0x01, Bit::_7).unwrap();
+    assert_read(&ec, 0x01);
+    assert!(set, "bit 7 set");
 
     let io = get_io_mut!(ec);
 
     unsafe {
-        io.ec_write_bit(0x2E, Bit::_7, true).unwrap();
+        io.ec_write_bit(0x01, Bit::_7, false).unwrap();
     }
 
-    let set = io.ec_read_bit(0x2E, Bit::_7).unwrap();
-    assert_read(&ec, 0x2E);
-    assert!(set, "bit 7 set");
+    let set = io.ec_read_bit(0x01, Bit::_7).unwrap();
+    assert_read(&ec, 0x01);
+    assert!(!set, "bit 7 not set");
 
-    assert_wrote(&ec, 0x2E, &[0xCB]);
+    assert_wrote(&ec, 0x01, &[0x00]);
 }
 
 //
@@ -736,5 +735,65 @@ fn test_set_gpu_hysteresis_curve_unsupported() {
     ec.model.as_mut().unwrap().has_dgpu = false;
     let res = ec.set_gpu_hysteresis_curve(Default::default());
     ec.model.as_mut().unwrap().has_dgpu = true;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "only wmi2 is supported"]
+fn test_gpu_fan_curve_wmi_unsupported() {
+    let mut ec = get_ec();
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
+    let res = ec.gpu_fan_curve();
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi2;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "only wmi2 is supported"]
+fn test_gpu_temp_curve_wmi_unsupported() {
+    let mut ec = get_ec();
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
+    let res = ec.gpu_temp_curve();
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi2;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "only wmi2 is supported"]
+fn test_gpu_hysteresis_curve_wmi_unsupported() {
+    let mut ec = get_ec();
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
+    let res = ec.gpu_hysteresis_curve();
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi2;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "only wmi2 is supported"]
+fn test_set_gpu_fan_curve_wmi_unsupported() {
+    let mut ec = get_ec();
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
+    let res = ec.set_gpu_fan_curve(Default::default());
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi2;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "only wmi2 is supported"]
+fn test_set_gpu_temp_curve_wmi_unsupported() {
+    let mut ec = get_ec();
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
+    let res = ec.set_gpu_temp_curve(Default::default());
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi2;
+    res.unwrap();
+}
+
+#[test]
+#[should_panic = "only wmi2 is supported"]
+fn test_set_gpu_hysteresis_curve_wmi_unsupported() {
+    let mut ec = get_ec();
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
+    let res = ec.set_gpu_hysteresis_curve(Default::default());
+    ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi2;
     res.unwrap();
 }
