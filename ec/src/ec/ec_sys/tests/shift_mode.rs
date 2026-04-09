@@ -55,22 +55,8 @@ fn test_shift_mode_supported() {
 fn test_set_shift_mode_unsupported() {
     let mut ec = get_ec();
 
-    ec.sys.as_mut().unwrap().1.shift_mode.modes = &[
-        (ShiftModeKind::SuperBattery, 0xC2),
-        (ShiftModeKind::Balanced, 0xC1),
-        (ShiftModeKind::Turbo, 0xC4),
-        (ShiftModeKind::Null, 0x00),
-    ];
+    ec.sys.as_mut().unwrap().1.shift_mode.modes = &[];
 
-    let res = ec.set_shift_mode(ShiftModeKind::ExtremePerformance);
-
-    ec.sys.as_mut().unwrap().1.shift_mode.modes = &[
-        (ShiftModeKind::SuperBattery, 0xC2),
-        (ShiftModeKind::Balanced, 0xC1),
-        (ShiftModeKind::ExtremePerformance, 0xC0),
-        (ShiftModeKind::Turbo, 0xC4),
-        (ShiftModeKind::Null, 0x00),
-    ];
-
-    res.unwrap();
+    ec.set_shift_mode(ShiftModeKind::ExtremePerformance)
+        .unwrap();
 }

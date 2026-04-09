@@ -51,14 +51,5 @@ fn test_set_fan_mode_unsupported() {
         (FanModeKind::Null, 0x00),
     ];
 
-    let res = ec.set_fan_mode(FanModeKind::Advanced);
-
-    ec.sys.as_mut().unwrap().1.fan_mode.modes = &[
-        (FanModeKind::Auto, 0x0D),
-        (FanModeKind::Silent, 0x1D),
-        (FanModeKind::Advanced, 0x8D),
-        (FanModeKind::Null, 0x00),
-    ];
-
-    res.unwrap();
+    ec.set_fan_mode(FanModeKind::Advanced).unwrap();
 }
