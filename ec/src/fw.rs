@@ -63,12 +63,6 @@ pub struct FnWinSwap {
     pub invert: bool,
 }
 
-impl FnWinSwap {
-    pub fn is_supported(&self) -> bool {
-        self.addr.is_supported()
-    }
-}
-
 #[derive(Debug, Copy, Clone)]
 pub struct CoolerBoost {
     pub addr: Addr,

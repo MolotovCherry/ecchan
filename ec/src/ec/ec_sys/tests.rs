@@ -38,8 +38,8 @@ use sayuri::sync::{Mutex, MutexGuard};
 use super::*;
 use crate::{
     Ec,
-    fw::{BatteryMode, Curve6, Curve7, FW_REGISTRY, SuperBatteryKind, WmiVer},
-    models::MODEL_REGISTRY,
+    fw::{BatteryMode, Curve6, Curve7, FW_REGISTRY, FwConfig, SuperBatteryKind, WmiVer},
+    models::{MODEL_REGISTRY, ModelConfig},
 };
 
 #[rustfmt::skip]
@@ -114,45 +114,57 @@ impl FileExt for EcTestFile {
     }
 }
 
-struct TestReset(MutexGuard<'static, Ec>);
+struct TestReset {
+    inner: MutexGuard<'static, Ec>,
+    _fw: FwConfig,
+    _model: ModelConfig,
+}
 
 impl Deref for TestReset {
     type Target = MutexGuard<'static, Ec>;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.inner
     }
 }
 
 impl DerefMut for TestReset {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+        &mut self.inner
     }
 }
 
 impl Drop for TestReset {
     fn drop(&mut self) {
-        self.0.sys.as_ref().unwrap().0.file.reset();
+        self.inner.sys.as_mut().unwrap().1 = self._fw;
+        *self.inner.model.as_mut().unwrap() = self._model;
+        self.inner.sys.as_ref().unwrap().0.file.reset();
     }
 }
 
 fn get_ec() -> TestReset {
+    static FW: LazyLock<FwConfig> = LazyLock::new(|| FW_REGISTRY.get("17Q1IMS1.10C").unwrap());
+
+    static MODEL: LazyLock<ModelConfig> =
+        LazyLock::new(|| MODEL_REGISTRY.get_from_name("Titan GT77 12UHS").unwrap());
+
     static EC: LazyLock<Mutex<Ec>> = LazyLock::new(|| {
         let file = EcTestFile::new();
-
         let ec_sys = EcSys { file };
-        let fw = FW_REGISTRY.get("17Q1IMS1.10C").unwrap();
-        let model = MODEL_REGISTRY.get_from_name("Titan GT77 12UHS").unwrap();
 
         let ec = Ec {
-            sys: Some((ec_sys, fw)),
-            model: Some(model),
+            sys: Some((ec_sys, *FW)),
+            model: Some(*MODEL),
         };
 
         Mutex::new(ec)
     });
 
-    TestReset(EC.lock())
+    TestReset {
+        inner: EC.lock(),
+        _fw: *FW,
+        _model: *MODEL,
+    }
 }
 
 /// Empty vals means assert nothing was written

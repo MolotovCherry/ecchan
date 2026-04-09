@@ -48,7 +48,6 @@ fn test_fan2_rpm_missing() {
 
     ec.model.as_mut().unwrap().fans = Fan::One;
     let res = ec.fan2_rpm();
-    ec.model.as_mut().unwrap().fans = Fan::Four;
 
     res.unwrap();
 }
@@ -60,7 +59,6 @@ fn test_fan3_rpm_missing() {
 
     ec.model.as_mut().unwrap().fans = Fan::Two;
     let res = ec.fan3_rpm();
-    ec.model.as_mut().unwrap().fans = Fan::Four;
 
     res.unwrap();
 }
@@ -72,7 +70,6 @@ fn test_fan4_rpm_missing() {
 
     ec.model.as_mut().unwrap().fans = Fan::Three;
     let res = ec.fan4_rpm();
-    ec.model.as_mut().unwrap().fans = Fan::Four;
 
     res.unwrap();
 }

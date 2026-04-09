@@ -47,8 +47,8 @@ fn test_super_battery() {
 #[test]
 fn test_set_super_battery() {
     let mut ec = get_ec();
-    ec.set_super_battery(SuperBatteryKind::On).unwrap();
-    assert_wrote(&ec, 0xEB, &[0x0F]);
+    ec.set_super_battery(SuperBatteryKind::Off).unwrap();
+    assert_wrote(&ec, 0xEB, &[0x00]);
     assert_read(&ec, 0xEB);
 }
 

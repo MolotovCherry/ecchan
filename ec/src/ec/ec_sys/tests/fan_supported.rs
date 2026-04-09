@@ -31,7 +31,6 @@ fn test_fan2_not_supported() {
 
     ec.model.as_mut().unwrap().fans = Fan::One;
     assert!(!ec.fan2_supported());
-    ec.model.as_mut().unwrap().fans = Fan::Four;
 }
 
 #[test]
@@ -40,7 +39,6 @@ fn test_fan3_not_supported() {
 
     ec.model.as_mut().unwrap().fans = Fan::One;
     assert!(!ec.fan3_supported());
-    ec.model.as_mut().unwrap().fans = Fan::Four;
 }
 
 #[test]
@@ -49,5 +47,4 @@ fn test_fan4_not_supported() {
 
     ec.model.as_mut().unwrap().fans = Fan::One;
     assert!(!ec.fan4_supported());
-    ec.model.as_mut().unwrap().fans = Fan::Four;
 }
