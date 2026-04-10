@@ -8,7 +8,7 @@ use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
         BatteryMode, Bit, BitSet, CoolerBoostKind, Curve6, Curve7, FW_INFO, FW_REGISTRY,
-        FanModeKind, FnDirection, FwConfig, MicMuteLed, MuteLed, ShiftModeKind, SuperBatteryKind,
+        FanMode, FnDirection, FwConfig, MicMuteLed, MuteLed, ShiftMode, SuperBatteryKind,
         Threshold, WebcamKind, WinDirection, WmiVer,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
@@ -164,7 +164,7 @@ impl Ec {
     //
 
     /// Supported shift modes
-    pub fn shift_modes(&self) -> Result<Vec<ShiftModeKind>> {
+    pub fn shift_modes(&self) -> Result<Vec<ShiftMode>> {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
@@ -177,7 +177,7 @@ impl Ec {
     }
 
     /// The current shift mode
-    pub fn shift_mode(&self) -> Result<ShiftModeKind> {
+    pub fn shift_mode(&self) -> Result<ShiftMode> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -205,8 +205,8 @@ impl Ec {
     ///
     /// Make sure you are setting a supported shift mode according to shift_modes()
     /// Null is not a valid mode
-    pub fn set_shift_mode(&mut self, mode: ShiftModeKind) -> Result<()> {
-        if matches!(mode, ShiftModeKind::Null) {
+    pub fn set_shift_mode(&mut self, mode: ShiftMode) -> Result<()> {
+        if matches!(mode, ShiftMode::Null) {
             whatever!("shift mode cannot be null");
         }
 
@@ -480,7 +480,7 @@ impl Ec {
     //
 
     /// Supported fan modes
-    pub fn fan_modes(&self) -> Result<Vec<FanModeKind>> {
+    pub fn fan_modes(&self) -> Result<Vec<FanMode>> {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
@@ -492,7 +492,7 @@ impl Ec {
         }
     }
 
-    pub fn fan_mode(&self) -> Result<FanModeKind> {
+    pub fn fan_mode(&self) -> Result<FanMode> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -521,8 +521,8 @@ impl Ec {
         }
     }
 
-    pub fn set_fan_mode(&mut self, mode: FanModeKind) -> Result<()> {
-        if matches!(mode, FanModeKind::Null) {
+    pub fn set_fan_mode(&mut self, mode: FanMode) -> Result<()> {
+        if matches!(mode, FanMode::Null) {
             whatever!("fan mode cannot be null");
         }
 

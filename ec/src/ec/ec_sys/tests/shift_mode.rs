@@ -1,5 +1,5 @@
 use super::*;
-use crate::fw::ShiftModeKind;
+use crate::fw::ShiftMode;
 
 #[test]
 fn test_shift_modes() {
@@ -8,10 +8,10 @@ fn test_shift_modes() {
     assert_eq!(
         modes,
         [
-            ShiftModeKind::SuperBattery,
-            ShiftModeKind::Balanced,
-            ShiftModeKind::ExtremePerformance,
-            ShiftModeKind::Turbo,
+            ShiftMode::SuperBattery,
+            ShiftMode::Balanced,
+            ShiftMode::ExtremePerformance,
+            ShiftMode::Turbo,
         ]
     );
 }
@@ -20,7 +20,7 @@ fn test_shift_modes() {
 fn test_shift_mode() {
     let ec = get_ec();
     let mode = ec.shift_mode().unwrap();
-    assert_eq!(mode, ShiftModeKind::ExtremePerformance);
+    assert_eq!(mode, ShiftMode::ExtremePerformance);
     assert_read(&ec, 0xD2);
     assert_unwritten(&ec);
 }
@@ -29,7 +29,7 @@ fn test_shift_mode() {
 fn test_set_shift_mode() {
     let mut ec = get_ec();
 
-    ec.set_shift_mode(ShiftModeKind::Turbo).unwrap();
+    ec.set_shift_mode(ShiftMode::Turbo).unwrap();
     assert_wrote(&ec, 0xD2, &[0xC4]);
     assert_unread(&ec);
 }
@@ -38,7 +38,7 @@ fn test_set_shift_mode() {
 #[should_panic = "shift mode cannot be null"]
 fn test_set_shift_mode_null() {
     let mut ec = get_ec();
-    ec.set_shift_mode(ShiftModeKind::Null).unwrap();
+    ec.set_shift_mode(ShiftMode::Null).unwrap();
 }
 
 #[test]
@@ -57,6 +57,6 @@ fn test_set_shift_mode_unsupported() {
 
     ec.sys.as_mut().unwrap().1.shift_mode.modes = &[];
 
-    ec.set_shift_mode(ShiftModeKind::ExtremePerformance)
+    ec.set_shift_mode(ShiftMode::ExtremePerformance)
         .unwrap();
 }

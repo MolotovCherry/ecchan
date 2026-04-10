@@ -6,4 +6,4 @@ mod fw;
 mod models;
 
 pub use ec::*;
-pub use fw::{FanModeKind, SuperBatteryKind};
+pub use fw::{FanMode, SuperBatteryKind};

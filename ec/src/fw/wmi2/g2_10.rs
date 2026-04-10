@@ -1,6 +1,6 @@
 use crate::fw::{
-    Addr, Bit, CoolerBoost, Curve, FanMode, FanModeKind, FanRpm, FnWinSwap, FwConfig, KbdBl, Leds,
-    ShiftMode, ShiftModeKind, SuperBattery, Thermal, Webcam, WmiVer,
+    Addr, Bit, CoolerBoost, Curve, FanMode, FanModeConfig, FanRpm, FnWinSwap, FwConfig, KbdBl,
+    Leds, ShiftMode, ShiftModeConfig, SuperBattery, Thermal, Webcam, WmiVer,
 };
 
 pub const G2_10: FwConfig = FwConfig {
@@ -96,27 +96,27 @@ pub const G2_10: FwConfig = FwConfig {
         addr: Addr::Addr(0x98),
         bit: Bit::_7,
     },
-    shift_mode: ShiftMode {
+    shift_mode: ShiftModeConfig {
         addr: Addr::Addr(0xD2),
         modes: &[
-            (ShiftModeKind::SuperBattery, 0xC2),
-            (ShiftModeKind::Balanced, 0xC1),
-            (ShiftModeKind::ExtremePerformance, 0xC0),
-            (ShiftModeKind::Turbo, 0xC4),
-            (ShiftModeKind::Null, 0x00),
+            (ShiftMode::SuperBattery, 0xC2),
+            (ShiftMode::Balanced, 0xC1),
+            (ShiftMode::ExtremePerformance, 0xC0),
+            (ShiftMode::Turbo, 0xC4),
+            (ShiftMode::Null, 0x00),
         ],
     },
     super_battery: SuperBattery {
         addr: Addr::Addr(0xEB),
         mask: 0x0F,
     },
-    fan_mode: FanMode {
+    fan_mode: FanModeConfig {
         addr: Addr::Addr(0xD4),
         modes: &[
-            (FanModeKind::Auto, 0x0D),
-            (FanModeKind::Silent, 0x1D),
-            (FanModeKind::Advanced, 0x8D),
-            (FanModeKind::Null, 0x00),
+            (FanMode::Auto, 0x0D),
+            (FanMode::Silent, 0x1D),
+            (FanMode::Advanced, 0x8D),
+            (FanMode::Null, 0x00),
         ],
     },
     cpu: Thermal {

@@ -1,5 +1,5 @@
 use super::*;
-use crate::FanModeKind;
+use crate::FanMode;
 
 #[test]
 fn test_fan_modes() {
@@ -8,9 +8,9 @@ fn test_fan_modes() {
     assert_eq!(
         modes,
         [
-            FanModeKind::Auto,
-            FanModeKind::Silent,
-            FanModeKind::Advanced
+            FanMode::Auto,
+            FanMode::Silent,
+            FanMode::Advanced
         ]
     );
 }
@@ -19,7 +19,7 @@ fn test_fan_modes() {
 fn test_fan_mode() {
     let ec = get_ec();
     let mode = ec.fan_mode().unwrap();
-    assert_eq!(mode, FanModeKind::Auto);
+    assert_eq!(mode, FanMode::Auto);
     assert_read(&ec, 0xD4);
     assert_unwritten(&ec);
 }
@@ -27,7 +27,7 @@ fn test_fan_mode() {
 #[test]
 fn test_set_fan_mode() {
     let mut ec = get_ec();
-    ec.set_fan_mode(FanModeKind::Advanced).unwrap();
+    ec.set_fan_mode(FanMode::Advanced).unwrap();
 
     assert_wrote(&ec, 0xD4, &[0x8D]);
     assert_unread(&ec);
@@ -37,7 +37,7 @@ fn test_set_fan_mode() {
 #[should_panic = "fan mode cannot be null"]
 fn test_set_fan_mode_null() {
     let mut ec = get_ec();
-    ec.set_fan_mode(FanModeKind::Null).unwrap();
+    ec.set_fan_mode(FanMode::Null).unwrap();
 }
 
 #[test]
@@ -46,10 +46,10 @@ fn test_set_fan_mode_unsupported() {
     let mut ec = get_ec();
 
     ec.sys.as_mut().unwrap().1.fan_mode.modes = &[
-        (FanModeKind::Auto, 0x0D),
-        (FanModeKind::Silent, 0x1D),
-        (FanModeKind::Null, 0x00),
+        (FanMode::Auto, 0x0D),
+        (FanMode::Silent, 0x1D),
+        (FanMode::Null, 0x00),
     ];
 
-    ec.set_fan_mode(FanModeKind::Advanced).unwrap();
+    ec.set_fan_mode(FanMode::Advanced).unwrap();
 }

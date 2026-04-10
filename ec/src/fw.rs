@@ -72,24 +72,24 @@ pub struct CoolerBoost {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct ShiftMode {
+pub struct ShiftModeConfig {
     pub addr: Addr,
-    pub modes: &'static [(ShiftModeKind, u8)],
+    pub modes: &'static [(ShiftMode, u8)],
 }
 
-impl ShiftMode {
-    pub fn get_modes(&self) -> Vec<ShiftModeKind> {
+impl ShiftModeConfig {
+    pub fn get_modes(&self) -> Vec<ShiftMode> {
         self.modes
             .iter()
             .map(|(k, _)| *k)
-            .filter(|m| !matches!(m, ShiftModeKind::Null))
+            .filter(|m| !matches!(m, ShiftMode::Null))
             .collect()
     }
 }
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum ShiftModeKind {
+pub enum ShiftMode {
     /// User High / Extreme Performance (old: Sport Mode)
     ExtremePerformance,
     /// User Medium / Balance / Silent (old: Comfort Mode)
@@ -109,24 +109,24 @@ pub struct SuperBattery {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct FanMode {
+pub struct FanModeConfig {
     pub addr: Addr,
-    pub modes: &'static [(FanModeKind, u8)],
+    pub modes: &'static [(FanMode, u8)],
 }
 
-impl FanMode {
-    pub fn get_modes(&self) -> Vec<FanModeKind> {
+impl FanModeConfig {
+    pub fn get_modes(&self) -> Vec<FanMode> {
         self.modes
             .iter()
             .map(|(k, _)| *k)
-            .filter(|m| !matches!(m, FanModeKind::Null))
+            .filter(|m| !matches!(m, FanMode::Null))
             .collect()
     }
 }
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum FanModeKind {
+pub enum FanMode {
     Auto,
     Silent,
     Advanced,
@@ -164,9 +164,9 @@ pub struct FwConfig {
     pub webcam: Webcam,
     pub fn_win_swap: FnWinSwap,
     pub cooler_boost: CoolerBoost,
-    pub shift_mode: ShiftMode,
+    pub shift_mode: ShiftModeConfig,
     pub super_battery: SuperBattery,
-    pub fan_mode: FanMode,
+    pub fan_mode: FanModeConfig,
     pub cpu: Thermal,
     pub gpu: Thermal,
     pub leds: Leds,
