@@ -1,6 +1,5 @@
-use crate::fw::CoolerBoostKind;
-
 use super::*;
+use crate::fw::CoolerBoostKind;
 
 #[test]
 fn test_cooler_boost() {

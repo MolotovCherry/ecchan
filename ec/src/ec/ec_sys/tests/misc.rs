@@ -1,6 +1,5 @@
-use crate::models::Fan;
-
 use super::*;
+use crate::models::Fan;
 
 #[test]
 fn test_has_dgpu() {

@@ -1,6 +1,5 @@
-use crate::fw::WebcamKind;
-
 use super::*;
+use crate::fw::WebcamKind;
 
 #[test]
 fn test_webcam() {

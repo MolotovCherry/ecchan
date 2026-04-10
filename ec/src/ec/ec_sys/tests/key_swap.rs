@@ -1,6 +1,5 @@
-use crate::fw::{FnDirection, WinDirection};
-
 use super::*;
+use crate::fw::{FnDirection, WinDirection};
 
 #[test]
 fn test_fn_key() {
