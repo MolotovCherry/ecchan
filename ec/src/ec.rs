@@ -7,9 +7,9 @@ use snafu::prelude::*;
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
-        BatteryMode, Bit, BitSet, CoolerBoostKind, Curve6, Curve7, FW_INFO, FW_REGISTRY,
-        FanMode, FnDirection, FwConfig, MicMuteLed, MuteLed, ShiftMode, SuperBatteryKind,
-        Threshold, WebcamKind, WinDirection, WmiVer,
+        BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FW_REGISTRY,
+        FanMode, FnDirection, FwConfig, MicMuteLed, MuteLed, ShiftMode, SuperBattery,
+        Threshold, Webcam, WinDirection, WmiVer,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
@@ -334,7 +334,7 @@ impl Ec {
         }
     }
 
-    pub fn super_battery(&self) -> Result<SuperBatteryKind> {
+    pub fn super_battery(&self) -> Result<SuperBattery> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -347,8 +347,8 @@ impl Ec {
             let val = (val & fw.super_battery.mask) == fw.super_battery.mask;
 
             let kind = match val {
-                true => SuperBatteryKind::On,
-                false => SuperBatteryKind::Off,
+                true => SuperBattery::On,
+                false => SuperBattery::Off,
             };
 
             Ok(kind)
@@ -359,7 +359,7 @@ impl Ec {
         }
     }
 
-    pub fn set_super_battery(&mut self, kind: SuperBatteryKind) -> Result<()> {
+    pub fn set_super_battery(&mut self, kind: SuperBattery) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {
@@ -370,8 +370,8 @@ impl Ec {
                 .whatever_context::<_, EcError>("set_super_battery() failed to ec_read()")?;
 
             let val = match kind {
-                SuperBatteryKind::Off => raw & !fw.super_battery.mask,
-                SuperBatteryKind::On => raw | fw.super_battery.mask,
+                SuperBattery::Off => raw & !fw.super_battery.mask,
+                SuperBattery::On => raw | fw.super_battery.mask,
             };
 
             unsafe {
@@ -569,7 +569,7 @@ impl Ec {
     // Webcam
     //
 
-    pub fn webcam(&self) -> Result<WebcamKind> {
+    pub fn webcam(&self) -> Result<Webcam> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -584,8 +584,8 @@ impl Ec {
             };
 
             let webcam = match set {
-                true => WebcamKind::On,
-                false => WebcamKind::Off,
+                true => Webcam::On,
+                false => Webcam::Off,
             };
 
             Ok(webcam)
@@ -596,7 +596,7 @@ impl Ec {
         }
     }
 
-    pub fn webcam_block(&self) -> Result<WebcamKind> {
+    pub fn webcam_block(&self) -> Result<Webcam> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -611,8 +611,8 @@ impl Ec {
             };
 
             let webcam = match set {
-                true => WebcamKind::On,
-                false => WebcamKind::Off,
+                true => Webcam::On,
+                false => Webcam::Off,
             };
 
             Ok(webcam)
@@ -623,7 +623,7 @@ impl Ec {
         }
     }
 
-    pub fn set_webcam(&mut self, state: WebcamKind) -> Result<()> {
+    pub fn set_webcam(&mut self, state: Webcam) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {
@@ -644,7 +644,7 @@ impl Ec {
         }
     }
 
-    pub fn set_webcam_block(&mut self, state: WebcamKind) -> Result<()> {
+    pub fn set_webcam_block(&mut self, state: Webcam) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {
@@ -691,7 +691,7 @@ impl Ec {
     // Cooler Boost
     //
 
-    pub fn cooler_boost(&self) -> Result<CoolerBoostKind> {
+    pub fn cooler_boost(&self) -> Result<CoolerBoost> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -702,8 +702,8 @@ impl Ec {
                 .whatever_context::<_, EcError>("cooler_boost() failed to ec_read_bit()")?;
 
             let cooler_boost = match set {
-                true => CoolerBoostKind::On,
-                false => CoolerBoostKind::Off,
+                true => CoolerBoost::On,
+                false => CoolerBoost::Off,
             };
 
             Ok(cooler_boost)
@@ -714,7 +714,7 @@ impl Ec {
         }
     }
 
-    pub fn set_cooler_boost(&mut self, state: CoolerBoostKind) -> Result<()> {
+    pub fn set_cooler_boost(&mut self, state: CoolerBoost) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {

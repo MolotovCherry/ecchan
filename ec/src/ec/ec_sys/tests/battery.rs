@@ -38,7 +38,7 @@ fn test_battery_mode_supported() {
 fn test_super_battery() {
     let ec = get_ec();
     let mode = ec.super_battery().unwrap();
-    assert_eq!(SuperBatteryKind::On, mode);
+    assert_eq!(SuperBattery::On, mode);
 
     assert_read(&ec, 0xEB);
     assert_unwritten(&ec);
@@ -47,7 +47,7 @@ fn test_super_battery() {
 #[test]
 fn test_set_super_battery() {
     let mut ec = get_ec();
-    ec.set_super_battery(SuperBatteryKind::Off).unwrap();
+    ec.set_super_battery(SuperBattery::Off).unwrap();
     assert_wrote(&ec, 0xEB, &[0x00]);
     assert_read(&ec, 0xEB);
 }

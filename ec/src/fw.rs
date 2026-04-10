@@ -52,7 +52,7 @@ impl Addr {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct Webcam {
+pub struct WebcamConfig {
     pub addr: Addr,
     pub block_addr: Addr,
     pub bit: Bit,
@@ -66,7 +66,7 @@ pub struct FnWinSwap {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct CoolerBoost {
+pub struct CoolerBoostConfig {
     pub addr: Addr,
     pub bit: Bit,
 }
@@ -103,7 +103,7 @@ pub enum ShiftMode {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct SuperBattery {
+pub struct SuperBatteryConfig {
     pub addr: Addr,
     pub mask: u8,
 }
@@ -161,11 +161,11 @@ pub struct FwConfig {
     pub allowed_fw: &'static [&'static str],
     pub ver: WmiVer,
     pub charge_control_addr: Addr,
-    pub webcam: Webcam,
+    pub webcam: WebcamConfig,
     pub fn_win_swap: FnWinSwap,
-    pub cooler_boost: CoolerBoost,
+    pub cooler_boost: CoolerBoostConfig,
     pub shift_mode: ShiftModeConfig,
-    pub super_battery: SuperBattery,
+    pub super_battery: SuperBatteryConfig,
     pub fan_mode: FanModeConfig,
     pub cpu: Thermal,
     pub gpu: Thermal,
@@ -399,12 +399,12 @@ impl BitSet for u8 {
 //
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum SuperBatteryKind {
+pub enum SuperBattery {
     Off,
     On,
 }
 
-impl SuperBatteryKind {
+impl SuperBattery {
     pub fn enabled(&self) -> bool {
         matches!(self, Self::On)
     }
@@ -517,12 +517,12 @@ impl BatteryMode {
 //
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum WebcamKind {
+pub enum Webcam {
     On,
     Off,
 }
 
-impl WebcamKind {
+impl Webcam {
     pub fn enabled(&self) -> bool {
         matches!(self, Self::On)
     }
@@ -533,12 +533,12 @@ impl WebcamKind {
 //
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum CoolerBoostKind {
+pub enum CoolerBoost {
     On,
     Off,
 }
 
-impl CoolerBoostKind {
+impl CoolerBoost {
     pub fn enabled(&self) -> bool {
         matches!(self, Self::On)
     }

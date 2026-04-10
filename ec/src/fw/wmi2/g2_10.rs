@@ -1,6 +1,6 @@
 use crate::fw::{
-    Addr, Bit, CoolerBoost, Curve, FanMode, FanModeConfig, FanRpm, FnWinSwap, FwConfig, KbdBl,
-    Leds, ShiftMode, ShiftModeConfig, SuperBattery, Thermal, Webcam, WmiVer,
+    Addr, Bit, CoolerBoostConfig, Curve, FanMode, FanModeConfig, FanRpm, FnWinSwap, FwConfig,
+    KbdBl, Leds, ShiftMode, ShiftModeConfig, SuperBatteryConfig, Thermal, WebcamConfig, WmiVer,
 };
 
 pub const G2_10: FwConfig = FwConfig {
@@ -82,7 +82,7 @@ pub const G2_10: FwConfig = FwConfig {
     ],
     ver: WmiVer::Wmi2,
     charge_control_addr: Addr::Addr(0xD7),
-    webcam: Webcam {
+    webcam: WebcamConfig {
         addr: Addr::Addr(0x2E),
         block_addr: Addr::Addr(0x2F),
         bit: Bit::_1,
@@ -92,7 +92,7 @@ pub const G2_10: FwConfig = FwConfig {
         bit: Bit::_4,
         invert: true,
     },
-    cooler_boost: CoolerBoost {
+    cooler_boost: CoolerBoostConfig {
         addr: Addr::Addr(0x98),
         bit: Bit::_7,
     },
@@ -106,7 +106,7 @@ pub const G2_10: FwConfig = FwConfig {
             (ShiftMode::Null, 0x00),
         ],
     },
-    super_battery: SuperBattery {
+    super_battery: SuperBatteryConfig {
         addr: Addr::Addr(0xEB),
         mask: 0x0F,
     },
