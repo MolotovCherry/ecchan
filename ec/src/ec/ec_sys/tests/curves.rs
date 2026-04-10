@@ -1,5 +1,9 @@
 use super::*;
 
+//
+// Fan Curve
+//
+
 #[test]
 fn test_cpu_fan_curve() {
     let ec = get_ec();
@@ -41,6 +45,47 @@ fn test_gpu_fan_curve() {
     assert_read_range(&ec, 0x8A..=0x8F);
     assert_unwritten(&ec);
 }
+
+#[test]
+fn test_set_cpu_fan_curve() {
+    let mut ec = get_ec();
+
+    let curve = Curve7 {
+        n1: 1,
+        n2: 2,
+        n3: 3,
+        n4: 4,
+        n5: 5,
+        n6: 6,
+        n7: 7,
+    };
+
+    ec.set_cpu_fan_curve(curve).unwrap();
+    assert_wrote(&ec, 0x72, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_unread(&ec);
+}
+
+#[test]
+fn test_set_gpu_fan_curve() {
+    let mut ec = get_ec();
+
+    let curve = Curve6 {
+        n1: 1,
+        n2: 2,
+        n3: 3,
+        n4: 4,
+        n5: 5,
+        n6: 6,
+    };
+
+    ec.set_gpu_fan_curve(curve).unwrap();
+    assert_wrote(&ec, 0x8A, &[1, 2, 3, 4, 5, 6]);
+    assert_unread(&ec);
+}
+
+//
+// Temp curve
+//
 
 #[test]
 fn test_cpu_temp_curve() {
@@ -86,6 +131,48 @@ fn test_gpu_temp_curve() {
 }
 
 #[test]
+fn test_set_cpu_temp_curve() {
+    let mut ec = get_ec();
+
+    let curve = Curve7 {
+        n1: 1,
+        n2: 2,
+        n3: 3,
+        n4: 4,
+        n5: 5,
+        n6: 6,
+        n7: 7,
+    };
+
+    ec.set_cpu_temp_curve(curve).unwrap();
+    assert_wrote(&ec, 0x69, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_unread(&ec);
+}
+
+#[test]
+fn test_set_gpu_temp_curve() {
+    let mut ec = get_ec();
+
+    let curve = Curve7 {
+        n1: 1,
+        n2: 2,
+        n3: 3,
+        n4: 4,
+        n5: 5,
+        n6: 6,
+        n7: 7,
+    };
+
+    ec.set_gpu_temp_curve(curve).unwrap();
+    assert_wrote(&ec, 0x81, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_unread(&ec);
+}
+
+//
+// Hysteresis Curve
+//
+
+#[test]
 fn test_cpu_hysteresis_curve() {
     let ec = get_ec();
     let curve = ec.cpu_hysteresis_curve().unwrap();
@@ -125,6 +212,46 @@ fn test_gpu_hysteresis_curve() {
     assert_read_range(&ec, 0x92..=0x97);
     assert_unwritten(&ec);
 }
+
+#[test]
+fn test_set_cpu_hysteresis_curve() {
+    let mut ec = get_ec();
+
+    let curve = Curve6 {
+        n1: 1,
+        n2: 2,
+        n3: 3,
+        n4: 4,
+        n5: 5,
+        n6: 6,
+    };
+
+    ec.set_cpu_hysteresis_curve(curve).unwrap();
+    assert_wrote(&ec, 0x7A, &[1, 2, 3, 4, 5, 6]);
+    assert_unread(&ec);
+}
+
+#[test]
+fn test_set_gpu_hysteresis_curve() {
+    let mut ec = get_ec();
+
+    let curve = Curve6 {
+        n1: 1,
+        n2: 2,
+        n3: 3,
+        n4: 4,
+        n5: 5,
+        n6: 6,
+    };
+
+    ec.set_gpu_hysteresis_curve(curve).unwrap();
+    assert_wrote(&ec, 0x92, &[1, 2, 3, 4, 5, 6]);
+    assert_unread(&ec);
+}
+
+//
+//
+//
 
 #[test]
 #[should_panic = "no dgpu available"]
