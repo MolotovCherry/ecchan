@@ -549,13 +549,7 @@ impl CoolerBoost {
 //
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum FnDirection {
-    Left,
-    Right,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum WinDirection {
+pub enum KeyDirection {
     Left,
     Right,
 }
@@ -565,13 +559,7 @@ pub enum WinDirection {
 //
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum MicMuteLed {
-    On,
-    Off,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum MuteLed {
+pub enum Led {
     On,
     Off,
 }

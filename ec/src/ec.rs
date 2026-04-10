@@ -7,9 +7,8 @@ use snafu::prelude::*;
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
-        BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FW_REGISTRY,
-        FanMode, FnDirection, FwConfig, MicMuteLed, MuteLed, ShiftMode, SuperBattery,
-        Threshold, Webcam, WinDirection, WmiVer,
+        BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FW_REGISTRY, FanMode,
+        FwConfig, KeyDirection, Led, ShiftMode, SuperBattery, Threshold, Webcam, WmiVer,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
@@ -751,7 +750,7 @@ impl Ec {
     // Fn Win Key Swap
     //
 
-    pub fn fn_key(&self) -> Result<FnDirection> {
+    pub fn fn_key(&self) -> Result<KeyDirection> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -765,8 +764,8 @@ impl Ec {
             set = !set; // fn key position is the opposite of win key
 
             let fn_win_swap = match set {
-                true => FnDirection::Left,
-                false => FnDirection::Right,
+                true => KeyDirection::Left,
+                false => KeyDirection::Right,
             };
 
             Ok(fn_win_swap)
@@ -777,13 +776,13 @@ impl Ec {
         }
     }
 
-    pub fn set_fn_key(&mut self, dir: FnDirection) -> Result<()> {
+    pub fn set_fn_key(&mut self, dir: KeyDirection) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_fn_key", fw.fn_win_swap.addr);
 
-            let mut val = matches!(dir, FnDirection::Left);
+            let mut val = matches!(dir, KeyDirection::Left);
             val ^= fw.fn_win_swap.invert; // invert the direction for some laptops
             val = !val; // fn key position is the opposite of win key
 
@@ -810,7 +809,7 @@ impl Ec {
         }
     }
 
-    pub fn win_key(&self) -> Result<WinDirection> {
+    pub fn win_key(&self) -> Result<KeyDirection> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -823,8 +822,8 @@ impl Ec {
             val ^= fw.fn_win_swap.invert; // invert the direction for some laptops
 
             let fn_win_swap = match val {
-                true => WinDirection::Left,
-                false => WinDirection::Right,
+                true => KeyDirection::Left,
+                false => KeyDirection::Right,
             };
 
             Ok(fn_win_swap)
@@ -835,13 +834,13 @@ impl Ec {
         }
     }
 
-    pub fn set_win_key(&mut self, dir: WinDirection) -> Result<()> {
+    pub fn set_win_key(&mut self, dir: KeyDirection) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_win_key", fw.fn_win_swap.addr);
 
-            let mut val = matches!(dir, WinDirection::Left);
+            let mut val = matches!(dir, KeyDirection::Left);
             val ^= fw.fn_win_swap.invert; // invert the direction for some laptops
 
             unsafe {
@@ -861,7 +860,7 @@ impl Ec {
     // LEDs
     //
 
-    pub fn mic_mute_led(&self) -> Result<MicMuteLed> {
+    pub fn mic_mute_led(&self) -> Result<Led> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -872,8 +871,8 @@ impl Ec {
                 .whatever_context::<_, EcError>("mic_mute_led() failed to ec_read_bit()")?;
 
             let led = match val {
-                true => MicMuteLed::On,
-                false => MicMuteLed::Off,
+                true => Led::On,
+                false => Led::Off,
             };
 
             Ok(led)
@@ -884,7 +883,7 @@ impl Ec {
         }
     }
 
-    pub fn mute_led(&self) -> Result<MuteLed> {
+    pub fn mute_led(&self) -> Result<Led> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -895,8 +894,8 @@ impl Ec {
                 .whatever_context::<_, EcError>("mute_led() failed to ec_read_bit()")?;
 
             let led = match val {
-                true => MuteLed::On,
-                false => MuteLed::Off,
+                true => Led::On,
+                false => Led::Off,
             };
 
             Ok(led)
@@ -907,15 +906,15 @@ impl Ec {
         }
     }
 
-    pub fn set_mic_mute_led(&mut self, state: MicMuteLed) -> Result<()> {
+    pub fn set_mic_mute_led(&mut self, state: Led) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_mic_mute_led", fw.leds.mic_mute_led_addr);
 
             let state = match state {
-                MicMuteLed::On => true,
-                MicMuteLed::Off => false,
+                Led::On => true,
+                Led::Off => false,
             };
 
             unsafe {
@@ -933,15 +932,15 @@ impl Ec {
         }
     }
 
-    pub fn set_mute_led(&mut self, state: MuteLed) -> Result<()> {
+    pub fn set_mute_led(&mut self, state: Led) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {
             let addr = addr!("set_mute_led", fw.leds.mute_led_addr);
 
             let state = match state {
-                MuteLed::On => true,
-                MuteLed::Off => false,
+                Led::On => true,
+                Led::Off => false,
             };
 
             unsafe {
