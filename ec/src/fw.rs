@@ -11,7 +11,7 @@
 //! After there's an update to the supported ec list on msi-ec,
 //! feel free to make a PR for inclusion here with corresponding links.
 
-use std::ops::{BitAnd, BitOrAssign, BitXor, Not, Shl, ShlAssign};
+use std::ops::{BitAnd, BitOrAssign, BitXor, Not};
 
 mod wmi2;
 
@@ -234,15 +234,8 @@ pub struct FanRpm {
 //
 
 #[derive(Debug, Copy, Clone)]
-pub enum CurveKind {
-    Curve6,
-    Curve7,
-}
-
-#[derive(Debug, Copy, Clone)]
 pub struct Curve {
     pub addr: Addr,
-    pub kind: CurveKind,
 }
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
@@ -359,7 +352,7 @@ impl BitXor<Bit> for u8 {
 
 impl BitOrAssign<Bit> for u8 {
     fn bitor_assign(&mut self, rhs: Bit) {
-        *self = *self | rhs as u8;
+        *self |= rhs as u8;
     }
 }
 
@@ -587,7 +580,7 @@ pub enum MuteLed {
 // Format
 //
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum WmiVer {
     Wmi1,
     Wmi2,

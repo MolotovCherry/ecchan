@@ -19,6 +19,7 @@ mod fan_rpm;
 mod fan_supported;
 mod fw;
 mod key_swap;
+mod misc;
 mod mute_leds;
 mod rt;
 mod shift_mode;

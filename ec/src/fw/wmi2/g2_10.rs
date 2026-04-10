@@ -1,6 +1,6 @@
 use crate::fw::{
-    Addr, Bit, CoolerBoost, Curve, CurveKind, FanMode, FanModeKind, FanRpm, FnWinSwap, FwConfig,
-    KbdBl, Leds, ShiftMode, ShiftModeKind, SuperBattery, Thermal, Webcam, WmiVer,
+    Addr, Bit, CoolerBoost, Curve, FanMode, FanModeKind, FanRpm, FnWinSwap, FwConfig, KbdBl, Leds,
+    ShiftMode, ShiftModeKind, SuperBattery, Thermal, Webcam, WmiVer,
 };
 
 pub const G2_10: FwConfig = FwConfig {
@@ -149,31 +149,25 @@ pub const G2_10: FwConfig = FwConfig {
     // 0x72-0x78
     cpu_fan_curve: Curve {
         addr: Addr::Addr(0x72),
-        kind: CurveKind::Curve7,
     },
     // 0x69-0x6F
     cpu_temp_curve: Curve {
         addr: Addr::Addr(0x69),
-        kind: CurveKind::Curve7,
     },
     // 0x7A-0x7F
     cpu_hysteresis_curve: Curve {
         addr: Addr::Addr(0x7A),
-        kind: CurveKind::Curve6,
     },
     // 0x8A-0x8F
     gpu_fan_curve: Curve {
         addr: Addr::Addr(0x8A),
-        kind: CurveKind::Curve6,
     },
     // 0x81-0x87
     gpu_temp_curve: Curve {
         addr: Addr::Addr(0x81),
-        kind: CurveKind::Curve7,
     },
     // 0x92-0x97
     gpu_hysteresis_curve: Curve {
         addr: Addr::Addr(0x92),
-        kind: CurveKind::Curve6,
     },
 };
