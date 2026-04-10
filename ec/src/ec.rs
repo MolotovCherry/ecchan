@@ -1017,6 +1017,8 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
+            // no dgpu check, because it's hardcoded into fw
+
             let addr = addr!("gpu_rt_fan_speed", fw.gpu.rt_fan_speed_addr);
 
             let val = io
@@ -1035,6 +1037,8 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
+            // no dgpu check, because it's hardcoded into fw
+
             let addr = addr!("gpu_rt_temp", fw.gpu.rt_temp_addr);
 
             let val = io
