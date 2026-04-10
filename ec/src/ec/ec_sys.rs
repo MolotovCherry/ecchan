@@ -5,6 +5,8 @@ mod tests;
 use std::fs::File;
 #[cfg(test)]
 use tests::EcTestFile as File;
+#[cfg(test)]
+pub(crate) use tests::HAS_DGPU;
 
 use std::{io, os::unix::fs::FileExt as _};
 

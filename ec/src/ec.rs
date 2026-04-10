@@ -96,8 +96,55 @@ impl Ec {
         self.model.map(|m| m.fans).unwrap_or(Fan::One)
     }
 
+    // too undeterministic for tests
+    #[cfg(not(test))]
     pub fn has_dgpu(&self) -> bool {
-        self.model.map(|m| m.has_dgpu).unwrap_or(false)
+        use std::sync::OnceLock;
+
+        use crate::fw::Addr;
+
+        static HAS_DGPU: OnceLock<bool> = OnceLock::new();
+
+        if let Some(&status) = HAS_DGPU.get() {
+            return status;
+        }
+
+        if let Some((io, fw)) = self.sys.as_ref() {
+            // while we have no direct dgpu detection in ecram, we can infer its presence
+
+            let state = 'state: {
+                // FIXME: this code only works for wmi2
+                if fw.ver != WmiVer::Wmi2 {
+                    break 'state false;
+                }
+
+                // system in DGPU discrete mode- definitely has dgpu
+                let discrete = io.ec_read_bit(0x2E, Bit::_6).unwrap_or(false);
+                // supports switchable to dgpu- definitely has dgpu
+                let switchable = io.ec_read_bit(0x2F, Bit::_6).unwrap_or(false);
+                // system has a dgpu if it's warm
+                let gpu_temp = match fw.gpu.rt_temp_addr {
+                    Addr::Addr(addr) => io.ec_read(addr).map(|t| t > 0).unwrap_or(false),
+                    Addr::Unsupported => false,
+                };
+                // gpu fan rotate status -> also means we have a fan 2!
+                let gpu_fan_on = io.ec_read_bit(0x34, Bit::_0).unwrap_or(false);
+
+                discrete | switchable | gpu_temp | gpu_fan_on
+            };
+
+            HAS_DGPU.set(state).unwrap();
+            state
+        } else {
+            HAS_DGPU.set(false).unwrap();
+            false
+        }
+    }
+
+    #[cfg(test)]
+    pub fn has_dgpu(&self) -> bool {
+        use std::sync::atomic::Ordering;
+        ec_sys::HAS_DGPU.load(Ordering::Relaxed)
     }
 
     pub fn wmi_ver(&self) -> Option<WmiVer> {
@@ -1133,7 +1180,7 @@ impl Ec {
         }
     }
 
-    pub fn gpu_fan_curve(&self) -> Result<Curve6> {
+    pub fn gpu_fan_curve(&self) -> Result<Curve7> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
         }
@@ -1256,7 +1303,7 @@ impl Ec {
         }
     }
 
-    pub fn set_gpu_fan_curve(&mut self, curve: Curve6) -> Result<()> {
+    pub fn set_gpu_fan_curve(&mut self, curve: Curve7) -> Result<()> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
         }

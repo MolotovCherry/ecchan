@@ -20,7 +20,7 @@ fn test_set_fn_key() {
     assert_read(&ec, 0xE8);
 
     ec.set_fn_key(KeyDirection::Left).unwrap();
-    assert_wrote(&ec, 0xE8, &[0x11]);
+    assert_wrote(&ec, 0xE8, 0x11);
 
     let io = get_io_mut!(ec);
 
@@ -28,7 +28,7 @@ fn test_set_fn_key() {
     assert!(val, "fn key is left");
 
     ec.set_fn_key(KeyDirection::Right).unwrap();
-    assert_wrote(&ec, 0xE8, &[0x01]);
+    assert_wrote(&ec, 0xE8, 0x01);
 }
 
 #[test]
@@ -50,7 +50,7 @@ fn test_set_win_key() {
     assert_read(&ec, 0xE8);
 
     ec.set_win_key(KeyDirection::Right).unwrap();
-    assert_wrote(&ec, 0xE8, &[0x11]);
+    assert_wrote(&ec, 0xE8, 0x11);
 
     let io = get_io_mut!(ec);
 
@@ -58,7 +58,7 @@ fn test_set_win_key() {
     assert!(val, "win key is right");
 
     ec.set_win_key(KeyDirection::Left).unwrap();
-    assert_wrote(&ec, 0xE8, &[0x01]);
+    assert_wrote(&ec, 0xE8, 0x01);
 }
 
 #[test]

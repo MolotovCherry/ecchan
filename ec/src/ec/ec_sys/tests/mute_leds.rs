@@ -24,7 +24,7 @@ fn test_set_mute_led() {
     assert_read(&ec, 0x2D);
 
     ec.set_mute_led(Led::On).unwrap();
-    assert_wrote(&ec, 0x2D, &[0x02]);
+    assert_wrote(&ec, 0x2D, 0x02);
 
     let io = get_io_mut!(ec);
 
@@ -32,7 +32,7 @@ fn test_set_mute_led() {
     assert!(val, "mute led is on");
 
     ec.set_mute_led(Led::Off).unwrap();
-    assert_wrote(&ec, 0x2D, &[0x00]);
+    assert_wrote(&ec, 0x2D, 0x00);
 }
 
 #[test]
@@ -64,7 +64,7 @@ fn test_set_mic_mute_led() {
     assert_read(&ec, 0x2C);
 
     ec.set_mic_mute_led(Led::On).unwrap();
-    assert_wrote(&ec, 0x2C, &[0x02]);
+    assert_wrote(&ec, 0x2C, 0x02);
 
     let io = get_io_mut!(ec);
 
@@ -72,7 +72,7 @@ fn test_set_mic_mute_led() {
     assert!(val, "mic mute led is on");
 
     ec.set_mic_mute_led(Led::Off).unwrap();
-    assert_wrote(&ec, 0x2C, &[0x00]);
+    assert_wrote(&ec, 0x2C, 0x00);
 }
 
 #[test]

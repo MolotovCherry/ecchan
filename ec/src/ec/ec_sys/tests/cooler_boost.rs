@@ -20,7 +20,7 @@ fn test_set_cooler_boost() {
     assert_read(&ec, 0x98);
 
     ec.set_cooler_boost(CoolerBoost::On).unwrap();
-    assert_wrote(&ec, 0x98, &[0x82]);
+    assert_wrote(&ec, 0x98, 0x82);
 
     let io = get_io_mut!(ec);
 
@@ -28,7 +28,7 @@ fn test_set_cooler_boost() {
     assert!(val, "cooler boost is on");
 
     ec.set_cooler_boost(CoolerBoost::Off).unwrap();
-    assert_wrote(&ec, 0x98, &[0x02]);
+    assert_wrote(&ec, 0x98, 0x02);
 }
 
 #[test]

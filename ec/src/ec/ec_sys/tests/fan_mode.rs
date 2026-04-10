@@ -5,14 +5,7 @@ use crate::FanMode;
 fn test_fan_modes() {
     let ec = get_ec();
     let modes = ec.fan_modes().unwrap();
-    assert_eq!(
-        modes,
-        [
-            FanMode::Auto,
-            FanMode::Silent,
-            FanMode::Advanced
-        ]
-    );
+    assert_eq!(modes, [FanMode::Auto, FanMode::Silent, FanMode::Advanced]);
 }
 
 #[test]
@@ -29,7 +22,7 @@ fn test_set_fan_mode() {
     let mut ec = get_ec();
     ec.set_fan_mode(FanMode::Advanced).unwrap();
 
-    assert_wrote(&ec, 0xD4, &[0x8D]);
+    assert_wrote(&ec, 0xD4, 0x8D);
     assert_unread(&ec);
 }
 

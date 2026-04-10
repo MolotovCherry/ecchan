@@ -158,7 +158,7 @@ pub const G2_10: FwConfig = FwConfig {
     cpu_hysteresis_curve: Curve {
         addr: Addr::Addr(0x7A),
     },
-    // 0x8A-0x8F
+    // 0x8A-0x90
     gpu_fan_curve: Curve {
         addr: Addr::Addr(0x8A),
     },

@@ -30,7 +30,7 @@ fn test_set_shift_mode() {
     let mut ec = get_ec();
 
     ec.set_shift_mode(ShiftMode::Turbo).unwrap();
-    assert_wrote(&ec, 0xD2, &[0xC4]);
+    assert_wrote(&ec, 0xD2, 0xC4);
     assert_unread(&ec);
 }
 
@@ -57,6 +57,5 @@ fn test_set_shift_mode_unsupported() {
 
     ec.sys.as_mut().unwrap().1.shift_mode.modes = &[];
 
-    ec.set_shift_mode(ShiftMode::ExtremePerformance)
-        .unwrap();
+    ec.set_shift_mode(ShiftMode::ExtremePerformance).unwrap();
 }

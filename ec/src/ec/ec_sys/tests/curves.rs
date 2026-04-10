@@ -31,18 +31,19 @@ fn test_gpu_fan_curve() {
     let curve = ec.gpu_fan_curve().unwrap();
 
     assert_eq!(
-        Curve6 {
+        Curve7 {
             n1: 0,
             n2: 30,
             n3: 40,
             n4: 55,
             n5: 60,
             n6: 70,
+            n7: 80
         },
         curve
     );
 
-    assert_read_range(&ec, 0x8A..=0x8F);
+    assert_read_range(&ec, 0x8A..=0x90);
     assert_unwritten(&ec);
 }
 
@@ -61,7 +62,7 @@ fn test_set_cpu_fan_curve() {
     };
 
     ec.set_cpu_fan_curve(curve).unwrap();
-    assert_wrote(&ec, 0x72, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_wrote_range(&ec, 0x72..=0x78, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
 
@@ -69,17 +70,18 @@ fn test_set_cpu_fan_curve() {
 fn test_set_gpu_fan_curve() {
     let mut ec = get_ec();
 
-    let curve = Curve6 {
+    let curve = Curve7 {
         n1: 1,
         n2: 2,
         n3: 3,
         n4: 4,
         n5: 5,
         n6: 6,
+        n7: 7,
     };
 
     ec.set_gpu_fan_curve(curve).unwrap();
-    assert_wrote(&ec, 0x8A, &[1, 2, 3, 4, 5, 6]);
+    assert_wrote_range(&ec, 0x8A..=0x90, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
 
@@ -145,7 +147,7 @@ fn test_set_cpu_temp_curve() {
     };
 
     ec.set_cpu_temp_curve(curve).unwrap();
-    assert_wrote(&ec, 0x69, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_wrote_range(&ec, 0x69..=0x6F, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
 
@@ -164,7 +166,7 @@ fn test_set_gpu_temp_curve() {
     };
 
     ec.set_gpu_temp_curve(curve).unwrap();
-    assert_wrote(&ec, 0x81, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_wrote_range(&ec, 0x81..=0x87, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
 
@@ -227,7 +229,7 @@ fn test_set_cpu_hysteresis_curve() {
     };
 
     ec.set_cpu_hysteresis_curve(curve).unwrap();
-    assert_wrote(&ec, 0x7A, &[1, 2, 3, 4, 5, 6]);
+    assert_wrote_range(&ec, 0x7A..=0x7F, &[1, 2, 3, 4, 5, 6]);
     assert_unread(&ec);
 }
 
@@ -245,7 +247,7 @@ fn test_set_gpu_hysteresis_curve() {
     };
 
     ec.set_gpu_hysteresis_curve(curve).unwrap();
-    assert_wrote(&ec, 0x92, &[1, 2, 3, 4, 5, 6]);
+    assert_wrote_range(&ec, 0x92..=0x97, &[1, 2, 3, 4, 5, 6]);
     assert_unread(&ec);
 }
 
@@ -256,24 +258,24 @@ fn test_set_gpu_hysteresis_curve() {
 #[test]
 #[should_panic = "no dgpu available"]
 fn test_gpu_fan_curve_unsupported() {
-    let mut ec = get_ec();
-    ec.model.as_mut().unwrap().has_dgpu = false;
+    let ec = get_ec();
+    HAS_DGPU.store(false, Ordering::Relaxed);
     ec.gpu_fan_curve().unwrap();
 }
 
 #[test]
 #[should_panic = "no dgpu available"]
 fn test_gpu_temp_curve_unsupported() {
-    let mut ec = get_ec();
-    ec.model.as_mut().unwrap().has_dgpu = false;
+    let ec = get_ec();
+    HAS_DGPU.store(false, Ordering::Relaxed);
     ec.gpu_temp_curve().unwrap();
 }
 
 #[test]
 #[should_panic = "no dgpu available"]
 fn test_gpu_hysteresis_curve_unsupported() {
-    let mut ec = get_ec();
-    ec.model.as_mut().unwrap().has_dgpu = false;
+    let ec = get_ec();
+    HAS_DGPU.store(false, Ordering::Relaxed);
     ec.gpu_hysteresis_curve().unwrap();
 }
 
@@ -281,7 +283,7 @@ fn test_gpu_hysteresis_curve_unsupported() {
 #[should_panic = "no dgpu available"]
 fn test_set_gpu_fan_curve_unsupported() {
     let mut ec = get_ec();
-    ec.model.as_mut().unwrap().has_dgpu = false;
+    HAS_DGPU.store(false, Ordering::Relaxed);
     ec.set_gpu_fan_curve(Default::default()).unwrap();
 }
 
@@ -289,7 +291,7 @@ fn test_set_gpu_fan_curve_unsupported() {
 #[should_panic = "no dgpu available"]
 fn test_set_gpu_temp_curve_unsupported() {
     let mut ec = get_ec();
-    ec.model.as_mut().unwrap().has_dgpu = false;
+    HAS_DGPU.store(false, Ordering::Relaxed);
     ec.set_gpu_temp_curve(Default::default()).unwrap();
 }
 
@@ -297,7 +299,7 @@ fn test_set_gpu_temp_curve_unsupported() {
 #[should_panic = "no dgpu available"]
 fn test_set_gpu_hysteresis_curve_unsupported() {
     let mut ec = get_ec();
-    ec.model.as_mut().unwrap().has_dgpu = false;
+    HAS_DGPU.store(false, Ordering::Relaxed);
     ec.set_gpu_hysteresis_curve(Default::default()).unwrap();
 }
 

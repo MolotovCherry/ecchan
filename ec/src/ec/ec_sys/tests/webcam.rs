@@ -20,7 +20,7 @@ fn test_set_webcam() {
     assert_read(&ec, 0x2E);
 
     ec.set_webcam(Webcam::Off).unwrap();
-    assert_wrote(&ec, 0x2E, &[0x49]);
+    assert_wrote(&ec, 0x2E, 0x49);
 
     let io = get_io_mut!(ec);
 
@@ -28,7 +28,7 @@ fn test_set_webcam() {
     assert!(!val, "webcam is off");
 
     ec.set_webcam(Webcam::On).unwrap();
-    assert_wrote(&ec, 0x2E, &[0x4B]);
+    assert_wrote(&ec, 0x2E, 0x4B);
 }
 
 #[test]
@@ -50,7 +50,7 @@ fn test_set_webcam_block() {
     assert_read(&ec, 0x2F);
 
     ec.set_webcam_block(Webcam::On).unwrap();
-    assert_wrote(&ec, 0x2F, &[0x59]);
+    assert_wrote(&ec, 0x2F, 0x59);
 
     let io = get_io_mut!(ec);
 
@@ -58,7 +58,7 @@ fn test_set_webcam_block() {
     assert!(val, "webcam block is on");
 
     ec.set_webcam_block(Webcam::Off).unwrap();
-    assert_wrote(&ec, 0x2F, &[0x5B]);
+    assert_wrote(&ec, 0x2F, 0x5B);
 }
 
 #[test]

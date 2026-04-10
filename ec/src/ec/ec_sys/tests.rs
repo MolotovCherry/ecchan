@@ -69,6 +69,8 @@ static EC_BIN: [u8; 256] = [
     /* 0xF_ */ 0x00, 0x00, 0x70, 0x00, 0x23, 0x44, 0x3a, 0x00, 0x44, 0x3a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
 
+pub(crate) static HAS_DGPU: AtomicBool = AtomicBool::new(true);
+
 // EcIo Test Backend
 
 pub struct EcTestFile {
@@ -145,6 +147,7 @@ impl Drop for TestReset {
         self.inner.sys.as_mut().unwrap().1 = self._fw;
         *self.inner.model.as_mut().unwrap() = self._model;
         self.inner.sys.as_ref().unwrap().0.file.reset();
+        HAS_DGPU.store(true, Ordering::Relaxed);
     }
 }
 
@@ -173,14 +176,24 @@ fn get_ec() -> TestReset {
     }
 }
 
+#[track_caller]
+fn assert_wrote(ec: &TestReset, addr: u8, val: u8) {
+    assert_wrote_range(ec, addr..=addr, &[val]);
+}
+
 /// Empty vals means assert nothing was written
 #[track_caller]
-fn assert_wrote(ec: &TestReset, addr: u8, vals: &[u8]) {
-    let addr_u = addr as usize;
+fn assert_wrote_range(ec: &TestReset, addrs: RangeInclusive<u8>, vals: &[u8]) {
+    let start = *addrs.start() as usize;
+    let end = *addrs.end() as usize;
+    let range = start..=end;
 
-    assert!(
-        addr_u.saturating_add(vals.len().saturating_sub(1)) <= 0xFF,
-        "addr + vals.len overflowed"
+    assert!(start <= end, "range start must be <= range end");
+
+    assert_eq!(
+        end - start,
+        vals.len().saturating_sub(1),
+        "vals must be same length as range"
     );
 
     // cache old reads since ec_dump_raw will taint it
@@ -200,9 +213,7 @@ fn assert_wrote(ec: &TestReset, addr: u8, vals: &[u8]) {
     let dump = ec.ec_dump_raw().unwrap();
     let mut bin = EC_BIN;
 
-    bin[addr_u..addr_u + vals.len()].copy_from_slice(vals);
-
-    let range = addr..=addr + vals.len().saturating_sub(1) as u8;
+    bin[start..=end].copy_from_slice(vals);
 
     assert_eq!(dump, bin);
 
@@ -210,12 +221,11 @@ fn assert_wrote(ec: &TestReset, addr: u8, vals: &[u8]) {
     for (addr, w) in writes.iter().enumerate() {
         let addr = addr as u8;
         let v = w.load(Ordering::Relaxed);
-
-        if vals.is_empty() {
-            assert!(!v, "illegal write at 0x{addr:>02X}");
-        } else {
-            assert_eq!(v, range.contains(&addr), "illegal write at 0x{addr:>02X}");
-        }
+        assert_eq!(
+            v,
+            range.contains(&(addr as usize)),
+            "illegal write at 0x{addr:>02X}"
+        );
     }
 
     // restore old read values to untaint
@@ -226,7 +236,12 @@ fn assert_wrote(ec: &TestReset, addr: u8, vals: &[u8]) {
 
 #[track_caller]
 fn assert_unwritten(ec: &TestReset) {
-    assert_wrote(ec, 0x00, &[]);
+    let writes = &ec.sys.as_ref().unwrap().0.file.writes;
+    for (addr, w) in writes.iter().enumerate() {
+        let addr = addr as u8;
+        let v = w.load(Ordering::Relaxed);
+        assert!(!v, "illegal write at 0x{addr:>02X}");
+    }
 }
 
 #[track_caller]
