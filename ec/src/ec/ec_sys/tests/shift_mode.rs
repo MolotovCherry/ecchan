@@ -30,7 +30,7 @@ fn test_set_shift_mode() {
     let mut ec = get_ec();
 
     ec.set_shift_mode(ShiftMode::Turbo).unwrap();
-    assert_wrote(&ec, 0xD2, 0xC4);
+    assert_write(&ec, 0xD2, 0xC4);
     assert_unread(&ec);
 }
 

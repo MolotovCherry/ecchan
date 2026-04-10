@@ -62,7 +62,7 @@ fn test_set_cpu_fan_curve() {
     };
 
     ec.set_cpu_fan_curve(curve).unwrap();
-    assert_wrote_range(&ec, 0x72..=0x78, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_write_range(&ec, 0x72..=0x78, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
 
@@ -81,7 +81,7 @@ fn test_set_gpu_fan_curve() {
     };
 
     ec.set_gpu_fan_curve(curve).unwrap();
-    assert_wrote_range(&ec, 0x8A..=0x90, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_write_range(&ec, 0x8A..=0x90, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
 
@@ -147,7 +147,7 @@ fn test_set_cpu_temp_curve() {
     };
 
     ec.set_cpu_temp_curve(curve).unwrap();
-    assert_wrote_range(&ec, 0x69..=0x6F, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_write_range(&ec, 0x69..=0x6F, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
 
@@ -166,7 +166,7 @@ fn test_set_gpu_temp_curve() {
     };
 
     ec.set_gpu_temp_curve(curve).unwrap();
-    assert_wrote_range(&ec, 0x81..=0x87, &[1, 2, 3, 4, 5, 6, 7]);
+    assert_write_range(&ec, 0x81..=0x87, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
 
@@ -229,7 +229,7 @@ fn test_set_cpu_hysteresis_curve() {
     };
 
     ec.set_cpu_hysteresis_curve(curve).unwrap();
-    assert_wrote_range(&ec, 0x7A..=0x7F, &[1, 2, 3, 4, 5, 6]);
+    assert_write_range(&ec, 0x7A..=0x7F, &[1, 2, 3, 4, 5, 6]);
     assert_unread(&ec);
 }
 
@@ -247,7 +247,7 @@ fn test_set_gpu_hysteresis_curve() {
     };
 
     ec.set_gpu_hysteresis_curve(curve).unwrap();
-    assert_wrote_range(&ec, 0x92..=0x97, &[1, 2, 3, 4, 5, 6]);
+    assert_write_range(&ec, 0x92..=0x97, &[1, 2, 3, 4, 5, 6]);
     assert_unread(&ec);
 }
 

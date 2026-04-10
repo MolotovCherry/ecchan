@@ -22,7 +22,7 @@ fn test_set_fan_mode() {
     let mut ec = get_ec();
     ec.set_fan_mode(FanMode::Advanced).unwrap();
 
-    assert_wrote(&ec, 0xD4, 0x8D);
+    assert_write(&ec, 0xD4, 0x8D);
     assert_unread(&ec);
 }
 

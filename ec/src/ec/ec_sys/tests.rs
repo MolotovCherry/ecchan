@@ -181,13 +181,13 @@ fn get_ec() -> TestReset {
 }
 
 #[track_caller]
-fn assert_wrote(ec: &TestReset, addr: u8, val: u8) {
-    assert_wrote_range(ec, addr..=addr, &[val]);
+fn assert_write(ec: &TestReset, addr: u8, val: u8) {
+    assert_write_range(ec, addr..=addr, &[val]);
 }
 
 /// Empty vals means assert nothing was written
 #[track_caller]
-fn assert_wrote_range(ec: &TestReset, addrs: RangeInclusive<u8>, vals: &[u8]) {
+fn assert_write_range(ec: &TestReset, addrs: RangeInclusive<u8>, vals: &[u8]) {
     let start = *addrs.start() as usize;
     let end = *addrs.end() as usize;
     let range = start..=end;

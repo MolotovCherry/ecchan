@@ -22,7 +22,7 @@ fn test_write_1() {
         io.ec_write(0x2F, 0xFB).unwrap();
     }
 
-    assert_wrote(&ec, 0x2F, 0xFB);
+    assert_write(&ec, 0x2F, 0xFB);
     assert_unread(&ec);
 }
 
@@ -43,7 +43,7 @@ fn test_end_seq_read_1() {
     io.ec_read_seq(0xFF, &mut buf).unwrap();
     assert_read(&ec, 0xFF);
     assert_eq!(0xFE, buf[0]);
-    assert_wrote(&ec, 0xFF, 0xFE);
+    assert_write(&ec, 0xFF, 0xFE);
 }
 
 #[test]
@@ -65,7 +65,7 @@ fn test_end_write_seq_1() {
         io.ec_write_seq(0xFF, &[0x44]).unwrap();
     }
 
-    assert_wrote(&ec, 0xFF, 0x44);
+    assert_write(&ec, 0xFF, 0x44);
     assert_unread(&ec);
 }
 
@@ -107,7 +107,7 @@ fn test_seq_write_4() {
         io.ec_write_seq(0xF2, vals).unwrap();
     }
 
-    assert_wrote_range(&ec, 0xF2..=0xF5, vals);
+    assert_write_range(&ec, 0xF2..=0xF5, vals);
     assert_unread(&ec);
 }
 
@@ -150,7 +150,7 @@ fn test_write_bit() {
     assert_read(&ec, 0x01);
     assert!(set, "bit 6 set");
 
-    assert_wrote(&ec, 0x01, 0xC0);
+    assert_write(&ec, 0x01, 0xC0);
 
     drop(ec);
 
@@ -173,5 +173,5 @@ fn test_write_bit() {
     assert_read(&ec, 0x01);
     assert!(!set, "bit 7 not set");
 
-    assert_wrote(&ec, 0x01, 0x00);
+    assert_write(&ec, 0x01, 0x00);
 }

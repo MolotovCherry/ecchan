@@ -19,7 +19,7 @@ fn test_set_battery_mode() {
     let mut ec = get_ec();
     ec.set_battery_mode(BatteryMode::Mobility).unwrap();
     assert_unread(&ec);
-    assert_wrote(&ec, 0xD7, 0xE4);
+    assert_write(&ec, 0xD7, 0xE4);
 }
 
 #[test]
@@ -48,7 +48,7 @@ fn test_super_battery() {
 fn test_set_super_battery() {
     let mut ec = get_ec();
     ec.set_super_battery(SuperBattery::Off).unwrap();
-    assert_wrote(&ec, 0xEB, 0x00);
+    assert_write(&ec, 0xEB, 0x00);
     assert_read(&ec, 0xEB);
 }
 
