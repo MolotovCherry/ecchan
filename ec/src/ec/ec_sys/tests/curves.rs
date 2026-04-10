@@ -259,7 +259,7 @@ fn test_set_gpu_hysteresis_curve() {
 #[should_panic = "no dgpu available"]
 fn test_gpu_fan_curve_unsupported() {
     let ec = get_ec();
-    HAS_DGPU.store(false, Ordering::Relaxed);
+    no_dgpu();
     ec.gpu_fan_curve().unwrap();
 }
 
@@ -267,7 +267,7 @@ fn test_gpu_fan_curve_unsupported() {
 #[should_panic = "no dgpu available"]
 fn test_gpu_temp_curve_unsupported() {
     let ec = get_ec();
-    HAS_DGPU.store(false, Ordering::Relaxed);
+    no_dgpu();
     ec.gpu_temp_curve().unwrap();
 }
 
@@ -275,7 +275,7 @@ fn test_gpu_temp_curve_unsupported() {
 #[should_panic = "no dgpu available"]
 fn test_gpu_hysteresis_curve_unsupported() {
     let ec = get_ec();
-    HAS_DGPU.store(false, Ordering::Relaxed);
+    no_dgpu();
     ec.gpu_hysteresis_curve().unwrap();
 }
 
@@ -283,7 +283,7 @@ fn test_gpu_hysteresis_curve_unsupported() {
 #[should_panic = "no dgpu available"]
 fn test_set_gpu_fan_curve_unsupported() {
     let mut ec = get_ec();
-    HAS_DGPU.store(false, Ordering::Relaxed);
+    no_dgpu();
     ec.set_gpu_fan_curve(Default::default()).unwrap();
 }
 
@@ -291,7 +291,7 @@ fn test_set_gpu_fan_curve_unsupported() {
 #[should_panic = "no dgpu available"]
 fn test_set_gpu_temp_curve_unsupported() {
     let mut ec = get_ec();
-    HAS_DGPU.store(false, Ordering::Relaxed);
+    no_dgpu();
     ec.set_gpu_temp_curve(Default::default()).unwrap();
 }
 
@@ -299,7 +299,7 @@ fn test_set_gpu_temp_curve_unsupported() {
 #[should_panic = "no dgpu available"]
 fn test_set_gpu_hysteresis_curve_unsupported() {
     let mut ec = get_ec();
-    HAS_DGPU.store(false, Ordering::Relaxed);
+    no_dgpu();
     ec.set_gpu_hysteresis_curve(Default::default()).unwrap();
 }
 

@@ -71,6 +71,10 @@ static EC_BIN: [u8; 256] = [
 
 pub(crate) static HAS_DGPU: AtomicBool = AtomicBool::new(true);
 
+fn no_dgpu() {
+    HAS_DGPU.store(false, Ordering::Relaxed);
+}
+
 // EcIo Test Backend
 
 pub struct EcTestFile {
