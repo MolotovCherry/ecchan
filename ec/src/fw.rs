@@ -30,7 +30,7 @@ impl FwRegistry {
 
         FW_REGISTRY
             .iter()
-            .find(|fw| fw.supports_fw(ec_version))
+            .find(|fw| fw.allowed_fw.contains(&ec_version))
             .copied()
     }
 }
@@ -181,12 +181,6 @@ pub struct FwConfig {
     pub gpu_fan_curve: Curve,
     pub gpu_temp_curve: Curve,
     pub gpu_hysteresis_curve: Curve,
-}
-
-impl FwConfig {
-    pub fn supports_fw(&self, ec_version: &str) -> bool {
-        self.allowed_fw.contains(&ec_version)
-    }
 }
 
 //
