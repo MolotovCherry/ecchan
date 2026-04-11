@@ -2,7 +2,6 @@ mod ec_drv;
 mod ec_sys;
 
 use nix::libc::geteuid;
-use sayuri::sync::Mutex;
 use snafu::prelude::*;
 
 use crate::{
@@ -94,89 +93,12 @@ impl Ec {
     }
 
     pub fn fan_count(&self) -> Fan {
-        static FAN: Mutex<Fan> = Mutex::new(Fan::One);
-
-        // shortcut
-        let f = &mut *FAN.lock();
-        if matches!(f, Fan::Four) {
-            return *f;
-        }
-
-        let mut fan = self.model.map(|m| m.fans).unwrap_or(Fan::One);
-
-        if let Some((io, fw)) = self.sys.as_ref() {
-            if fw.ver != WmiVer::Wmi2 {
-                return fan;
-            }
-
-            // gpu fan spinning
-            fan = io
-                .ec_read_bit(0x34, Bit::_0)
-                .map_or(fan, |f| if f { Fan::Two } else { fan });
-
-            // ext fan1 spinning
-            fan = io
-                .ec_read_bit(0x34, Bit::_1)
-                .map_or(fan, |f| if f { Fan::Three } else { fan });
-
-            // ext fan2 spinning
-            fan = io
-                .ec_read_bit(0x34, Bit::_2)
-                .map_or(fan, |f| if f { Fan::Four } else { fan });
-        }
-
-        if fan > *f {
-            *f = fan;
-        } else {
-            fan = *f;
-        }
-
-        fan
+        self.model.map(|m| m.fans).unwrap_or(Fan::One)
     }
 
-    // too undeterministic for tests
     #[cfg(not(test))]
     pub fn has_dgpu(&self) -> bool {
-        use std::sync::OnceLock;
-
-        use crate::fw::Addr;
-
-        static HAS_DGPU: OnceLock<bool> = OnceLock::new();
-
-        if let Some(&status) = HAS_DGPU.get() {
-            return status;
-        }
-
-        if let Some((io, fw)) = self.sys.as_ref() {
-            // while we have no direct dgpu detection in ecram, we can infer its presence
-
-            let state = 'state: {
-                // FIXME: this code only works for wmi2
-                if fw.ver != WmiVer::Wmi2 {
-                    break 'state false;
-                }
-
-                // direct model config key
-                self.model.is_some_and(|m| m.has_dgpu) ||
-                // system in DGPU discrete mode- definitely has dgpu
-                io.ec_read_bit(0x2E, Bit::_6).unwrap_or(false) ||
-                // supports switchable to dgpu- definitely has dgpu
-                io.ec_read_bit(0x2F, Bit::_6).unwrap_or(false) ||
-                // system has a dgpu if it's warm
-                match fw.gpu.rt_temp_addr {
-                    Addr::Addr(addr) => io.ec_read(addr).map(|t| t > 0).unwrap_or(false),
-                    Addr::Unsupported => false,
-                } ||
-                // gpu fan rotate status -> also means we have a fan 2!
-                io.ec_read_bit(0x34, Bit::_0).unwrap_or(false)
-            };
-
-            HAS_DGPU.set(state).unwrap();
-            state
-        } else {
-            HAS_DGPU.set(false).unwrap();
-            false
-        }
+        self.model.map(|m| m.has_dgpu).unwrap_or(false)
     }
 
     #[cfg(test)]
