@@ -52,6 +52,7 @@ pub enum Fan {
 #[derive(Debug, Copy, Clone)]
 pub struct ModelConfig {
     pub name: &'static str,
+    pub has_dgpu: bool,
     /// The highest number fan, i.e. how many fans total there are
     pub fans: Fan,
 }

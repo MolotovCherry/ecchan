@@ -413,36 +413,6 @@ impl SuperBattery {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Threshold(u8);
 
-impl Threshold {
-    /// Valid values: 0..=90
-    /// Note: 90 means total charge of 100..=100
-    pub fn from_start(val: u8) -> Option<Self> {
-        match val {
-            0..=90 => Some(Self(val + 10)),
-            _ => None,
-        }
-    }
-
-    /// Valid values: 10..=100
-    /// Note: 100 means 100..=100
-    pub fn from_end(val: u8) -> Option<Self> {
-        match val {
-            10..=100 => Some(Self(val)),
-            _ => None,
-        }
-    }
-
-    /// Note: 90 means total charge of 100..=100
-    pub fn as_start(&self) -> u8 {
-        self.0 - 10
-    }
-
-    /// Note: 100 means 100..=100
-    pub fn as_end(&self) -> u8 {
-        self.0
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum BatteryMode {
     /// 50-60
@@ -452,7 +422,10 @@ pub enum BatteryMode {
     /// 100
     Mobility,
     /// Custom end threshold. Charges between N-10..=N
-    /// Valid values: 10..=100
+    /// Valid values: 10..=100.
+    ///
+    /// This variant is non-constructable for safety reasons.
+    /// Use from_start and from_end to safely create a value.
     ///
     /// Note: 100 means 100..=100
     Custom(Threshold),
@@ -463,12 +436,12 @@ impl BatteryMode {
     /// Valid values: 0..=90
     ///
     /// Note: 90 means total charge of 100..=100
-    pub fn from_start_threshold(val: u8) -> Option<Self> {
+    pub fn from_start(val: u8) -> Option<Self> {
         let this = match val {
             50 => Self::Healthy,
             70 => Self::Balanced,
             90 => Self::Mobility,
-            0..=90 => Self::Custom(Threshold::from_start(val).unwrap()),
+            0..=90 => Self::Custom(Threshold(val + 10)),
             _ => return None,
         };
 
@@ -479,12 +452,12 @@ impl BatteryMode {
     /// Valid values: 10..=100
     ///
     /// Note: 100 means 100..=100
-    pub fn from_end_threshold(val: u8) -> Option<Self> {
+    pub fn from_end(val: u8) -> Option<Self> {
         let this = match val {
             60 => Self::Healthy,
             80 => Self::Balanced,
             100 => Self::Mobility,
-            10..=100 => Self::Custom(Threshold::from_end(val).unwrap()),
+            10..=100 => Self::Custom(Threshold(val)),
             _ => return None,
         };
 
@@ -497,7 +470,7 @@ impl BatteryMode {
             Self::Healthy => 50,
             Self::Balanced => 70,
             Self::Mobility => 90,
-            Self::Custom(t) => t.as_start(),
+            Self::Custom(Threshold(t)) => t - 10,
         }
     }
 
@@ -507,7 +480,7 @@ impl BatteryMode {
             Self::Healthy => 60,
             Self::Balanced => 80,
             Self::Mobility => 100,
-            Self::Custom(t) => t.as_end(),
+            Self::Custom(Threshold(t)) => t,
         }
     }
 }

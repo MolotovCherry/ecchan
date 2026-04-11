@@ -2,13 +2,14 @@ mod ec_drv;
 mod ec_sys;
 
 use nix::libc::geteuid;
+use sayuri::sync::Mutex;
 use snafu::prelude::*;
 
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
         BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FW_REGISTRY, FanMode,
-        FwConfig, KeyDirection, Led, ShiftMode, SuperBattery, Threshold, Webcam, WmiVer,
+        FwConfig, KeyDirection, Led, ShiftMode, SuperBattery, Webcam, WmiVer,
     },
     models::{Fan, MODEL_REGISTRY, ModelConfig},
 };
@@ -93,7 +94,44 @@ impl Ec {
     }
 
     pub fn fan_count(&self) -> Fan {
-        self.model.map(|m| m.fans).unwrap_or(Fan::One)
+        static FAN: Mutex<Fan> = Mutex::new(Fan::One);
+
+        // shortcut
+        let f = &mut *FAN.lock();
+        if matches!(f, Fan::Four) {
+            return *f;
+        }
+
+        let mut fan = self.model.map(|m| m.fans).unwrap_or(Fan::One);
+
+        if let Some((io, fw)) = self.sys.as_ref() {
+            if fw.ver != WmiVer::Wmi2 {
+                return fan;
+            }
+
+            // gpu fan spinning
+            fan = io
+                .ec_read_bit(0x34, Bit::_0)
+                .map_or(fan, |f| if f { Fan::Two } else { fan });
+
+            // ext fan1 spinning
+            fan = io
+                .ec_read_bit(0x34, Bit::_1)
+                .map_or(fan, |f| if f { Fan::Three } else { fan });
+
+            // ext fan2 spinning
+            fan = io
+                .ec_read_bit(0x34, Bit::_2)
+                .map_or(fan, |f| if f { Fan::Four } else { fan });
+        }
+
+        if fan > *f {
+            *f = fan;
+        } else {
+            fan = *f;
+        }
+
+        fan
     }
 
     // too undeterministic for tests
@@ -118,19 +156,19 @@ impl Ec {
                     break 'state false;
                 }
 
+                // direct model config key
+                self.model.is_some_and(|m| m.has_dgpu) ||
                 // system in DGPU discrete mode- definitely has dgpu
-                let discrete = io.ec_read_bit(0x2E, Bit::_6).unwrap_or(false);
+                io.ec_read_bit(0x2E, Bit::_6).unwrap_or(false) ||
                 // supports switchable to dgpu- definitely has dgpu
-                let switchable = io.ec_read_bit(0x2F, Bit::_6).unwrap_or(false);
+                io.ec_read_bit(0x2F, Bit::_6).unwrap_or(false) ||
                 // system has a dgpu if it's warm
-                let gpu_temp = match fw.gpu.rt_temp_addr {
+                match fw.gpu.rt_temp_addr {
                     Addr::Addr(addr) => io.ec_read(addr).map(|t| t > 0).unwrap_or(false),
                     Addr::Unsupported => false,
-                };
+                } ||
                 // gpu fan rotate status -> also means we have a fan 2!
-                let gpu_fan_on = io.ec_read_bit(0x34, Bit::_0).unwrap_or(false);
-
-                discrete | switchable | gpu_temp | gpu_fan_on
+                io.ec_read_bit(0x34, Bit::_0).unwrap_or(false)
             };
 
             HAS_DGPU.set(state).unwrap();
@@ -324,7 +362,7 @@ impl Ec {
                 60 => BatteryMode::Healthy,
                 80 => BatteryMode::Balanced,
                 100 => BatteryMode::Mobility,
-                c @ 10..=100 => BatteryMode::Custom(Threshold::from_end(c).unwrap()),
+                c @ 10..=100 => BatteryMode::from_end(c).unwrap(),
                 _ => unreachable!(),
             };
 
