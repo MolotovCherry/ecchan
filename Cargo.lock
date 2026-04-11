@@ -21,20 +21,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "dmidecode"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a898086945b8e1c1e12f0996773ae65442d84f8dcafd5ab88a4c80b1da3d3008"
-dependencies = [
- "bitflags",
- "uuid",
-]
-
-[[package]]
 name = "ec"
 version = "0.1.0"
 dependencies = [
- "dmidecode",
  "log",
  "nix",
  "sayuri",
@@ -150,12 +139,6 @@ name = "unicode-ident"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
-
-[[package]]
-name = "uuid"
-version = "1.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ac8b6f42ead25368cf5b098aeb3dc8a1a2c05a3eee8a9a1a68c640edbfc79d9"
 
 [[package]]
 name = "windows"

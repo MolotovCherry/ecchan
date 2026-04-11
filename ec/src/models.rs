@@ -2,8 +2,6 @@ pub mod titan_gt77_12uhs;
 
 use std::fs;
 
-use dmidecode::Structure;
-
 /// A registry of model specific configs..
 #[rustfmt::skip]
 pub static MODEL_REGISTRY: ModelRegistry<'static> = ModelRegistry(&[
@@ -15,24 +13,9 @@ pub struct ModelRegistry<'a>(&'a [ModelConfig]);
 impl ModelRegistry<'_> {
     /// Find the ModelConfig for this computer model as read from BIOS
     pub fn find(&self) -> Option<ModelConfig> {
-        // Get the SMBIOS header and DMI table from sysfs.
-        let buf = fs::read("/sys/firmware/dmi/tables/smbios_entry_point").ok()?;
-        let dmi = fs::read("/sys/firmware/dmi/tables/DMI").ok()?;
-        let entry = dmidecode::EntryPoint::search(&buf).ok()?;
-
-        for table in entry.structures(&dmi) {
-            let Ok(table) = table else {
-                log::error!("DMI tables contain malformed structure: {table:?}");
-                continue;
-            };
-
-            match table {
-                Structure::System(system) => return MODEL_REGISTRY.get_from_name(system.product),
-                _ => continue,
-            }
-        }
-
-        None
+        let buf = fs::read("/sys/class/dmi/id/product_name").ok()?;
+        let s = String::from_utf8(buf).ok()?;
+        MODEL_REGISTRY.get_from_name(s.trim())
     }
 
     pub fn get_from_name(&self, name: &str) -> Option<ModelConfig> {
