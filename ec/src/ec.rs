@@ -8,9 +8,9 @@ use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
         BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FanMode, FwConfig,
-        FwRegistry, KeyDirection, Led, ShiftMode, SuperBattery, Webcam, WmiVer,
+        KeyDirection, Led, ShiftMode, SuperBattery, Webcam, WmiVer,
     },
-    models::{Fan, ModelConfig, ModelRegistry},
+    models::{Fan, ModelConfig},
 };
 
 macro_rules! addr {
@@ -63,7 +63,7 @@ impl Ec {
                     break 'val None;
                 };
 
-                if let Some(fw) = FwRegistry::from_name(&version) {
+                if let Some(fw) = FwConfig::from_name(&version) {
                     Some((io, fw))
                 } else {
                     log::warn!("fw {version} is unsupported by ec_sys");
@@ -83,7 +83,7 @@ impl Ec {
             },
         };
 
-        let model = ModelRegistry::find();
+        let model = ModelConfig::find();
 
         // TODO: ec drv
 

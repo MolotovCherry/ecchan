@@ -15,26 +15,6 @@ use std::ops::{BitAnd, BitOrAssign, BitXor, Not};
 
 mod wmi2;
 
-pub struct FwRegistry;
-
-impl FwRegistry {
-    pub fn from_name(ec_version: &str) -> Option<FwConfig> {
-        /// A registry of supported fw configs.
-        ///
-        /// Once a config is made (following module docs),
-        /// add it here to support it.
-        #[rustfmt::skip]
-        static FW_REGISTRY: &[FwConfig] = &[
-            wmi2::g2_10::G2_10
-        ];
-
-        FW_REGISTRY
-            .iter()
-            .find(|fw| fw.allowed_fw.contains(&ec_version))
-            .copied()
-    }
-}
-
 #[derive(Debug, Copy, Clone)]
 pub enum Addr {
     Unsupported,
@@ -181,6 +161,24 @@ pub struct FwConfig {
     pub gpu_fan_curve: Curve,
     pub gpu_temp_curve: Curve,
     pub gpu_hysteresis_curve: Curve,
+}
+
+impl FwConfig {
+    pub fn from_name(ec_version: &str) -> Option<FwConfig> {
+        /// A registry of supported fw configs.
+        ///
+        /// Once a config is made (following module docs),
+        /// add it here to support it.
+        #[rustfmt::skip]
+        static FW_REGISTRY: &[FwConfig] = &[
+            wmi2::g2_10::G2_10
+        ];
+
+        FW_REGISTRY
+            .iter()
+            .find(|fw| fw.allowed_fw.contains(&ec_version))
+            .copied()
+    }
 }
 
 //
