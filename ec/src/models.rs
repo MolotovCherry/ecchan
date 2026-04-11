@@ -2,24 +2,23 @@ pub mod titan_gt77_12uhs;
 
 use std::fs;
 
-/// A registry of model specific configs..
-#[rustfmt::skip]
-pub static MODEL_REGISTRY: ModelRegistry<'static> = ModelRegistry(&[
-    titan_gt77_12uhs::CONFIG
-]);
+pub struct ModelRegistry;
 
-pub struct ModelRegistry<'a>(&'a [ModelConfig]);
-
-impl ModelRegistry<'_> {
+impl ModelRegistry {
     /// Find the ModelConfig for this computer model as read from BIOS
-    pub fn find(&self) -> Option<ModelConfig> {
+    pub fn find() -> Option<ModelConfig> {
         let buf = fs::read("/sys/class/dmi/id/product_name").ok()?;
         let s = String::from_utf8(buf).ok()?;
-        MODEL_REGISTRY.get_from_name(s.trim())
+        Self::from_name(s.trim())
     }
 
-    pub fn get_from_name(&self, name: &str) -> Option<ModelConfig> {
-        MODEL_REGISTRY.0.iter().find(|i| i.name == name).copied()
+    pub fn from_name(name: &str) -> Option<ModelConfig> {
+        #[rustfmt::skip]
+        static MODEL_REGISTRY: &[ModelConfig] = &[
+            titan_gt77_12uhs::CONFIG
+        ];
+
+        MODEL_REGISTRY.iter().find(|i| i.name == name).copied()
     }
 }
 

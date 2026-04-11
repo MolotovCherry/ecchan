@@ -7,10 +7,10 @@ use snafu::prelude::*;
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
-        BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FW_REGISTRY, FanMode,
-        FwConfig, KeyDirection, Led, ShiftMode, SuperBattery, Webcam, WmiVer,
+        BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FanMode, FwConfig,
+        FwRegistry, KeyDirection, Led, ShiftMode, SuperBattery, Webcam, WmiVer,
     },
-    models::{Fan, MODEL_REGISTRY, ModelConfig},
+    models::{Fan, ModelConfig, ModelRegistry},
 };
 
 macro_rules! addr {
@@ -63,7 +63,7 @@ impl Ec {
                     break 'val None;
                 };
 
-                if let Some(fw) = FW_REGISTRY.get(&version) {
+                if let Some(fw) = FwRegistry::from_name(&version) {
                     Some((io, fw))
                 } else {
                     log::warn!("fw {version} is unsupported by ec_sys");
@@ -83,7 +83,7 @@ impl Ec {
             },
         };
 
-        let model = MODEL_REGISTRY.find();
+        let model = ModelRegistry::find();
 
         // TODO: ec drv
 

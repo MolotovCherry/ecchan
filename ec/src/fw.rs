@@ -15,20 +15,23 @@ use std::ops::{BitAnd, BitOrAssign, BitXor, Not};
 
 mod wmi2;
 
-/// A registry of supported fw configs.
-///
-/// Once a config is made (following module docs),
-/// add it here to support it.
-#[rustfmt::skip]
-pub static FW_REGISTRY: Registry<'static> = Registry(&[
-    wmi2::g2_10::G2_10
-]);
+pub struct FwRegistry;
 
-pub struct Registry<'a>(&'a [FwConfig]);
+impl FwRegistry {
+    pub fn from_name(ec_version: &str) -> Option<FwConfig> {
+        /// A registry of supported fw configs.
+        ///
+        /// Once a config is made (following module docs),
+        /// add it here to support it.
+        #[rustfmt::skip]
+        static FW_REGISTRY: &[FwConfig] = &[
+            wmi2::g2_10::G2_10
+        ];
 
-impl Registry<'_> {
-    pub fn get(&self, ec_version: &str) -> Option<FwConfig> {
-        self.0.iter().find(|fw| fw.supports_fw(ec_version)).copied()
+        FW_REGISTRY
+            .iter()
+            .find(|fw| fw.supports_fw(ec_version))
+            .copied()
     }
 }
 

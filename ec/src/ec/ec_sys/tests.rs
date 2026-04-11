@@ -44,8 +44,8 @@ use sayuri::sync::{Mutex, MutexGuard};
 use super::*;
 use crate::{
     Ec,
-    fw::{BatteryMode, Curve6, Curve7, FW_REGISTRY, FwConfig, SuperBattery, WmiVer},
-    models::{MODEL_REGISTRY, ModelConfig},
+    fw::{BatteryMode, Curve6, Curve7, FwConfig, FwRegistry, SuperBattery, WmiVer},
+    models::{ModelConfig, ModelRegistry},
 };
 
 #[rustfmt::skip]
@@ -156,10 +156,11 @@ impl Drop for TestReset {
 }
 
 fn get_ec() -> TestReset {
-    static FW: LazyLock<FwConfig> = LazyLock::new(|| FW_REGISTRY.get("17Q1IMS1.10C").unwrap());
+    static FW: LazyLock<FwConfig> =
+        LazyLock::new(|| FwRegistry::from_name("17Q1IMS1.10C").unwrap());
 
     static MODEL: LazyLock<ModelConfig> =
-        LazyLock::new(|| MODEL_REGISTRY.get_from_name("Titan GT77 12UHS").unwrap());
+        LazyLock::new(|| ModelRegistry::from_name("Titan GT77 12UHS").unwrap());
 
     static EC: LazyLock<Mutex<Ec>> = LazyLock::new(|| {
         let file = EcTestFile::new();
