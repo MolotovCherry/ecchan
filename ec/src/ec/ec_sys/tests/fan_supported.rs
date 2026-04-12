@@ -1,5 +1,5 @@
 use super::*;
-use crate::models::Fan;
+use crate::models::Fans;
 
 #[test]
 fn test_fan1_supported() {
@@ -29,7 +29,7 @@ fn test_fan4_supported() {
 fn test_fan2_not_supported() {
     let mut ec = get_ec();
 
-    ec.model.as_mut().unwrap().fans = Fan::One;
+    ec.model.as_mut().unwrap().fans.count = Fans::One;
     assert!(!ec.fan2_supported());
 }
 
@@ -37,7 +37,7 @@ fn test_fan2_not_supported() {
 fn test_fan3_not_supported() {
     let mut ec = get_ec();
 
-    ec.model.as_mut().unwrap().fans = Fan::One;
+    ec.model.as_mut().unwrap().fans.count = Fans::One;
     assert!(!ec.fan3_supported());
 }
 
@@ -45,6 +45,6 @@ fn test_fan3_not_supported() {
 fn test_fan4_not_supported() {
     let mut ec = get_ec();
 
-    ec.model.as_mut().unwrap().fans = Fan::One;
+    ec.model.as_mut().unwrap().fans.count = Fans::One;
     assert!(!ec.fan4_supported());
 }

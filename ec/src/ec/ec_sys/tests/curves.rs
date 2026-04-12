@@ -7,7 +7,7 @@ use super::*;
 #[test]
 fn test_cpu_fan_curve() {
     let ec = get_ec();
-    let curve = ec.cpu_fan_curve().unwrap();
+    let curve = ec.cpu_fan_curve_wmi2().unwrap();
     assert_eq!(
         Curve7 {
             n1: 25,
@@ -28,7 +28,7 @@ fn test_cpu_fan_curve() {
 #[test]
 fn test_gpu_fan_curve() {
     let ec = get_ec();
-    let curve = ec.gpu_fan_curve().unwrap();
+    let curve = ec.gpu_fan_curve_wmi2().unwrap();
 
     assert_eq!(
         Curve7 {
@@ -61,7 +61,7 @@ fn test_set_cpu_fan_curve() {
         n7: 7,
     };
 
-    ec.set_cpu_fan_curve(curve).unwrap();
+    ec.set_cpu_fan_curve_wmi2(curve).unwrap();
     assert_write_range(&ec, 0x72..=0x78, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
@@ -80,7 +80,7 @@ fn test_set_gpu_fan_curve() {
         n7: 7,
     };
 
-    ec.set_gpu_fan_curve(curve).unwrap();
+    ec.set_gpu_fan_curve_wmi2(curve).unwrap();
     assert_write_range(&ec, 0x8A..=0x90, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
@@ -92,7 +92,7 @@ fn test_set_gpu_fan_curve() {
 #[test]
 fn test_cpu_temp_curve() {
     let ec = get_ec();
-    let curve = ec.cpu_temp_curve().unwrap();
+    let curve = ec.cpu_temp_curve_wmi2().unwrap();
     assert_eq!(
         Curve7 {
             n1: 0,
@@ -113,7 +113,7 @@ fn test_cpu_temp_curve() {
 #[test]
 fn test_gpu_temp_curve() {
     let ec = get_ec();
-    let curve = ec.gpu_temp_curve().unwrap();
+    let curve = ec.gpu_temp_curve_wmi2().unwrap();
 
     assert_eq!(
         Curve7 {
@@ -146,7 +146,7 @@ fn test_set_cpu_temp_curve() {
         n7: 7,
     };
 
-    ec.set_cpu_temp_curve(curve).unwrap();
+    ec.set_cpu_temp_curve_wmi2(curve).unwrap();
     assert_write_range(&ec, 0x69..=0x6F, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
@@ -165,7 +165,7 @@ fn test_set_gpu_temp_curve() {
         n7: 7,
     };
 
-    ec.set_gpu_temp_curve(curve).unwrap();
+    ec.set_gpu_temp_curve_wmi2(curve).unwrap();
     assert_write_range(&ec, 0x81..=0x87, &[1, 2, 3, 4, 5, 6, 7]);
     assert_unread(&ec);
 }
@@ -177,7 +177,7 @@ fn test_set_gpu_temp_curve() {
 #[test]
 fn test_cpu_hysteresis_curve() {
     let ec = get_ec();
-    let curve = ec.cpu_hysteresis_curve().unwrap();
+    let curve = ec.cpu_hysteresis_curve_wmi2().unwrap();
     assert_eq!(
         Curve6 {
             n1: 10,
@@ -197,7 +197,7 @@ fn test_cpu_hysteresis_curve() {
 #[test]
 fn test_gpu_hysteresis_curve() {
     let ec = get_ec();
-    let curve = ec.gpu_hysteresis_curve().unwrap();
+    let curve = ec.gpu_hysteresis_curve_wmi2().unwrap();
 
     assert_eq!(
         Curve6 {
@@ -228,7 +228,7 @@ fn test_set_cpu_hysteresis_curve() {
         n6: 6,
     };
 
-    ec.set_cpu_hysteresis_curve(curve).unwrap();
+    ec.set_cpu_hysteresis_curve_wmi2(curve).unwrap();
     assert_write_range(&ec, 0x7A..=0x7F, &[1, 2, 3, 4, 5, 6]);
     assert_unread(&ec);
 }
@@ -246,7 +246,7 @@ fn test_set_gpu_hysteresis_curve() {
         n6: 6,
     };
 
-    ec.set_gpu_hysteresis_curve(curve).unwrap();
+    ec.set_gpu_hysteresis_curve_wmi2(curve).unwrap();
     assert_write_range(&ec, 0x92..=0x97, &[1, 2, 3, 4, 5, 6]);
     assert_unread(&ec);
 }
@@ -260,7 +260,7 @@ fn test_set_gpu_hysteresis_curve() {
 fn test_gpu_fan_curve_unsupported() {
     let ec = get_ec();
     no_dgpu();
-    ec.gpu_fan_curve().unwrap();
+    ec.gpu_fan_curve_wmi2().unwrap();
 }
 
 #[test]
@@ -268,7 +268,7 @@ fn test_gpu_fan_curve_unsupported() {
 fn test_gpu_temp_curve_unsupported() {
     let ec = get_ec();
     no_dgpu();
-    ec.gpu_temp_curve().unwrap();
+    ec.gpu_temp_curve_wmi2().unwrap();
 }
 
 #[test]
@@ -276,7 +276,7 @@ fn test_gpu_temp_curve_unsupported() {
 fn test_gpu_hysteresis_curve_unsupported() {
     let ec = get_ec();
     no_dgpu();
-    ec.gpu_hysteresis_curve().unwrap();
+    ec.gpu_hysteresis_curve_wmi2().unwrap();
 }
 
 #[test]
@@ -284,7 +284,7 @@ fn test_gpu_hysteresis_curve_unsupported() {
 fn test_set_gpu_fan_curve_unsupported() {
     let mut ec = get_ec();
     no_dgpu();
-    ec.set_gpu_fan_curve(Default::default()).unwrap();
+    ec.set_gpu_fan_curve_wmi2(Default::default()).unwrap();
 }
 
 #[test]
@@ -292,7 +292,7 @@ fn test_set_gpu_fan_curve_unsupported() {
 fn test_set_gpu_temp_curve_unsupported() {
     let mut ec = get_ec();
     no_dgpu();
-    ec.set_gpu_temp_curve(Default::default()).unwrap();
+    ec.set_gpu_temp_curve_wmi2(Default::default()).unwrap();
 }
 
 #[test]
@@ -300,7 +300,8 @@ fn test_set_gpu_temp_curve_unsupported() {
 fn test_set_gpu_hysteresis_curve_unsupported() {
     let mut ec = get_ec();
     no_dgpu();
-    ec.set_gpu_hysteresis_curve(Default::default()).unwrap();
+    ec.set_gpu_hysteresis_curve_wmi2(Default::default())
+        .unwrap();
 }
 
 #[test]
@@ -308,7 +309,7 @@ fn test_set_gpu_hysteresis_curve_unsupported() {
 fn test_gpu_fan_curve_wmi_unsupported() {
     let mut ec = get_ec();
     ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
-    ec.gpu_fan_curve().unwrap();
+    ec.gpu_fan_curve_wmi2().unwrap();
 }
 
 #[test]
@@ -316,7 +317,7 @@ fn test_gpu_fan_curve_wmi_unsupported() {
 fn test_gpu_temp_curve_wmi_unsupported() {
     let mut ec = get_ec();
     ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
-    ec.gpu_temp_curve().unwrap();
+    ec.gpu_temp_curve_wmi2().unwrap();
 }
 
 #[test]
@@ -324,7 +325,7 @@ fn test_gpu_temp_curve_wmi_unsupported() {
 fn test_gpu_hysteresis_curve_wmi_unsupported() {
     let mut ec = get_ec();
     ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
-    ec.gpu_hysteresis_curve().unwrap();
+    ec.gpu_hysteresis_curve_wmi2().unwrap();
 }
 
 #[test]
@@ -332,7 +333,7 @@ fn test_gpu_hysteresis_curve_wmi_unsupported() {
 fn test_set_gpu_fan_curve_wmi_unsupported() {
     let mut ec = get_ec();
     ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
-    ec.set_gpu_fan_curve(Default::default()).unwrap();
+    ec.set_gpu_fan_curve_wmi2(Default::default()).unwrap();
 }
 
 #[test]
@@ -340,7 +341,7 @@ fn test_set_gpu_fan_curve_wmi_unsupported() {
 fn test_set_gpu_temp_curve_wmi_unsupported() {
     let mut ec = get_ec();
     ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
-    ec.set_gpu_temp_curve(Default::default()).unwrap();
+    ec.set_gpu_temp_curve_wmi2(Default::default()).unwrap();
 }
 
 #[test]
@@ -348,5 +349,38 @@ fn test_set_gpu_temp_curve_wmi_unsupported() {
 fn test_set_gpu_hysteresis_curve_wmi_unsupported() {
     let mut ec = get_ec();
     ec.sys.as_mut().unwrap().1.ver = WmiVer::Wmi1;
-    ec.set_gpu_hysteresis_curve(Default::default()).unwrap();
+    ec.set_gpu_hysteresis_curve_wmi2(Default::default())
+        .unwrap();
+}
+
+#[test]
+#[should_panic = "node value exceeded max 150"]
+fn test_set_cpu_fan_curve_too_high() {
+    let mut ec = get_ec();
+    ec.set_cpu_fan_curve_wmi2(Curve7 {
+        n1: 155,
+        n2: 155,
+        n3: 155,
+        n4: 155,
+        n5: 155,
+        n6: 155,
+        n7: 155,
+    })
+    .unwrap();
+}
+
+#[test]
+#[should_panic = "node value exceeded max 150"]
+fn test_set_gpu_fan_curve_too_high() {
+    let mut ec = get_ec();
+    ec.set_gpu_fan_curve_wmi2(Curve7 {
+        n1: 155,
+        n2: 155,
+        n3: 155,
+        n4: 155,
+        n5: 155,
+        n6: 155,
+        n7: 155,
+    })
+    .unwrap();
 }

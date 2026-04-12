@@ -1,5 +1,5 @@
 use super::*;
-use crate::models::Fan;
+use crate::models::Fans;
 
 #[test]
 fn test_has_dgpu() {
@@ -10,7 +10,7 @@ fn test_has_dgpu() {
 #[test]
 fn test_fan_count() {
     let ec = get_ec();
-    assert_eq!(ec.fan_count(), Fan::Four);
+    assert_eq!(ec.fan_count(), Fans::Four);
 }
 
 #[test]

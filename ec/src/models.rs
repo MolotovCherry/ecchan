@@ -3,7 +3,14 @@ mod titan_gt77_12uhs;
 use std::fs;
 
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Fan {
+pub struct FanConfig {
+    pub max_speed: u8,
+    /// The highest number fan, i.e. how many fans total there are
+    pub count: Fans,
+}
+
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Fans {
     #[default]
     One,
     Two,
@@ -15,8 +22,7 @@ pub enum Fan {
 pub struct ModelConfig {
     pub name: &'static str,
     pub has_dgpu: bool,
-    /// The highest number fan, i.e. how many fans total there are
-    pub fans: Fan,
+    pub fans: FanConfig,
 }
 
 impl ModelConfig {

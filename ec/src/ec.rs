@@ -12,7 +12,7 @@ use crate::{
         BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FanMode, FwConfig,
         KeyDirection, Led, ShiftMode, SuperBattery, Webcam, WmiVer,
     },
-    models::{Fan, ModelConfig},
+    models::{Fans, ModelConfig},
 };
 
 macro_rules! addr {
@@ -106,8 +106,12 @@ impl Ec {
         Ok(this)
     }
 
-    pub fn fan_count(&self) -> Fan {
-        self.model.map(|m| m.fans).unwrap_or(Fan::One)
+    pub fn fan_count(&self) -> Fans {
+        self.model.map(|m| m.fans.count).unwrap_or(Fans::One)
+    }
+
+    pub fn fan_max(&self) -> Option<u8> {
+        self.model.map(|m| m.fans.max_speed)
     }
 
     #[cfg(not(test))]
@@ -427,12 +431,12 @@ impl Ec {
     // Fan RPM
     //
 
-    fn fan_rpm(&self, fan: Fan) -> Result<u16> {
+    fn fan_rpm(&self, fan: Fans) -> Result<u16> {
         let supported = match fan {
-            Fan::One => self.fan1_supported(),
-            Fan::Two => self.fan2_supported(),
-            Fan::Three => self.fan3_supported(),
-            Fan::Four => self.fan4_supported(),
+            Fans::One => self.fan1_supported(),
+            Fans::Two => self.fan2_supported(),
+            Fans::Three => self.fan3_supported(),
+            Fans::Four => self.fan4_supported(),
         };
 
         if !supported {
@@ -448,10 +452,10 @@ impl Ec {
         };
 
         let addr = match fan {
-            Fan::One => &fw.fan_rpm.fan1_addr,
-            Fan::Two => &fw.fan_rpm.fan2_addr,
-            Fan::Three => &fw.fan_rpm.fan3_addr,
-            Fan::Four => &fw.fan_rpm.fan4_addr,
+            Fans::One => &fw.fan_rpm.fan1_addr,
+            Fans::Two => &fw.fan_rpm.fan2_addr,
+            Fans::Three => &fw.fan_rpm.fan3_addr,
+            Fans::Four => &fw.fan_rpm.fan4_addr,
         };
 
         let addr = addr_range!("fan_rpm", addr);
@@ -468,39 +472,39 @@ impl Ec {
     }
 
     pub fn fan1_rpm(&self) -> Result<u16> {
-        self.fan_rpm(Fan::One)
+        self.fan_rpm(Fans::One)
     }
 
     pub fn fan2_rpm(&self) -> Result<u16> {
-        self.fan_rpm(Fan::Two)
+        self.fan_rpm(Fans::Two)
     }
 
     pub fn fan3_rpm(&self) -> Result<u16> {
-        self.fan_rpm(Fan::Three)
+        self.fan_rpm(Fans::Three)
     }
 
     pub fn fan4_rpm(&self) -> Result<u16> {
-        self.fan_rpm(Fan::Four)
+        self.fan_rpm(Fans::Four)
     }
 
-    fn fan_supported(&self, fan: Fan) -> bool {
+    fn fan_supported(&self, fan: Fans) -> bool {
         self.fan_count() >= fan
     }
 
     pub fn fan1_supported(&self) -> bool {
-        self.fan_supported(Fan::One)
+        self.fan_supported(Fans::One)
     }
 
     pub fn fan2_supported(&self) -> bool {
-        self.fan_supported(Fan::Two)
+        self.fan_supported(Fans::Two)
     }
 
     pub fn fan3_supported(&self) -> bool {
-        self.fan_supported(Fan::Three)
+        self.fan_supported(Fans::Three)
     }
 
     pub fn fan4_supported(&self) -> bool {
-        self.fan_supported(Fan::Four)
+        self.fan_supported(Fans::Four)
     }
 
     //
@@ -1114,7 +1118,7 @@ impl Ec {
         Ok(())
     }
 
-    pub fn cpu_fan_curve(&self) -> Result<Curve7> {
+    pub fn cpu_fan_curve_wmi2(&self) -> Result<Curve7> {
         if let Some((io, fw)) = self.sys.as_ref() {
             if !matches!(fw.ver, WmiVer::Wmi2) {
                 whatever!("only wmi2 is supported");
@@ -1131,7 +1135,7 @@ impl Ec {
         }
     }
 
-    pub fn cpu_temp_curve(&self) -> Result<Curve7> {
+    pub fn cpu_temp_curve_wmi2(&self) -> Result<Curve7> {
         if let Some((io, fw)) = self.sys.as_ref() {
             if !matches!(fw.ver, WmiVer::Wmi2) {
                 whatever!("only wmi2 is supported");
@@ -1148,7 +1152,7 @@ impl Ec {
         }
     }
 
-    pub fn cpu_hysteresis_curve(&self) -> Result<Curve6> {
+    pub fn cpu_hysteresis_curve_wmi2(&self) -> Result<Curve6> {
         if let Some((io, fw)) = self.sys.as_ref() {
             if !matches!(fw.ver, WmiVer::Wmi2) {
                 whatever!("only wmi2 is supported");
@@ -1165,7 +1169,7 @@ impl Ec {
         }
     }
 
-    pub fn gpu_fan_curve(&self) -> Result<Curve7> {
+    pub fn gpu_fan_curve_wmi2(&self) -> Result<Curve7> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
         }
@@ -1186,7 +1190,7 @@ impl Ec {
         }
     }
 
-    pub fn gpu_temp_curve(&self) -> Result<Curve7> {
+    pub fn gpu_temp_curve_wmi2(&self) -> Result<Curve7> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
         }
@@ -1207,7 +1211,7 @@ impl Ec {
         }
     }
 
-    pub fn gpu_hysteresis_curve(&self) -> Result<Curve6> {
+    pub fn gpu_hysteresis_curve_wmi2(&self) -> Result<Curve6> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
         }
@@ -1228,7 +1232,19 @@ impl Ec {
         }
     }
 
-    pub fn set_cpu_fan_curve(&mut self, curve: Curve7) -> Result<()> {
+    pub fn set_cpu_fan_curve_wmi2(&mut self, curve: Curve7) -> Result<()> {
+        let Some(max) = self.fan_max() else {
+            whatever!("fan max not configured. please add model config");
+        };
+
+        let nodes = [
+            curve.n1, curve.n2, curve.n3, curve.n4, curve.n5, curve.n6, curve.n7,
+        ];
+
+        if nodes.iter().any(|s| *s > max) {
+            whatever!("node value exceeded max {max}");
+        }
+
         if let Some((io, fw)) = self.sys.as_mut() {
             if !matches!(fw.ver, WmiVer::Wmi2) {
                 whatever!("only wmi2 is supported");
@@ -1248,7 +1264,7 @@ impl Ec {
         }
     }
 
-    pub fn set_cpu_temp_curve(&mut self, curve: Curve7) -> Result<()> {
+    pub fn set_cpu_temp_curve_wmi2(&mut self, curve: Curve7) -> Result<()> {
         if let Some((io, fw)) = self.sys.as_mut() {
             if !matches!(fw.ver, WmiVer::Wmi2) {
                 whatever!("only wmi2 is supported");
@@ -1268,7 +1284,7 @@ impl Ec {
         }
     }
 
-    pub fn set_cpu_hysteresis_curve(&mut self, curve: Curve6) -> Result<()> {
+    pub fn set_cpu_hysteresis_curve_wmi2(&mut self, curve: Curve6) -> Result<()> {
         if let Some((io, fw)) = self.sys.as_mut() {
             if !matches!(fw.ver, WmiVer::Wmi2) {
                 whatever!("only wmi2 is supported");
@@ -1288,9 +1304,21 @@ impl Ec {
         }
     }
 
-    pub fn set_gpu_fan_curve(&mut self, curve: Curve7) -> Result<()> {
+    pub fn set_gpu_fan_curve_wmi2(&mut self, curve: Curve7) -> Result<()> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
+        }
+
+        let Some(max) = self.fan_max() else {
+            whatever!("fan max not configured. please add model config");
+        };
+
+        let nodes = [
+            curve.n1, curve.n2, curve.n3, curve.n4, curve.n5, curve.n6, curve.n7,
+        ];
+
+        if nodes.iter().any(|s| *s > max) {
+            whatever!("node value exceeded max {max}");
         }
 
         if let Some((io, fw)) = self.sys.as_mut() {
@@ -1312,7 +1340,7 @@ impl Ec {
         }
     }
 
-    pub fn set_gpu_temp_curve(&mut self, curve: Curve7) -> Result<()> {
+    pub fn set_gpu_temp_curve_wmi2(&mut self, curve: Curve7) -> Result<()> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
         }
@@ -1336,7 +1364,7 @@ impl Ec {
         }
     }
 
-    pub fn set_gpu_hysteresis_curve(&mut self, curve: Curve6) -> Result<()> {
+    pub fn set_gpu_hysteresis_curve_wmi2(&mut self, curve: Curve6) -> Result<()> {
         if !self.has_dgpu() {
             whatever!("no dgpu available");
         }

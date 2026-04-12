@@ -1,5 +1,5 @@
 use super::*;
-use crate::models::Fan;
+use crate::models::Fans;
 
 #[test]
 fn test_fan1_rpm() {
@@ -46,7 +46,7 @@ fn test_fan4_rpm() {
 fn test_fan2_rpm_missing() {
     let mut ec = get_ec();
 
-    ec.model.as_mut().unwrap().fans = Fan::One;
+    ec.model.as_mut().unwrap().fans.count = Fans::One;
     ec.fan2_rpm().unwrap();
 }
 
@@ -55,7 +55,7 @@ fn test_fan2_rpm_missing() {
 fn test_fan3_rpm_missing() {
     let mut ec = get_ec();
 
-    ec.model.as_mut().unwrap().fans = Fan::Two;
+    ec.model.as_mut().unwrap().fans.count = Fans::Two;
     ec.fan3_rpm().unwrap();
 }
 
@@ -64,6 +64,6 @@ fn test_fan3_rpm_missing() {
 fn test_fan4_rpm_missing() {
     let mut ec = get_ec();
 
-    ec.model.as_mut().unwrap().fans = Fan::Three;
+    ec.model.as_mut().unwrap().fans.count = Fans::Three;
     ec.fan4_rpm().unwrap();
 }
