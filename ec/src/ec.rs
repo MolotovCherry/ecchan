@@ -80,7 +80,9 @@ impl Ec {
                 if let Some(fw) = FwConfig::from_name(&version) {
                     Some((io, fw))
                 } else {
-                    log::warn!("fw {version} is unsupported by ec_sys");
+                    log::warn!(
+                        "fw {version} is unsupported by ec_sys. please add it to a fw config"
+                    );
                     None
                 }
             }
@@ -106,14 +108,20 @@ impl Ec {
         Ok(this)
     }
 
+    /// How many fans there are. If this returns One despite having more fans, your
+    /// model is not supported. Please add a model config and PR it.
     pub fn fan_count(&self) -> Fans {
         self.model.map(|m| m.fans.count).unwrap_or(Fans::One)
     }
 
+    /// The maximum allowed value for setting fans. If this returns None, your model
+    /// is not supported. Please add a model config and PR it.
     pub fn fan_max(&self) -> Option<u8> {
         self.model.map(|m| m.fans.max_speed)
     }
 
+    /// Whether the system has a dgpu or not. If this returns false even though you
+    /// have a dgpu, your model is not supported. Please add a model config and PR it.
     #[cfg(not(test))]
     pub fn has_dgpu(&self) -> bool {
         self.model.map(|m| m.has_dgpu).unwrap_or(false)
@@ -125,6 +133,11 @@ impl Ec {
         ec_sys::HAS_DGPU.load(Ordering::Relaxed)
     }
 
+    /// What WMI version this model is. If this returns None, please add a fw config
+    /// for your ec version and PR it. You can find a ready made config for many
+    /// ec versions below. The fw config format is similar, so it will be easy to copy over.
+    ///
+    /// <https://github.com/BeardOverflow/msi-ec/blob/main/msi-ec.c>
     pub fn wmi_ver(&self) -> Option<WmiVer> {
         self.sys.as_ref().map(|(_, fw)| fw.ver)
     }
