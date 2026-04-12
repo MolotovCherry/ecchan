@@ -1,4 +1,4 @@
-pub mod titan_gt77_12uhs;
+mod titan_gt77_12uhs;
 
 use std::fs;
 

@@ -8,7 +8,7 @@ use tests::EcTestFile as File;
 #[cfg(test)]
 pub(crate) use tests::HAS_DGPU;
 
-use std::{io, os::unix::fs::FileExt as _};
+use std::{io, ops::RangeInclusive, os::unix::fs::FileExt as _};
 
 use nix::errno::Errno;
 use snafu::prelude::*;
@@ -150,15 +150,25 @@ impl EcSys {
         }
     }
 
-    pub fn ec_read_seq(&self, addr: u8, buf: &mut [u8]) -> Result<()> {
-        let len = buf.len().saturating_sub(1);
-        if (addr as usize).saturating_add(len) > 0xFF {
-            whatever!("addr 0x{addr:X} + buf len {} overflows", buf.len());
-        }
+    pub fn ec_read_seq(&self, range: RangeInclusive<u8>, buf: &mut [u8]) -> Result<()> {
+        let start = *range.start();
+        let end = *range.end();
+        let len = buf.len();
+
+        assert!(
+            end >= start,
+            "end on addr 0x{start:02X}..=0x{end:>02X} must be >= start"
+        );
+
+        assert_eq!(
+            end.strict_sub(start) as usize,
+            buf.len().saturating_sub(1),
+            "buf len {len} must equal span of 0x{start:02X}..=0x{end:02X}"
+        );
 
         match self
             .file
-            .read_exact_at(buf, addr as _)
+            .read_exact_at(buf, start as _)
             .context(OtherIoSnafu)
         {
             Ok(_) => Ok(()),
@@ -204,15 +214,25 @@ impl EcSys {
 
     /// # SAFETY
     /// Improper usage of this function will result in permanent hardware damage or a bricked computer
-    pub unsafe fn ec_write_seq(&mut self, addr: u8, vals: &[u8]) -> Result<()> {
-        let len = vals.len().saturating_sub(1);
-        if (addr as usize).saturating_add(len) > 0xFF {
-            whatever!("addr 0x{addr:X} + buf len {} overflows", vals.len());
-        }
+    pub unsafe fn ec_write_seq(&mut self, range: RangeInclusive<u8>, buf: &[u8]) -> Result<()> {
+        let start = *range.start();
+        let end = *range.end();
+        let len = buf.len();
+
+        assert!(
+            end >= start,
+            "end on addr 0x{start:02X}..=0x{end:>02X} must be >= start"
+        );
+
+        assert_eq!(
+            end.strict_sub(start) as usize,
+            buf.len().saturating_sub(1),
+            "buf len {len} must equal span of 0x{start:02X}..=0x{end:02X}"
+        );
 
         match self
             .file
-            .write_all_at(vals, addr as _)
+            .write_all_at(buf, start as _)
             .context(OtherIoSnafu)
         {
             Ok(_) => Ok(()),

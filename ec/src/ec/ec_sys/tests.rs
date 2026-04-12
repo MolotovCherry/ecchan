@@ -148,7 +148,7 @@ impl DerefMut for TestReset {
 
 impl Drop for TestReset {
     fn drop(&mut self) {
-        self.inner.sys.as_mut().unwrap().1 = self._fw;
+        self.inner.sys.as_mut().unwrap().1 = self._fw.clone();
         *self.inner.model.as_mut().unwrap() = self._model;
         self.inner.sys.as_ref().unwrap().0.file.reset();
         HAS_DGPU.store(true, Ordering::Relaxed);
@@ -166,7 +166,7 @@ fn get_ec() -> TestReset {
         let ec_sys = EcSys { file };
 
         let ec = Ec {
-            sys: Some((ec_sys, *FW)),
+            sys: Some((ec_sys, FW.clone())),
             model: Some(*MODEL),
         };
 
@@ -175,7 +175,7 @@ fn get_ec() -> TestReset {
 
     TestReset {
         inner: EC.lock(),
-        _fw: *FW,
+        _fw: FW.clone(),
         _model: *MODEL,
     }
 }

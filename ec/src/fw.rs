@@ -11,50 +11,58 @@
 //! After there's an update to the supported ec list on msi-ec,
 //! feel free to make a PR for inclusion here with corresponding links.
 
-use std::ops::{BitAnd, BitOrAssign, BitXor, Not};
+use std::ops::{BitAnd, BitOrAssign, BitXor, Not, RangeInclusive};
 
 mod wmi2;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum Addr {
     Unsupported,
-    Addr(u8),
+    Single(u8),
+    Range(RangeInclusive<u8>),
 }
 
 impl Addr {
-    pub fn is_supported(&self) -> bool {
-        matches!(self, Addr::Addr(_))
+    pub fn supported(&self) -> bool {
+        matches!(self, Addr::Single(_) | Addr::Range(_))
     }
 
     pub fn get(&self) -> Option<u8> {
         match self {
-            Self::Unsupported => None,
-            Self::Addr(addr) => Some(*addr),
+            Self::Single(addr) => Some(*addr),
+            _ => None,
+        }
+    }
+
+    pub const fn get_range(&self) -> Option<RangeInclusive<u8>> {
+        match self {
+            Self::Range(r) => Some(RangeInclusive::new(*r.start(), *r.end())),
+            _ => None,
         }
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct WebcamConfig {
     pub addr: Addr,
     pub block_addr: Addr,
     pub bit: Bit,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct FnWinSwap {
     pub addr: Addr,
     pub bit: Bit,
     pub invert: bool,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct CoolerBoostConfig {
     pub addr: Addr,
     pub bit: Bit,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct ShiftModeConfig {
     pub addr: Addr,
     pub modes: &'static [(ShiftMode, u8)],
@@ -85,13 +93,13 @@ pub enum ShiftMode {
     Null,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct SuperBatteryConfig {
     pub addr: Addr,
     pub mask: u8,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct FanModeConfig {
     pub addr: Addr,
     pub modes: &'static [(FanMode, u8)],
@@ -116,20 +124,21 @@ pub enum FanMode {
     Null,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Thermal {
     pub rt_temp_addr: Addr,
     pub rt_fan_speed_addr: Addr,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Leds {
     pub mic_mute_led_addr: Addr,
     pub mute_led_addr: Addr,
     pub bit: Bit,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[expect(unused)]
+#[derive(Debug, Clone)]
 pub struct KbdBl {
     pub bl_mode_addr: Addr,
     pub bl_modes: &'static [u8],
@@ -139,7 +148,7 @@ pub struct KbdBl {
     pub max_state: u8,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct FwConfig {
     pub allowed_fw: &'static [&'static str],
     pub ver: WmiVer,
@@ -153,6 +162,7 @@ pub struct FwConfig {
     pub cpu: Thermal,
     pub gpu: Thermal,
     pub leds: Leds,
+    #[expect(unused)]
     pub kbd_bl: KbdBl,
     pub fan_rpm: FanRpm,
     pub cpu_fan_curve: Curve,
@@ -177,7 +187,7 @@ impl FwConfig {
         FW_REGISTRY
             .iter()
             .find(|fw| fw.allowed_fw.contains(&ec_version))
-            .copied()
+            .cloned()
     }
 }
 
@@ -185,13 +195,22 @@ impl FwConfig {
 // Firmware info addresses are universal
 //
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct FwStr {
-    pub addr: u8,
-    pub len: usize,
+    pub addr: Addr,
 }
 
-#[derive(Debug, Copy, Clone)]
+impl FwStr {
+    pub const fn len(&self) -> usize {
+        match &self.addr {
+            Addr::Unsupported => panic!(),
+            Addr::Single(_) => 1,
+            Addr::Range(r) => (*r.end() - *r.start()) as usize + 1,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct FwInfo {
     pub version: FwStr,
     pub date: FwStr,
@@ -200,11 +219,14 @@ pub struct FwInfo {
 
 pub const FW_INFO: FwInfo = FwInfo {
     version: FwStr {
-        addr: 0xA0,
-        len: 12,
+        addr: Addr::Range(0xA0..=0xAB),
     },
-    date: FwStr { addr: 0xAC, len: 8 },
-    time: FwStr { addr: 0xB4, len: 8 },
+    date: FwStr {
+        addr: Addr::Range(0xAC..=0xB3),
+    },
+    time: FwStr {
+        addr: Addr::Range(0xB4..=0xBB),
+    },
 };
 
 //
@@ -216,19 +238,19 @@ pub const FW_INFO: FwInfo = FwInfo {
 ///
 /// Formula: (take care for division by 0)
 /// 480000 / val = rpm
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct FanRpm {
-    pub fan1_addr: u8,
-    pub fan2_addr: u8,
-    pub fan3_addr: u8,
-    pub fan4_addr: u8,
+    pub fan1_addr: Addr,
+    pub fan2_addr: Addr,
+    pub fan3_addr: Addr,
+    pub fan4_addr: Addr,
 }
 
 //
 // Curves
 //
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Curve {
     pub addr: Addr,
 }

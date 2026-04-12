@@ -1,6 +1,8 @@
 mod ec_drv;
 mod ec_sys;
 
+use std::ops::RangeInclusive;
+
 use nix::libc::geteuid;
 use snafu::prelude::*;
 
@@ -16,6 +18,18 @@ use crate::{
 macro_rules! addr {
     ($name:literal, $addr:expr) => {{
         if let Some(addr) = $addr.get() {
+            addr
+        } else {
+            return Err(EcError::Unsupported {
+                name: $name.to_owned(),
+            });
+        }
+    }};
+}
+
+macro_rules! addr_range {
+    ($name:literal, $addr:expr) => {{
+        if let Some(addr) = $addr.get_range() {
             addr
         } else {
             return Err(EcError::Unsupported {
@@ -116,8 +130,10 @@ impl Ec {
     //
 
     fn _fw_version(io: &EcSys) -> Result<String> {
-        let mut buf = [0; FW_INFO.version.len];
-        io.ec_read_seq(FW_INFO.version.addr, &mut buf)?;
+        let addr = const { FW_INFO.version.addr.get_range().unwrap() };
+
+        let mut buf = [0; FW_INFO.version.len()];
+        io.ec_read_seq(addr, &mut buf)?;
         str::from_utf8(&buf)
             .whatever_context("fw_version() received non utf8 data")
             .map(ToOwned::to_owned)
@@ -135,8 +151,10 @@ impl Ec {
 
     pub fn fw_date(&self) -> Result<String> {
         if let Some((io, _)) = self.sys.as_ref() {
-            let mut buf = [0; FW_INFO.date.len];
-            io.ec_read_seq(FW_INFO.date.addr, &mut buf)
+            let addr = const { FW_INFO.date.addr.get_range().unwrap() };
+
+            let mut buf = [0; FW_INFO.date.len()];
+            io.ec_read_seq(addr, &mut buf)
                 .whatever_context::<_, EcError>("fw_date() failed to ec_read_seq()")?;
             let s = str::from_utf8(&buf)
                 .whatever_context::<_, EcError>("fw_date() received non utf8 data")?;
@@ -151,8 +169,10 @@ impl Ec {
 
     pub fn fw_time(&self) -> Result<String> {
         if let Some((io, _)) = self.sys.as_ref() {
-            let mut buf = [0; FW_INFO.time.len];
-            io.ec_read_seq(FW_INFO.time.addr, &mut buf)
+            let addr = const { FW_INFO.time.addr.get_range().unwrap() };
+
+            let mut buf = [0; FW_INFO.time.len()];
+            io.ec_read_seq(addr, &mut buf)
                 .whatever_context::<_, EcError>("fw_time() failed to ec_read_seq()")?;
             let s = str::from_utf8(&buf)
                 .whatever_context::<_, EcError>("fw_time() received non utf8 data")?;
@@ -249,7 +269,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.shift_mode.addr.is_supported()
+            fw.shift_mode.addr.supported()
         } else {
             false
         }
@@ -334,7 +354,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.charge_control_addr.is_supported()
+            fw.charge_control_addr.supported()
         } else {
             false
         }
@@ -397,7 +417,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.super_battery.addr.is_supported()
+            fw.super_battery.addr.supported()
         } else {
             false
         }
@@ -428,11 +448,13 @@ impl Ec {
         };
 
         let addr = match fan {
-            Fan::One => fw.fan_rpm.fan1_addr,
-            Fan::Two => fw.fan_rpm.fan2_addr,
-            Fan::Three => fw.fan_rpm.fan3_addr,
-            Fan::Four => fw.fan_rpm.fan4_addr,
+            Fan::One => &fw.fan_rpm.fan1_addr,
+            Fan::Two => &fw.fan_rpm.fan2_addr,
+            Fan::Three => &fw.fan_rpm.fan3_addr,
+            Fan::Four => &fw.fan_rpm.fan4_addr,
         };
+
+        let addr = addr_range!("fan_rpm", addr);
 
         let mut rpm = [0; 2];
 
@@ -565,7 +587,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.fan_mode.addr.is_supported()
+            fw.fan_mode.addr.supported()
         } else {
             false
         }
@@ -677,7 +699,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.webcam.addr.is_supported()
+            fw.webcam.addr.supported()
         } else {
             false
         }
@@ -687,7 +709,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.webcam.block_addr.is_supported()
+            fw.webcam.block_addr.supported()
         } else {
             false
         }
@@ -747,7 +769,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.cooler_boost.addr.is_supported()
+            fw.cooler_boost.addr.supported()
         } else {
             false
         }
@@ -810,7 +832,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.fn_win_swap.addr.is_supported()
+            fw.fn_win_swap.addr.supported()
         } else {
             false
         }
@@ -967,7 +989,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.leds.mic_mute_led_addr.is_supported()
+            fw.leds.mic_mute_led_addr.supported()
         } else {
             false
         }
@@ -977,7 +999,7 @@ impl Ec {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {
-            fw.leds.mute_led_addr.is_supported()
+            fw.leds.mute_led_addr.supported()
         } else {
             false
         }
@@ -1067,7 +1089,10 @@ impl Ec {
     // Fan curves ; only for WMI2
     //
 
-    fn read_curve<const N: usize, T: From<[u8; N]>>(addr: u8, io: &EcSys) -> Result<T> {
+    fn read_curve<const N: usize, T: From<[u8; N]>>(
+        addr: RangeInclusive<u8>,
+        io: &EcSys,
+    ) -> Result<T> {
         let mut buf = [0; N];
         io.ec_read_seq(addr, &mut buf)
             .whatever_context::<_, EcError>("read_curve() failed to ec_read_seq()")?;
@@ -1077,7 +1102,7 @@ impl Ec {
 
     unsafe fn set_curve<const N: usize, T: Into<[u8; N]>>(
         io: &mut EcSys,
-        addr: u8,
+        addr: RangeInclusive<u8>,
         curve: T,
     ) -> Result<()> {
         let buf = curve.into();
@@ -1095,7 +1120,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("cpu_fan_curve", fw.cpu_fan_curve.addr);
+            let addr = addr_range!("cpu_fan_curve", fw.cpu_fan_curve.addr);
 
             let curve = Self::read_curve(addr, io)?;
             Ok(curve)
@@ -1112,7 +1137,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("cpu_temp_curve", fw.cpu_temp_curve.addr);
+            let addr = addr_range!("cpu_temp_curve", fw.cpu_temp_curve.addr);
 
             let curve = Self::read_curve(addr, io)?;
             Ok(curve)
@@ -1129,7 +1154,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("cpu_hysteresis_curve", fw.cpu_hysteresis_curve.addr);
+            let addr = addr_range!("cpu_hysteresis_curve", fw.cpu_hysteresis_curve.addr);
 
             let curve = Self::read_curve(addr, io)?;
             Ok(curve)
@@ -1150,7 +1175,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("gpu_fan_curve", fw.gpu_fan_curve.addr);
+            let addr = addr_range!("gpu_fan_curve", fw.gpu_fan_curve.addr);
 
             let curve = Self::read_curve(addr, io)?;
             Ok(curve)
@@ -1171,7 +1196,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("gpu_temp_curve", fw.gpu_temp_curve.addr);
+            let addr = addr_range!("gpu_temp_curve", fw.gpu_temp_curve.addr);
 
             let curve = Self::read_curve(addr, io)?;
             Ok(curve)
@@ -1192,7 +1217,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("gpu_hysteresis_curve", fw.gpu_hysteresis_curve.addr);
+            let addr = addr_range!("gpu_hysteresis_curve", fw.gpu_hysteresis_curve.addr);
 
             let curve = Self::read_curve(addr, io)?;
             Ok(curve)
@@ -1209,7 +1234,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("cpu_fan_curve", fw.cpu_fan_curve.addr);
+            let addr = addr_range!("cpu_fan_curve", fw.cpu_fan_curve.addr);
 
             unsafe {
                 Self::set_curve(io, addr, curve)?;
@@ -1229,7 +1254,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("cpu_temp_curve", fw.cpu_temp_curve.addr);
+            let addr = addr_range!("cpu_temp_curve", fw.cpu_temp_curve.addr);
 
             unsafe {
                 Self::set_curve(io, addr, curve)?;
@@ -1249,7 +1274,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("cpu_hysteresis_curve", fw.cpu_hysteresis_curve.addr);
+            let addr = addr_range!("cpu_hysteresis_curve", fw.cpu_hysteresis_curve.addr);
 
             unsafe {
                 Self::set_curve(io, addr, curve)?;
@@ -1273,7 +1298,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("gpu_fan_curve", fw.gpu_fan_curve.addr);
+            let addr = addr_range!("gpu_fan_curve", fw.gpu_fan_curve.addr);
 
             unsafe {
                 Self::set_curve(io, addr, curve)?;
@@ -1297,7 +1322,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("gpu_temp_curve", fw.gpu_temp_curve.addr);
+            let addr = addr_range!("gpu_temp_curve", fw.gpu_temp_curve.addr);
 
             unsafe {
                 Self::set_curve(io, addr, curve)?;
@@ -1321,7 +1346,7 @@ impl Ec {
                 whatever!("only wmi2 is supported");
             }
 
-            let addr = addr!("gpu_hysteresis_curve", fw.gpu_hysteresis_curve.addr);
+            let addr = addr_range!("gpu_hysteresis_curve", fw.gpu_hysteresis_curve.addr);
 
             unsafe {
                 Self::set_curve(io, addr, curve)?;
@@ -1343,7 +1368,7 @@ impl Ec {
     pub fn ec_dump_raw(&self) -> Result<[u8; 256]> {
         if let Some((io, _)) = self.sys.as_ref() {
             let mut dump = [0; 256];
-            io.ec_read_seq(0x00, &mut dump)
+            io.ec_read_seq(0x00..=0xFF, &mut dump)
                 .whatever_context::<_, EcError>("ec_dump_raw() failed to ec_read_seq()")?;
             Ok(dump)
         } else {

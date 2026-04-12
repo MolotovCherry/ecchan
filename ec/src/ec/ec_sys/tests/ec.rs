@@ -40,20 +40,20 @@ fn test_end_seq_read_1() {
     }
 
     let mut buf = [0];
-    io.ec_read_seq(0xFF, &mut buf).unwrap();
+    io.ec_read_seq(0xFF..=0xFF, &mut buf).unwrap();
     assert_read(&ec, 0xFF);
     assert_eq!(0xFE, buf[0]);
     assert_write(&ec, 0xFF, 0xFE);
 }
 
 #[test]
-#[should_panic = "addr 0xFF + buf len 2 overflows"]
+#[should_panic = "buf len 2 must equal span of 0xFF..=0xFF"]
 fn test_end_seq_read_2() {
     let ec = get_ec();
     let io = get_io!(ec);
 
     let mut buf = [0, 0];
-    io.ec_read_seq(0xFF, &mut buf).unwrap();
+    io.ec_read_seq(0xFF..=0xFF, &mut buf).unwrap();
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn test_end_write_seq_1() {
     let io = get_io_mut!(ec);
 
     unsafe {
-        io.ec_write_seq(0xFF, &[0x44]).unwrap();
+        io.ec_write_seq(0xFF..=0xFF, &[0x44]).unwrap();
     }
 
     assert_write(&ec, 0xFF, 0x44);
@@ -70,13 +70,13 @@ fn test_end_write_seq_1() {
 }
 
 #[test]
-#[should_panic = "addr 0xFF + buf len 2 overflows"]
+#[should_panic = "buf len 2 must equal span of 0xFF..=0xFF"]
 fn test_end_seq_write_2() {
     let mut ec = get_ec();
     let io = get_io_mut!(ec);
 
     unsafe {
-        io.ec_write_seq(0xFF, &[0xCE, 0xDE]).unwrap();
+        io.ec_write_seq(0xFF..=0xFF, &[0xCE, 0xDE]).unwrap();
     }
 }
 
@@ -90,7 +90,7 @@ fn test_seq_read_4() {
     let io = get_io!(ec);
 
     let mut buf = [0; 4];
-    io.ec_read_seq(0xF2, &mut buf).unwrap();
+    io.ec_read_seq(0xF2..=0xF5, &mut buf).unwrap();
     assert_read_range(&ec, 0xF2..=0xF5);
     assert_eq!([0x70, 0x00, 0x23, 0x44], buf);
     assert_unwritten(&ec);
@@ -104,7 +104,7 @@ fn test_seq_write_4() {
     let vals = &[0x01, 0x02, 0x03, 0x04];
 
     unsafe {
-        io.ec_write_seq(0xF2, vals).unwrap();
+        io.ec_write_seq(0xF2..=0xF5, vals).unwrap();
     }
 
     assert_write_range(&ec, 0xF2..=0xF5, vals);

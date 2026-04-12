@@ -81,23 +81,23 @@ pub const G2_10: FwConfig = FwConfig {
         "182KIMS1.113", // Raider A18 HX A7VIG
     ],
     ver: WmiVer::Wmi2,
-    charge_control_addr: Addr::Addr(0xD7),
+    charge_control_addr: Addr::Single(0xD7),
     webcam: WebcamConfig {
-        addr: Addr::Addr(0x2E),
-        block_addr: Addr::Addr(0x2F),
+        addr: Addr::Single(0x2E),
+        block_addr: Addr::Single(0x2F),
         bit: Bit::_1,
     },
     fn_win_swap: FnWinSwap {
-        addr: Addr::Addr(0xE8),
+        addr: Addr::Single(0xE8),
         bit: Bit::_4,
         invert: true,
     },
     cooler_boost: CoolerBoostConfig {
-        addr: Addr::Addr(0x98),
+        addr: Addr::Single(0x98),
         bit: Bit::_7,
     },
     shift_mode: ShiftModeConfig {
-        addr: Addr::Addr(0xD2),
+        addr: Addr::Single(0xD2),
         modes: &[
             (ShiftMode::SuperBattery, 0xC2),
             (ShiftMode::Balanced, 0xC1),
@@ -107,11 +107,11 @@ pub const G2_10: FwConfig = FwConfig {
         ],
     },
     super_battery: SuperBatteryConfig {
-        addr: Addr::Addr(0xEB),
+        addr: Addr::Single(0xEB),
         mask: 0x0F,
     },
     fan_mode: FanModeConfig {
-        addr: Addr::Addr(0xD4),
+        addr: Addr::Single(0xD4),
         modes: &[
             (FanMode::Auto, 0x0D),
             (FanMode::Silent, 0x1D),
@@ -120,16 +120,16 @@ pub const G2_10: FwConfig = FwConfig {
         ],
     },
     cpu: Thermal {
-        rt_temp_addr: Addr::Addr(0x68),
-        rt_fan_speed_addr: Addr::Addr(0x71),
+        rt_temp_addr: Addr::Single(0x68),
+        rt_fan_speed_addr: Addr::Single(0x71),
     },
     gpu: Thermal {
-        rt_temp_addr: Addr::Addr(0x80),
-        rt_fan_speed_addr: Addr::Addr(0x89),
+        rt_temp_addr: Addr::Single(0x80),
+        rt_fan_speed_addr: Addr::Single(0x89),
     },
     leds: Leds {
-        mic_mute_led_addr: Addr::Addr(0x2C),
-        mute_led_addr: Addr::Addr(0x2D),
+        mic_mute_led_addr: Addr::Single(0x2C),
+        mute_led_addr: Addr::Single(0x2D),
         bit: Bit::_1,
     },
     kbd_bl: KbdBl {
@@ -141,33 +141,27 @@ pub const G2_10: FwConfig = FwConfig {
         max_state: 3,
     },
     fan_rpm: FanRpm {
-        fan1_addr: 0xC8,
-        fan2_addr: 0xCA,
-        fan3_addr: 0xCC,
-        fan4_addr: 0xCE,
+        fan1_addr: Addr::Range(0xC8..=0xC9),
+        fan2_addr: Addr::Range(0xCA..=0xCB),
+        fan3_addr: Addr::Range(0xCC..=0xCD),
+        fan4_addr: Addr::Range(0xCE..=0xCF),
     },
-    // 0x72-0x78
     cpu_fan_curve: Curve {
-        addr: Addr::Addr(0x72),
+        addr: Addr::Range(0x72..=0x78),
     },
-    // 0x69-0x6F
     cpu_temp_curve: Curve {
-        addr: Addr::Addr(0x69),
+        addr: Addr::Range(0x69..=0x6F),
     },
-    // 0x7A-0x7F
     cpu_hysteresis_curve: Curve {
-        addr: Addr::Addr(0x7A),
+        addr: Addr::Range(0x7A..=0x7F),
     },
-    // 0x8A-0x90
     gpu_fan_curve: Curve {
-        addr: Addr::Addr(0x8A),
+        addr: Addr::Range(0x8A..=0x90),
     },
-    // 0x81-0x87
     gpu_temp_curve: Curve {
-        addr: Addr::Addr(0x81),
+        addr: Addr::Range(0x81..=0x87),
     },
-    // 0x92-0x97
     gpu_hysteresis_curve: Curve {
-        addr: Addr::Addr(0x92),
+        addr: Addr::Range(0x92..=0x97),
     },
 };
