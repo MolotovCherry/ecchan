@@ -10,7 +10,7 @@ use strum::IntoDiscriminant;
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
     fw::{
-        BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FanMode, FwConfig,
+        BatteryChargeMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FanMode, FwConfig,
         KeyDirection, Led, ShiftMode, SuperBattery, Webcam, WmiVer,
     },
     models::{Fans, MethodOp, MethodTy, ModelConfig},
@@ -301,7 +301,7 @@ impl Ec {
     /// being the high end. For examaple, if this returns 60%, the threshold
     /// is 50-60%. We return 80%, which means threashold is 70-80%. 10% means
     /// 0-10% charge. However, when when 100%, it's 100% always.
-    pub fn battery_charge_mode(&self) -> Result<BatteryMode> {
+    pub fn battery_charge_mode(&self) -> Result<BatteryChargeMode> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -319,10 +319,10 @@ impl Ec {
             val.unset_bit(Bit::_7);
 
             let mode = match val {
-                60 => BatteryMode::Healthy,
-                80 => BatteryMode::Balanced,
-                100 => BatteryMode::Mobility,
-                c @ 10..=100 => BatteryMode::from_end(c).unwrap(),
+                60 => BatteryChargeMode::Healthy,
+                80 => BatteryChargeMode::Balanced,
+                100 => BatteryChargeMode::Mobility,
+                c @ 10..=100 => BatteryChargeMode::from_end(c).unwrap(),
                 _ => unreachable!(),
             };
 
@@ -334,7 +334,7 @@ impl Ec {
         }
     }
 
-    pub fn set_battery_charge_mode(&mut self, mode: BatteryMode) -> Result<()> {
+    pub fn set_battery_charge_mode(&mut self, mode: BatteryChargeMode) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {

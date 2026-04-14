@@ -5,5 +5,9 @@ mod ec;
 mod fw;
 mod models;
 
-pub use ec::*;
-pub use fw::{FanMode, SuperBattery};
+pub use ec::{Ec, EcError, Method, MethodData};
+pub use fw::{
+    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, KeyDirection, Led, ShiftMode,
+    SuperBattery, Webcam, WmiVer,
+};
+pub use models::{Fans, MethodOp};

@@ -8,7 +8,7 @@ use super::*;
 fn test_battery_mode() {
     let ec = get_ec();
     let mode = ec.battery_charge_mode().unwrap();
-    assert_eq!(BatteryMode::Healthy, mode);
+    assert_eq!(BatteryChargeMode::Healthy, mode);
 
     assert_read(&ec, 0xD7);
     assert_unwritten(&ec);
@@ -17,16 +17,16 @@ fn test_battery_mode() {
 #[test]
 fn test_set_battery_charge_mode() {
     let mut ec = get_ec();
-    ec.set_battery_charge_mode(BatteryMode::Mobility).unwrap();
+    ec.set_battery_charge_mode(BatteryChargeMode::Mobility).unwrap();
     assert_unread(&ec);
     assert_write(&ec, 0xD7, 0xE4);
 
-    ec.set_battery_charge_mode(BatteryMode::from_start(0).unwrap())
+    ec.set_battery_charge_mode(BatteryChargeMode::from_start(0).unwrap())
         .unwrap();
     assert_unread(&ec);
     assert_write(&ec, 0xD7, 0x8A);
 
-    ec.set_battery_charge_mode(BatteryMode::from_start(23).unwrap())
+    ec.set_battery_charge_mode(BatteryChargeMode::from_start(23).unwrap())
         .unwrap();
     assert_unread(&ec);
     assert_write(&ec, 0xD7, 0xA1);
@@ -43,34 +43,34 @@ fn test_battery_charge_mode_supported() {
 #[test]
 #[should_panic]
 fn test_set_battery_mode_too_low_end() {
-    BatteryMode::from_end(9).unwrap();
+    BatteryChargeMode::from_end(9).unwrap();
 }
 
 #[test]
 fn test_set_battery_mode_lowest() {
-    BatteryMode::from_end(10).unwrap();
+    BatteryChargeMode::from_end(10).unwrap();
 }
 
 #[test]
 #[should_panic]
 fn test_set_battery_mode_too_high_start() {
-    BatteryMode::from_start(91).unwrap();
+    BatteryChargeMode::from_start(91).unwrap();
 }
 
 #[test]
 fn test_set_battery_mode_high_start() {
-    BatteryMode::from_start(90).unwrap();
+    BatteryChargeMode::from_start(90).unwrap();
 }
 
 #[test]
 #[should_panic]
 fn test_set_battery_mode_too_high_end() {
-    BatteryMode::from_end(101).unwrap();
+    BatteryChargeMode::from_end(101).unwrap();
 }
 
 #[test]
 fn test_set_battery_mode_high_end() {
-    BatteryMode::from_end(100).unwrap();
+    BatteryChargeMode::from_end(100).unwrap();
 }
 
 //

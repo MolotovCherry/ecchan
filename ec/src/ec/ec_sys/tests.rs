@@ -46,7 +46,7 @@ use sayuri::sync::{Mutex, MutexGuard};
 use super::*;
 use crate::{
     Ec,
-    fw::{BatteryMode, Curve6, Curve7, FwConfig, SuperBattery, WmiVer},
+    fw::{BatteryChargeMode, Curve6, Curve7, FwConfig, SuperBattery, WmiVer},
     models::ModelConfig,
 };
 

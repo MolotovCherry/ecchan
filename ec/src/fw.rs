@@ -137,7 +137,6 @@ pub struct Leds {
     pub bit: Bit,
 }
 
-#[expect(unused)]
 #[derive(Debug, Clone)]
 pub struct KbdBl {
     pub bl_mode_addr: Addr,
@@ -162,7 +161,6 @@ pub struct FwConfig {
     pub cpu: Thermal,
     pub gpu: Thermal,
     pub leds: Leds,
-    #[expect(unused)]
     pub kbd_bl: KbdBl,
     pub fan_rpm: FanRpm,
     pub cpu_fan_curve: Curve,
@@ -431,7 +429,7 @@ impl SuperBattery {
 pub struct Threshold(u8);
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum BatteryMode {
+pub enum BatteryChargeMode {
     /// 50-60
     Healthy,
     /// 70-80
@@ -448,7 +446,7 @@ pub enum BatteryMode {
     Custom(Threshold),
 }
 
-impl BatteryMode {
+impl BatteryChargeMode {
     /// The start threshold. Charges between N..=N+10
     /// Valid values: 0..=90
     ///

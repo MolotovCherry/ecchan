@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    MethodData,
+    ec::MethodData,
     fw::Addr,
     models::{Method, MethodOp, MethodTy},
 };
