@@ -192,8 +192,14 @@ fn test_method_write_display_overdrive() {
 #[test]
 fn test_method_write_usb_power_share() {
     let mut ec = get_ec();
-    ec.method_write("usb_power_share", MethodOp::WriteBit, MethodData::Bit(true))
-        .unwrap();
+
+    #[rustfmt::skip]
+    ec.method_write(
+        "usb_power_share",
+        MethodOp::WriteBit,
+        MethodData::Bit(true),
+    )
+    .unwrap();
 
     assert_write(&ec, 0xBF, 0x28);
     assert_read(&ec, 0xBF);
