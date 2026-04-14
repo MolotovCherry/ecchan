@@ -34,6 +34,10 @@ This currently requires the Linux `ec_sys` driver is loaded with `write_support`
 
 You may add support for model specific features that are unavailable under fw in the `models` directory. You may find the the model string for your laptop by doing a `cat /sys/class/dmi/id/product_name`.
 
+# Long term goals
+
+Might think about upgrading this to a kernel driver in the far future. But this will have to be when most kernels enable Rust support by default.
+
 # AI Policy
 
 This project has a hard ban on AI usage.
