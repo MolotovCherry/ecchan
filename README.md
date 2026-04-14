@@ -38,6 +38,10 @@ You may add support for model specific features that are unavailable under fw in
 
 Might think about upgrading this to a kernel driver in the far future. But this will have to be when most kernels enable Rust support by default.
 
+# Alternatives
+
+[msi-ec](https://github.com/BeardOverflow/msi-ec) is a great project and is already a kernel driver. Building and installing it is relatively trivial too. However it does not support fan curves and model specific features.
+
 # AI Policy
 
 This project has a hard ban on AI usage.
