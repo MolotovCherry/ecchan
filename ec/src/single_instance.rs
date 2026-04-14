@@ -5,7 +5,7 @@ use std::os::fd::{AsRawFd, OwnedFd};
 
 use nix::{
     Result,
-    sys::socket::{self, Backlog, UnixAddr},
+    sys::socket::{self, UnixAddr},
 };
 
 /// A struct representing one running instance.
@@ -27,10 +27,7 @@ impl SingleInstance {
         )?;
 
         let maybe_sock = match socket::bind(sock.as_raw_fd(), &addr) {
-            Ok(()) => {
-                socket::listen(&sock, Backlog::new(1).unwrap()).unwrap();
-                Some(sock)
-            }
+            Ok(()) => Some(sock),
             Err(nix::errno::Errno::EADDRINUSE) => None,
             Err(e) => return Err(e),
         };
