@@ -27,10 +27,10 @@ This currently requires the Linux `ec_sys` driver is loaded with `write_support`
 
 # Adding support for your model
 
-1. check if your ec version is supported under the `fw` folder.
-2. if it isn't, then check [msi-ec.c](https://github.com/BeardOverflow/msi-ec/blob/main/msi-ec.c) for your specific version
-3. ff it exists there, you may create a new module under `wmi2` for your ec version. The format is similar, so it should be relatively easy to copy it from the c file.
-4. if it does not exist, please check [here](https://github.com/BeardOverflow/msi-ec/blob/main/docs/device_support_guide.md) for how to get the values for your specific model.
+1. Check if your ec version is supported under the `fw` folder.
+2. If it isn't, then check [msi-ec.c](https://github.com/BeardOverflow/msi-ec/blob/main/msi-ec.c) for your specific version
+3. If it exists there, you may create a new module under `wmi2` for your ec version. The format is similar, so it should be relatively easy to copy it from the c file.
+4. If it does not exist, please check [here](https://github.com/BeardOverflow/msi-ec/blob/main/docs/device_support_guide.md) for how to get the addresses and values for your specific model. While you're at it, you may consider making an issue report containing the addresses/values in their repo so they can also supoprt it.
 
 You may add support for model specific features that are unavailable under fw in the `models` directory. You may find the the model string for your laptop by doing a `cat /sys/class/dmi/id/product_name`.
 
