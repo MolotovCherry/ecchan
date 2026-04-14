@@ -12,4 +12,4 @@ strum = { version = "0.28.0", features = ["derive"] }
 
 [dependencies.nix]
 version = "0.31.2"
-features = ["fs"]
+features = ["fs", "socket"]

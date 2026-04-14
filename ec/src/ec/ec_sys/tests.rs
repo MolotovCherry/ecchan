@@ -48,6 +48,7 @@ use crate::{
     Ec,
     fw::{BatteryChargeMode, Curve6, Curve7, FwConfig, SuperBattery, WmiVer},
     models::ModelConfig,
+    single_instance::SingleInstance,
 };
 
 #[rustfmt::skip]
@@ -141,6 +142,7 @@ fn get_ec() -> MutexGuard<'static, Ec> {
         let ec = Ec {
             sys: Some((sys, FW.clone())),
             model: Some(*MODEL),
+            _sa: SingleInstance::new("blahblahblahblah").unwrap(),
         };
 
         Mutex::new(ec)

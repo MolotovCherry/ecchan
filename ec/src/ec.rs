@@ -3,7 +3,7 @@ mod ec_sys;
 
 use std::ops::RangeInclusive;
 
-use nix::libc::geteuid;
+use nix::{errno::Errno, libc::geteuid};
 use snafu::prelude::*;
 use strum::IntoDiscriminant;
 
@@ -14,6 +14,7 @@ use crate::{
         KeyDirection, Led, ShiftMode, SuperBattery, Webcam, WmiVer,
     },
     models::{Fans, MethodOp, MethodTy, ModelConfig},
+    single_instance::SingleInstance,
 };
 
 macro_rules! addr {
@@ -47,9 +48,16 @@ pub enum EcError {
     #[snafu(display("ec requires root privileges"))]
     RootRequired,
     #[snafu(display("{name}() is unsupported"))]
-    Unsupported { name: String },
+    Unsupported {
+        name: String,
+    },
     #[snafu(transparent)]
-    EcSys { source: EcSysError },
+    EcSys {
+        source: EcSysError,
+    },
+    Sock {
+        source: Errno,
+    },
     #[snafu(whatever, display("{message}"))]
     Whatever {
         message: String,
@@ -62,10 +70,19 @@ pub struct Ec {
     sys: Option<(EcSys, FwConfig)>,
     model: Option<ModelConfig>,
     // TODO: ec drv
+    _sa: SingleInstance,
 }
 
 impl Ec {
     pub fn new() -> Result<Self> {
+        // two instances cannot exist at same time for safety
+        let sa = SingleInstance::new("ecchan-sa-0bc40a84a7f6453f06ac6d53e86813bef24")
+            .context(SockSnafu)?;
+
+        if !sa.is_single() {
+            whatever!("another instance is already running");
+        }
+
         if unsafe { geteuid() } != 0 {
             log::error!("ec requires root privileges; please run program as root");
             return Err(EcError::RootRequired);
@@ -104,7 +121,11 @@ impl Ec {
 
         // TODO: ec drv
 
-        let this = Self { sys, model };
+        let this = Self {
+            sys,
+            model,
+            _sa: sa,
+        };
 
         Ok(this)
     }

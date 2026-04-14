@@ -4,6 +4,7 @@ compile_error!("Only Linux is supported");
 mod ec;
 mod fw;
 mod models;
+mod single_instance;
 
 pub use ec::{Ec, EcError, Method, MethodData};
 pub use fw::{
