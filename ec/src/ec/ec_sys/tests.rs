@@ -13,6 +13,7 @@ macro_rules! get_io_mut {
 mod battery;
 mod cooler_boost;
 mod curves;
+mod method_read;
 mod ec;
 mod fan_mode;
 mod fan_rpm;
@@ -30,7 +31,7 @@ use std::{
     array,
     fs::File,
     io::Write as _,
-    ops::{Deref, DerefMut, RangeInclusive},
+    ops::RangeInclusive,
     os::unix::fs::FileExt,
     sync::{
         LazyLock,
@@ -126,36 +127,7 @@ impl FileExt for EcTestFile {
     }
 }
 
-struct TestReset {
-    inner: MutexGuard<'static, Ec>,
-    _fw: FwConfig,
-    _model: ModelConfig,
-}
-
-impl Deref for TestReset {
-    type Target = MutexGuard<'static, Ec>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl DerefMut for TestReset {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
-    }
-}
-
-impl Drop for TestReset {
-    fn drop(&mut self) {
-        self.inner.sys.as_mut().unwrap().1 = self._fw.clone();
-        *self.inner.model.as_mut().unwrap() = self._model;
-        self.inner.sys.as_ref().unwrap().0.file.reset();
-        HAS_DGPU.store(true, Ordering::Relaxed);
-    }
-}
-
-fn get_ec() -> TestReset {
+fn get_ec() -> MutexGuard<'static, Ec> {
     static FW: LazyLock<FwConfig> = LazyLock::new(|| FwConfig::from_name("17Q1IMS1.10C").unwrap());
 
     static MODEL: LazyLock<ModelConfig> =
@@ -163,31 +135,47 @@ fn get_ec() -> TestReset {
 
     static EC: LazyLock<Mutex<Ec>> = LazyLock::new(|| {
         let file = EcTestFile::new();
-        let ec_sys = EcSys { file };
+        let sys = EcSys { file };
 
         let ec = Ec {
-            sys: Some((ec_sys, FW.clone())),
+            sys: Some((sys, FW.clone())),
             model: Some(*MODEL),
         };
 
         Mutex::new(ec)
     });
 
-    TestReset {
-        inner: EC.lock(),
-        _fw: FW.clone(),
-        _model: *MODEL,
+    let mut ec = EC.lock();
+
+    // reset ec to fresh object
+    ec.model = Some(*MODEL);
+
+    match ec.sys.as_mut() {
+        Some(v) => {
+            v.0.file.reset();
+            v.1 = FW.clone();
+        }
+
+        None => {
+            let file = EcTestFile::new();
+            let sys = EcSys { file };
+            ec.sys = Some((sys, FW.clone()));
+        }
     }
+
+    HAS_DGPU.store(true, Ordering::Relaxed);
+
+    ec
 }
 
 #[track_caller]
-fn assert_write(ec: &TestReset, addr: u8, val: u8) {
+fn assert_write(ec: &Ec, addr: u8, val: u8) {
     assert_write_range(ec, addr..=addr, &[val]);
 }
 
 /// Empty vals means assert nothing was written
 #[track_caller]
-fn assert_write_range(ec: &TestReset, addrs: RangeInclusive<u8>, vals: &[u8]) {
+fn assert_write_range(ec: &Ec, addrs: RangeInclusive<u8>, vals: &[u8]) {
     let start = *addrs.start() as usize;
     let end = *addrs.end() as usize;
     let range = start..=end;
@@ -239,7 +227,7 @@ fn assert_write_range(ec: &TestReset, addrs: RangeInclusive<u8>, vals: &[u8]) {
 }
 
 #[track_caller]
-fn assert_unwritten(ec: &TestReset) {
+fn assert_unwritten(ec: &Ec) {
     let writes = &ec.sys.as_ref().unwrap().0.file.writes;
     for (addr, w) in writes.iter().enumerate() {
         let addr = addr as u8;
@@ -249,7 +237,7 @@ fn assert_unwritten(ec: &TestReset) {
 }
 
 #[track_caller]
-fn assert_unread(ec: &TestReset) {
+fn assert_unread(ec: &Ec) {
     let reads = &ec.sys.as_ref().unwrap().0.file.reads;
     for (addr, r) in reads.iter().enumerate() {
         let addr = addr as u8;

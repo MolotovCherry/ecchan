@@ -5,6 +5,7 @@ use std::ops::RangeInclusive;
 
 use nix::libc::geteuid;
 use snafu::prelude::*;
+use strum::IntoDiscriminant;
 
 use crate::{
     ec::ec_sys::{EcSys, EcSysError},
@@ -12,7 +13,7 @@ use crate::{
         BatteryMode, Bit, BitSet, CoolerBoost, Curve6, Curve7, FW_INFO, FanMode, FwConfig,
         KeyDirection, Led, ShiftMode, SuperBattery, Webcam, WmiVer,
     },
-    models::{Fans, ModelConfig},
+    models::{Fans, MethodOp, MethodTy, ModelConfig},
 };
 
 macro_rules! addr {
@@ -1450,4 +1451,191 @@ impl Ec {
 
         Ok(buf)
     }
+
+    //
+    // Custom Methods specific to each laptop model
+    //
+
+    pub fn method_list(&self) -> Vec<Method> {
+        let mut buf = Vec::new();
+
+        if let Some(config) = self.model.as_ref() {
+            for me in config.methods {
+                let ops = me.ty.iter().map(IntoDiscriminant::discriminant).collect();
+
+                let method = Method {
+                    name: me.name,
+                    method: me.method,
+                    ops,
+                };
+
+                buf.push(method);
+            }
+        }
+
+        buf
+    }
+
+    pub fn method_read(&self, method: &str, op: MethodOp) -> Result<MethodData> {
+        let Some((io, _)) = self.sys.as_ref() else {
+            return Err(EcError::Unsupported {
+                name: "method_read".to_owned(),
+            });
+        };
+
+        if !matches!(op, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange) {
+            whatever!("{op:?} is not a kind of read");
+        }
+
+        let m = match self.model.as_ref() {
+            Some(m) => m
+                .methods
+                .iter()
+                .find(|m| m.method == method)
+                .with_whatever_context::<_, _, EcError>(|| {
+                    format!("method {method}() not found")
+                })?,
+
+            None => whatever!("model config does not exist"),
+        };
+
+        let addr = m.addr.get();
+        let range = m.addr.get_range();
+
+        assert!(m.addr.supported(), "address should be supported");
+
+        let is_read = m.ty.contains(&MethodTy::Read);
+        let read_bit = m.ty.iter().find(|m| matches!(m, MethodTy::ReadBit { .. }));
+        let is_range = m.ty.contains(&MethodTy::ReadRange);
+
+        let res = match op {
+            MethodOp::Read if is_read && let Some(addr) = addr => {
+                let byte = io.ec_read(addr)?;
+                MethodData::Byte(byte)
+            }
+
+            MethodOp::ReadRange if is_range && let Some(range) = range => {
+                let start = *range.start();
+                let end = *range.end();
+
+                assert!(end >= start);
+
+                let len = end.abs_diff(start) as usize + 1;
+                let mut buf = vec![0; len];
+
+                io.ec_read_seq(range, &mut buf)?;
+                MethodData::Range(buf)
+            }
+
+            MethodOp::ReadBit
+                if let Some(MethodTy::ReadBit { bit, invert }) = read_bit
+                    && let Some(addr) = addr =>
+            {
+                let bit = io.ec_read_bit(addr, *bit)?;
+                MethodData::Bit(bit ^ *invert)
+            }
+
+            _ => whatever!("{method}() does not expose {op:?} capability"),
+        };
+
+        Ok(res)
+    }
+
+    pub fn method_write(&mut self, method: &str, op: MethodOp, data: MethodData) -> Result<()> {
+        let Some((io, _)) = self.sys.as_mut() else {
+            return Err(EcError::Unsupported {
+                name: "method_write".to_owned(),
+            });
+        };
+
+        if !matches!(
+            op,
+            MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange
+        ) {
+            whatever!("{op:?} is not a kind of write");
+        }
+
+        let m = match self.model.as_ref() {
+            Some(m) => m
+                .methods
+                .iter()
+                .find(|m| m.method == method)
+                .with_whatever_context::<_, _, EcError>(|| {
+                    format!("method {method}() not found")
+                })?,
+
+            None => whatever!("model config does not exist"),
+        };
+
+        let addr = m.addr.get();
+        let range = m.addr.get_range();
+
+        assert!(m.addr.supported(), "address should be supported");
+
+        let is_write = m.ty.contains(&MethodTy::Write);
+        let write_bit = m.ty.iter().find(|m| matches!(m, MethodTy::WriteBit { .. }));
+        let is_range = m.ty.contains(&MethodTy::WriteRange);
+
+        match op {
+            #[rustfmt::skip]
+            MethodOp::WriteBit
+                if let Some(MethodTy::WriteBit { bit, invert }) = write_bit
+                    && let Some(addr) = addr
+                    && let MethodData::Bit(state) = data => unsafe {
+                io.ec_write_bit(addr, *bit, state ^ *invert)?;
+            },
+
+            #[rustfmt::skip]
+            MethodOp::Write
+                if is_write
+                    && let Some(addr) = addr
+                    && let MethodData::Byte(byte) = data => unsafe {
+                io.ec_write(addr, byte)?;
+            },
+
+            MethodOp::WriteRange
+                if is_range
+                    && let Some(range) = range
+                    && let MethodData::Range(value) = data =>
+            {
+                let start = *range.start();
+                let end = *range.end();
+
+                assert!(end >= start);
+
+                unsafe {
+                    io.ec_write_seq(range, &value)?;
+                }
+            }
+
+            _ => whatever!("{method}() does not expose write capability"),
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Method {
+    pub name: &'static str,
+    pub method: &'static str,
+    pub ops: Vec<MethodOp>,
+}
+
+/// Data that is returned from Read* ops,
+/// or is given for Write* ops.
+///
+/// Each variant must be used with a specific MethodOpTag.
+/// Get a list using method_list(); whichever tag is specified
+/// there will determine which of these are required/returned.
+///
+/// See docs on each variant for which op tags correspond to which variant
+#[derive(Debug, Clone)]
+pub enum MethodData {
+    /// ReadBit/WriteBit ops
+    Bit(bool),
+    /// Read/Write ops
+    Byte(u8),
+    /// ReadRange/WriteRange ops
+    Range(Vec<u8>),
 }

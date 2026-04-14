@@ -2,7 +2,11 @@ mod titan_gt77_12uhs;
 
 use std::fs;
 
-#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
+use strum::EnumDiscriminants;
+
+use crate::fw::{Addr, Bit};
+
+#[derive(Debug, Copy, Clone)]
 pub struct FanConfig {
     pub max_speed: u8,
     /// The highest number fan, i.e. how many fans total there are
@@ -18,11 +22,37 @@ pub enum Fans {
     Four,
 }
 
+#[derive(Debug, Clone)]
+pub struct Method {
+    pub name: &'static str,
+    pub method: &'static str,
+    pub addr: Addr,
+    pub ty: &'static [MethodTy],
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumDiscriminants)]
+#[strum_discriminants(name(MethodOp))]
+pub enum MethodTy {
+    // single bit read/write
+    // requires addr to be Addr::Single
+    ReadBit { bit: Bit, invert: bool },
+    WriteBit { bit: Bit, invert: bool },
+
+    // Single byte read/write
+    Read,
+    Write,
+
+    // Range of bytes read/write
+    ReadRange,
+    WriteRange,
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct ModelConfig {
     pub name: &'static str,
     pub has_dgpu: bool,
     pub fans: FanConfig,
+    pub methods: &'static [Method],
 }
 
 impl ModelConfig {
