@@ -36,7 +36,13 @@ You may add support for model specific features that are unavailable under fw in
 
 # AI Policy
 
+This project has a hard ban on AI usage.
+
 No AI was used in the making of this library (whether by programming or using it to understand things). It is entirely human produced.
+
+# Contributions
+
+Contributions to further improve and expand ec version and model support are welcome. As per the AI policy, AI is not allowed to be used in the making of your contribution, and any such PRs and issues will immediately be rejected. If you used AI, please do not contribute.
 
 # Disclaimer
 
