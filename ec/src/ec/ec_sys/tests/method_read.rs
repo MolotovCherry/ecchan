@@ -1,5 +1,6 @@
 use super::*;
 use crate::{
+    MethodData,
     fw::Addr,
     models::{Method, MethodOp, MethodTy},
 };
@@ -148,4 +149,32 @@ fn test_method_read_bad_range() {
     );
 
     _ = ec.method_read("-", MethodOp::ReadRange);
+}
+
+//
+// Test actual model functions for safety
+//
+
+#[test]
+fn test_method_read_display_overdrive() {
+    let ec = get_ec();
+    let r = ec
+        .method_read("display_overdrive", MethodOp::ReadBit)
+        .unwrap();
+
+    assert_eq!(r, MethodData::Bit(false));
+    assert_read(&ec, 0x2E);
+    assert_unwritten(&ec);
+}
+
+#[test]
+fn test_method_read_usb_power_share() {
+    let ec = get_ec();
+    let r = ec
+        .method_read("usb_power_share", MethodOp::ReadBit)
+        .unwrap();
+
+    assert_eq!(r, MethodData::Bit(false));
+    assert_read(&ec, 0xBF);
+    assert_unwritten(&ec);
 }

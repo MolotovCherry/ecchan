@@ -13,13 +13,14 @@ macro_rules! get_io_mut {
 mod battery;
 mod cooler_boost;
 mod curves;
-mod method_read;
 mod ec;
 mod fan_mode;
 mod fan_rpm;
 mod fan_supported;
 mod fw;
 mod key_swap;
+mod method_read;
+mod method_write;
 mod misc;
 mod mute_leds;
 mod rt;

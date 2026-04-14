@@ -1608,7 +1608,7 @@ impl Ec {
                 }
             }
 
-            _ => whatever!("{method}() does not expose write capability"),
+            _ => whatever!("{method}() does not expose {op:?} capability"),
         }
 
         Ok(())
@@ -1630,7 +1630,7 @@ pub struct Method {
 /// there will determine which of these are required/returned.
 ///
 /// See docs on each variant for which op tags correspond to which variant
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MethodData {
     /// ReadBit/WriteBit ops
     Bit(bool),
