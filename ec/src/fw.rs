@@ -137,6 +137,7 @@ pub struct Leds {
     pub bit: Bit,
 }
 
+#[expect(unused)]
 #[derive(Debug, Clone)]
 pub struct KbdBl {
     pub bl_mode_addr: Addr,
@@ -161,6 +162,7 @@ pub struct FwConfig {
     pub cpu: Thermal,
     pub gpu: Thermal,
     pub leds: Leds,
+    #[expect(unused)]
     pub kbd_bl: KbdBl,
     pub fan_rpm: FanRpm,
     pub cpu_fan_curve: Curve,

@@ -50,6 +50,7 @@ pub enum MethodTy {
 #[derive(Debug, Copy, Clone)]
 pub struct ModelConfig {
     pub name: &'static str,
+    #[cfg_attr(test, expect(unused))]
     pub has_dgpu: bool,
     pub fans: FanConfig,
     pub methods: &'static [Method],
