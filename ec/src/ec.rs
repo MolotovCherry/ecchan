@@ -301,7 +301,7 @@ impl Ec {
     /// being the high end. For examaple, if this returns 60%, the threshold
     /// is 50-60%. We return 80%, which means threashold is 70-80%. 10% means
     /// 0-10% charge. However, when when 100%, it's 100% always.
-    pub fn battery_mode(&self) -> Result<BatteryMode> {
+    pub fn battery_charge_mode(&self) -> Result<BatteryMode> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_ref() {
@@ -334,7 +334,7 @@ impl Ec {
         }
     }
 
-    pub fn set_battery_mode(&mut self, mode: BatteryMode) -> Result<()> {
+    pub fn set_battery_charge_mode(&mut self, mode: BatteryMode) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {
@@ -368,7 +368,7 @@ impl Ec {
         }
     }
 
-    pub fn battery_mode_supported(&self) -> bool {
+    pub fn battery_charge_mode_supported(&self) -> bool {
         if false {
             todo!("ec drv");
         } else if let Some((_, fw)) = self.sys.as_ref() {

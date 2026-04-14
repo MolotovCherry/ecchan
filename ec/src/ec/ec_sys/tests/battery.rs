@@ -7,7 +7,7 @@ use super::*;
 #[test]
 fn test_battery_mode() {
     let ec = get_ec();
-    let mode = ec.battery_mode().unwrap();
+    let mode = ec.battery_charge_mode().unwrap();
     assert_eq!(BatteryMode::Healthy, mode);
 
     assert_read(&ec, 0xD7);
@@ -15,27 +15,27 @@ fn test_battery_mode() {
 }
 
 #[test]
-fn test_set_battery_mode() {
+fn test_set_battery_charge_mode() {
     let mut ec = get_ec();
-    ec.set_battery_mode(BatteryMode::Mobility).unwrap();
+    ec.set_battery_charge_mode(BatteryMode::Mobility).unwrap();
     assert_unread(&ec);
     assert_write(&ec, 0xD7, 0xE4);
 
-    ec.set_battery_mode(BatteryMode::from_start(0).unwrap())
+    ec.set_battery_charge_mode(BatteryMode::from_start(0).unwrap())
         .unwrap();
     assert_unread(&ec);
     assert_write(&ec, 0xD7, 0x8A);
 
-    ec.set_battery_mode(BatteryMode::from_start(23).unwrap())
+    ec.set_battery_charge_mode(BatteryMode::from_start(23).unwrap())
         .unwrap();
     assert_unread(&ec);
     assert_write(&ec, 0xD7, 0xA1);
 }
 
 #[test]
-fn test_battery_mode_supported() {
+fn test_battery_charge_mode_supported() {
     let ec = get_ec();
-    assert!(ec.battery_mode_supported());
+    assert!(ec.battery_charge_mode_supported());
     assert_unread(&ec);
     assert_unwritten(&ec);
 }
