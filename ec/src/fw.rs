@@ -13,6 +13,8 @@
 
 use std::ops::{BitAnd, BitOrAssign, BitXor, Not, RangeInclusive};
 
+use serde::{Deserialize, Serialize};
+
 mod wmi2;
 
 #[derive(Debug, Clone)]
@@ -79,7 +81,7 @@ impl ShiftModeConfig {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ShiftMode {
     /// User High / Extreme Performance (old: Sport Mode)
     ExtremePerformance,
@@ -116,7 +118,7 @@ impl FanModeConfig {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FanMode {
     Auto,
     Silent,
@@ -255,7 +257,7 @@ pub struct Curve {
     pub addr: Addr,
 }
 
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Curve6 {
     pub n1: u8,
     pub n2: u8,
@@ -294,7 +296,7 @@ impl From<Curve6> for [u8; 6] {
     }
 }
 
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Curve7 {
     pub n1: u8,
     pub n2: u8,
@@ -415,7 +417,7 @@ impl BitSet for u8 {
 // Battery
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SuperBattery {
     Off,
     On,
@@ -427,10 +429,10 @@ impl SuperBattery {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Threshold(u8);
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BatteryChargeMode {
     /// 50-60
     Healthy,
@@ -506,7 +508,7 @@ impl BatteryChargeMode {
 // Webcam
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Webcam {
     On,
     Off,
@@ -522,7 +524,7 @@ impl Webcam {
 // Cooler Boost
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CoolerBoost {
     On,
     Off,
@@ -538,7 +540,7 @@ impl CoolerBoost {
 // Fn Win Swap
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum KeyDirection {
     Left,
     Right,
@@ -548,7 +550,7 @@ pub enum KeyDirection {
 // LEDs
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Led {
     On,
     Off,
@@ -558,7 +560,7 @@ pub enum Led {
 // Format
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WmiVer {
     Wmi1,
     Wmi2,

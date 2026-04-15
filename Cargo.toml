@@ -2,5 +2,6 @@
 resolver = "3"
 members = [
     "ec",
-    "msi-flux"
+    "ecchan-dbus",
+    "ecchan-server"
 ]

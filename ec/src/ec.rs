@@ -4,6 +4,7 @@ mod ec_sys;
 use std::ops::RangeInclusive;
 
 use nix::{errno::Errno, libc::geteuid};
+use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 use strum::IntoDiscriminant;
 
@@ -424,7 +425,7 @@ impl Ec {
         }
     }
 
-    pub fn set_super_battery(&mut self, kind: SuperBattery) -> Result<()> {
+    pub fn set_super_battery(&mut self, state: SuperBattery) -> Result<()> {
         if false {
             todo!("ec drv");
         } else if let Some((io, fw)) = self.sys.as_mut() {
@@ -434,7 +435,7 @@ impl Ec {
                 .ec_read(addr)
                 .whatever_context::<_, EcError>("set_super_battery() failed to ec_read()")?;
 
-            let val = match kind {
+            let val = match state {
                 SuperBattery::Off => raw & !fw.super_battery.mask,
                 SuperBattery::On => raw | fw.super_battery.mask,
             };
@@ -1477,7 +1478,7 @@ impl Ec {
     // Custom Methods specific to each laptop model
     //
 
-    pub fn method_list(&self) -> Vec<Method> {
+    pub fn method_list(&self) -> Vec<Method<'static>> {
         let mut buf = Vec::new();
 
         if let Some(config) = self.model.as_ref() {
@@ -1636,10 +1637,10 @@ impl Ec {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Method {
-    pub name: &'static str,
-    pub method: &'static str,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Method<'a> {
+    pub name: &'a str,
+    pub method: &'a str,
     pub ops: Vec<MethodOp>,
 }
 
@@ -1651,7 +1652,7 @@ pub struct Method {
 /// there will determine which of these are required/returned.
 ///
 /// See docs on each variant for which op tags correspond to which variant
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MethodData {
     /// ReadBit/WriteBit ops
     Bit(bool),

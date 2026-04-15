@@ -1,7 +1,10 @@
 [package]
-name = "msi-flux"
+name = "ecchan"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 ec = { path = "../ec" }
+dbus = "0.9.10"
+dbus-crossroads = "0.5.3"
+sayuri = "0.1.5"

@@ -1,0 +1,11 @@
+pub mod battery;
+pub mod ec;
+pub mod fans;
+pub mod fw;
+pub mod key_swap;
+pub mod leds;
+pub mod methods;
+pub mod rt;
+pub mod shift_mode;
+pub mod thermal;
+pub mod webcam;

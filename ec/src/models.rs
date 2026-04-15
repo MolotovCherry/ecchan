@@ -2,6 +2,7 @@ mod titan_gt77_12uhs;
 
 use std::fs;
 
+use serde::{Deserialize, Serialize};
 use strum::EnumDiscriminants;
 
 use crate::fw::{Addr, Bit};
@@ -13,7 +14,7 @@ pub struct FanConfig {
     pub count: Fans,
 }
 
-#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Fans {
     #[default]
     One,
@@ -32,6 +33,7 @@ pub struct Method {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumDiscriminants)]
 #[strum_discriminants(name(MethodOp))]
+#[strum_discriminants(derive(Serialize, Deserialize))]
 pub enum MethodTy {
     // single bit read/write
     // requires addr to be Addr::Single
