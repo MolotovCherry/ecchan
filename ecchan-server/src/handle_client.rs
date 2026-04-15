@@ -1,7 +1,4 @@
-use std::{
-    io::{self, ErrorKind, Read as _, Write as _},
-    os::unix::net::UnixStream,
-};
+use std::io::{self, ErrorKind};
 
 use ec::{Ec, EcError};
 use ecchan_ipc::{
@@ -9,6 +6,9 @@ use ecchan_ipc::{
     ret::{Bin, Ret, RetVal},
 };
 use snafu::{ResultExt, Snafu};
+use tokio::{net::UnixStream, select};
+
+use crate::signal::ShutdownSignal;
 
 #[derive(Debug, Snafu)]
 pub enum ClientError {
@@ -17,24 +17,32 @@ pub enum ClientError {
     Serde { source: serde_json::Error },
 }
 
-pub fn handle_client(client: &mut UnixStream, ec: &mut Ec) -> Result<(), ClientError> {
+pub async fn handle_client(
+    client: &mut UnixStream,
+    ec: &mut Ec,
+    shutdown: &ShutdownSignal,
+) -> Result<(), ClientError> {
     let mut buf = [0u8; 1024];
     let mut msg_buf = Vec::with_capacity(1024);
 
-    let mut sentinel_pos = 0;
-    // drain buf on next run
-    let mut drain_buf = false;
-
     log::debug!("client connected");
 
-    let mut z = 0;
+    let mut sentinel_pos = 0;
+    let mut zeroes = 0;
+    let mut drain = false;
+
     loop {
-        if drain_buf {
+        if drain {
             msg_buf.drain(..=sentinel_pos);
-            drain_buf = false;
+            drain = false;
         }
 
-        match client.read(&mut buf) {
+        select! {
+            _ = shutdown.wait() => break,
+            v = client.readable() => v.context(IoSnafu)?,
+        }
+
+        match client.try_read(&mut buf) {
             Ok(n) => match n {
                 0 => break,
                 n => {
@@ -46,21 +54,23 @@ pub fn handle_client(client: &mut UnixStream, ec: &mut Ec) -> Result<(), ClientE
                     // count zeroes
                     for &b in msg {
                         if b == 0 {
-                            z += 1;
+                            zeroes += 1;
                         }
 
-                        if z >= 2 {
+                        if zeroes >= 2 {
                             break;
                         }
                     }
 
                     // ensure we have 2 zeroes (begin and end sentinel)
-                    if z < 2 {
+                    if zeroes < 2 {
                         continue;
                     }
 
+                    drain = true;
+
                     // we got past initial read, so reset z for next time
-                    z = 0;
+                    zeroes = 0;
 
                     sentinel_pos = msg_buf
                         .iter()
@@ -77,8 +87,6 @@ pub fn handle_client(client: &mut UnixStream, ec: &mut Ec) -> Result<(), ClientE
                 _ => return Err(e).context(IoSnafu),
             },
         }
-
-        drain_buf = true;
 
         // skip initial sentinel, but include last sentinel
         let buf = &mut msg_buf[1..sentinel_pos];
@@ -116,7 +124,27 @@ pub fn handle_client(client: &mut UnixStream, ec: &mut Ec) -> Result<(), ClientE
 
         log::debug!("server response: {ser}");
 
-        client.write_all(&data).context(IoSnafu)?;
+        client.writable().await.context(IoSnafu)?;
+
+        let mut n = 0;
+        loop {
+            let data_slice = &data[n..];
+
+            match client.try_write(data_slice) {
+                Ok(c) => {
+                    n += c;
+
+                    if n >= data.len() {
+                        break;
+                    }
+                }
+
+                Err(e) => match e.kind() {
+                    ErrorKind::WouldBlock => continue,
+                    _ => return Err(e).context(IoSnafu),
+                },
+            }
+        }
     }
 
     Ok(())
