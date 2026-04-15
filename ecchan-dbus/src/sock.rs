@@ -51,11 +51,15 @@ impl Client {
 
         let mut buf = [0; 1024];
 
-        let mut z = 0;
+        let mut zeroes = 0;
         let data = loop {
             match self.conn.read(&mut buf) {
                 Ok(n) => match n {
-                    0 => continue,
+                    0 => {
+                        return Err(ClientError::Io {
+                            source: io::Error::new(ErrorKind::BrokenPipe, "no data left in socket"),
+                        });
+                    }
                     n => {
                         let msg = &buf[..n];
 
@@ -63,18 +67,10 @@ impl Client {
                         self.buf.extend_from_slice(msg);
 
                         // count zeroes
-                        for &b in msg {
-                            if b == 0 {
-                                z += 1;
-                            }
-
-                            if z >= 2 {
-                                break;
-                            }
-                        }
+                        zeroes += msg.iter().filter(|b| **b == 0).count();
 
                         // ensure we have 2 zeroes (begin and end sentinel)
-                        if z < 2 {
+                        if zeroes < 2 {
                             continue;
                         }
 

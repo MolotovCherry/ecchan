@@ -52,15 +52,7 @@ pub async fn handle_client(
                     msg_buf.extend_from_slice(msg);
 
                     // count zeroes
-                    for &b in msg {
-                        if b == 0 {
-                            zeroes += 1;
-                        }
-
-                        if zeroes >= 2 {
-                            break;
-                        }
-                    }
+                    zeroes += msg.iter().filter(|b| **b == 0).count();
 
                     // ensure we have 2 zeroes (begin and end sentinel)
                     if zeroes < 2 {
