@@ -3,5 +3,6 @@ resolver = "3"
 members = [
     "ec",
     "ecchan-dbus",
+    "ecchan-ipc",
     "ecchan-server"
 ]

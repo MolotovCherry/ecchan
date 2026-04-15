@@ -182,18 +182,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "ecchan-ipc"
+version = "0.1.0"
+dependencies = [
+ "ec",
+ "serde",
+ "serde-big-array",
+]
+
+[[package]]
 name = "ecchan-server"
 version = "0.1.0"
 dependencies = [
  "cobs",
  "ctrlc",
  "ec",
+ "ecchan-ipc",
  "env_logger",
  "log",
  "rustix",
- "sayuri",
- "serde",
- "serde-big-array",
  "serde_json",
  "snafu",
 ]

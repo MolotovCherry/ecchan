@@ -1,7 +1,7 @@
 use std::os::fd::{AsFd as _, BorrowedFd};
 
 use ec::{Ec, EcError};
-use ecchan_server::{
+use ecchan_ipc::{
     call::Call,
     ret::{Bin, Ret, RetVal},
 };
