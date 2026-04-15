@@ -33,7 +33,7 @@ pub struct Client {
 
 impl Client {
     pub fn new() -> io::Result<Self> {
-        let conn = UnixStream::connect(ecchan_ipc::SOCK)?;
+        let conn = UnixStream::connect(ecchan_ipc::get_socket_path())?;
         Ok(Self {
             conn,
             buf: vec![0; 1024],

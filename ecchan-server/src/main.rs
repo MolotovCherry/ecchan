@@ -4,7 +4,7 @@ use std::{
     error::Error,
     fs,
     os::unix::{fs::PermissionsExt, net::UnixListener},
-    path::Path,
+    path::PathBuf,
 };
 
 use ec::Ec;
@@ -18,13 +18,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut ec = Ec::new()?;
 
-    let sock_path = Path::new(ecchan_ipc::SOCK);
-    _ = fs::remove_file(sock_path);
+    let sock_path = PathBuf::from(ecchan_ipc::get_socket_path());
+    _ = fs::remove_file(&sock_path);
 
-    let sock = UnixListener::bind(sock_path)?;
-    let mut perms = fs::metadata(sock_path)?.permissions();
+    let sock = UnixListener::bind(&sock_path)?;
+    let mut perms = fs::metadata(&sock_path)?.permissions();
     perms.set_mode(0o666);
-    fs::set_permissions(sock_path, perms)?;
+    fs::set_permissions(&sock_path, perms)?;
 
     for stream in sock.incoming() {
         let mut stream = match stream {
