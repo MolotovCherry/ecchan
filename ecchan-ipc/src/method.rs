@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// A ipc call. Make a value of this and json serialize it to call.
 /// Returns an equivalent return type in Ret (see original fn for type)
 #[derive(Serialize, Deserialize)]
-pub enum Call<'a> {
+pub enum Method<'a> {
     // Firmware
     FwVersion,
     FwDate,

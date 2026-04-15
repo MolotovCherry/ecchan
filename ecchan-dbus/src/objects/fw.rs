@@ -1,15 +1,30 @@
 use dbus_crossroads::IfaceBuilder;
+use ecchan_ipc::method::Method;
 
-use crate::{EcSession, ec::DbusEcError};
+use crate::{Data, err::ToMethodErr};
 
-pub fn build(b: &mut IfaceBuilder<EcSession>) {
-    b.method("info", (), ("version", "date", "time"), |_, session, ()| {
-        let ec = session.ec.lock();
+pub fn build(b: &mut IfaceBuilder<Data>) {
+    b.method("version", (), ("version",), |_, data, ()| {
+        let client = &mut data.client;
 
-        let version = ec.fw_version().map_err(Into::<DbusEcError>::into)?;
-        let date = ec.fw_date().map_err(Into::<DbusEcError>::into)?;
-        let time = ec.fw_time().map_err(Into::<DbusEcError>::into)?;
+        let version = client.call(Method::FwVersion).to_method_err()?.str();
 
-        Ok((version, date, time))
+        Ok((version,))
+    });
+
+    b.method("date", (), ("date",), |_, data, ()| {
+        let client = &mut data.client;
+
+        let date = client.call(Method::FwDate).to_method_err()?.str();
+
+        Ok((date,))
+    });
+
+    b.method("time", (), ("time",), |_, data, ()| {
+        let client = &mut data.client;
+
+        let time = client.call(Method::FwTime).to_method_err()?.str();
+
+        Ok((time,))
     });
 }

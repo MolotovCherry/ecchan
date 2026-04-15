@@ -4,7 +4,7 @@ use std::{
 };
 
 use ecchan_ipc::{
-    call::Call,
+    method::Method,
     ret::{Ret, RetVal},
 };
 use snafu::{ResultExt as _, Snafu};
@@ -41,7 +41,7 @@ impl Client {
         })
     }
 
-    pub fn call<'a>(&'a mut self, call: Call) -> Result<RetVal<'a>, ClientError> {
+    pub fn call<'a>(&'a mut self, call: Method) -> Result<RetVal<'a>, ClientError> {
         self.buf.clear();
 
         let data = serde_json::to_string(&call).context(JsonSnafu)?;
