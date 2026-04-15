@@ -1,25 +1,23 @@
-use std::os::fd::{AsFd as _, BorrowedFd};
+use std::{
+    io::{self, ErrorKind, Read as _, Write as _},
+    os::unix::net::UnixStream,
+};
 
 use ec::{Ec, EcError};
 use ecchan_ipc::{
     call::Call,
     ret::{Bin, Ret, RetVal},
 };
-use rustix::{
-    event::{PollFd, PollFlags, poll},
-    io::{Errno, read, write},
-};
 use snafu::{ResultExt, Snafu};
 
 #[derive(Debug, Snafu)]
 pub enum ClientError {
-    Sock { source: Errno },
+    Io { source: io::Error },
     Ec { source: EcError },
     Serde { source: serde_json::Error },
-    Exit,
 }
 
-pub fn handle_client(client: BorrowedFd, ec: &mut Ec) -> Result<(), ClientError> {
+pub fn handle_client(client: &mut UnixStream, ec: &mut Ec) -> Result<(), ClientError> {
     let mut buf = [0u8; 1024];
     let mut msg_buf = Vec::with_capacity(1024);
 
@@ -27,48 +25,64 @@ pub fn handle_client(client: BorrowedFd, ec: &mut Ec) -> Result<(), ClientError>
     // drain buf on next run
     let mut drain_buf = false;
 
-    let mut events = [PollFd::from_borrowed_fd(client.as_fd(), PollFlags::IN)];
-
+    let mut z = 0;
     loop {
         if drain_buf {
-            msg_buf.drain(..=sentinel_pos);
+            msg_buf.drain(..sentinel_pos);
             drain_buf = false;
         }
 
-        match poll(&mut events, None) {
-            Ok(_) => (),
-            Err(e) => match e {
-                Errno::INTR => return Err(ClientError::Exit),
-                e => return Err(e).context(SockSnafu),
+        match client.read(&mut buf) {
+            Ok(n) => match n {
+                0 => break,
+                n => {
+                    let msg = &buf[..n];
+
+                    // accumulate full message
+                    msg_buf.extend_from_slice(msg);
+
+                    // count zeroes
+                    for &b in msg {
+                        if b == 0 {
+                            z += 1;
+                        }
+
+                        if z >= 2 {
+                            break;
+                        }
+                    }
+
+                    // ensure we have 2 zeroes (begin and end sentinel)
+                    if z < 2 {
+                        continue;
+                    }
+
+                    // we got past initial read, so reset z for next time
+                    z = 0;
+
+                    sentinel_pos = msg_buf
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, b)| **b == 0)
+                        .map(|(pos, _)| pos)
+                        .nth(1)
+                        .unwrap();
+                }
+            },
+
+            Err(e) => match e.kind() {
+                ErrorKind::WouldBlock => continue,
+                _ => return Err(e).context(IoSnafu),
             },
         }
 
-        let msg = match read(client, &mut buf) {
-            Ok(n) => match n {
-                0 => break,
-                n => &buf[..n],
-            },
-
-            Err(e) => match e {
-                Errno::WOULDBLOCK => continue,
-                e => return Err(e).context(SockSnafu),
-            },
-        };
-
-        // accumulate full message
-        msg_buf.extend_from_slice(msg);
-
-        // if we encountered a sentinel, we're ready to proceed
-        sentinel_pos = match msg_buf.iter().position(|b| *b == 0) {
-            Some(p) => p,
-            // no sentinel yet, continue accumulating message
-            None => continue,
-        };
-
         drain_buf = true;
 
-        let data = match cobs::decode_in_place(&mut msg_buf) {
-            Ok(s) => &msg_buf[..s],
+        // skip initial sentinel, but include last sentinel
+        let buf = &mut msg_buf[1..sentinel_pos];
+
+        let data = match cobs::decode_in_place(buf) {
+            Ok(s) => &buf[..s],
             Err(e) => {
                 log::error!("Client COBs decode error: {e}");
                 continue;
@@ -96,17 +110,7 @@ pub fn handle_client(client: BorrowedFd, ec: &mut Ec) -> Result<(), ClientError>
         let ser = serde_json::to_string(&response).context(SerdeSnafu)?;
         let data = cobs::encode_vec_including_sentinels(ser.as_bytes());
 
-        let mut n = 0;
-
-        // make sure to fully flush writes
-        loop {
-            let bytes = &data[n..];
-            n += write(client, bytes).context(SockSnafu)?;
-
-            if n >= msg.len() {
-                break;
-            }
-        }
+        client.write_all(&data).context(IoSnafu)?;
     }
 
     Ok(())

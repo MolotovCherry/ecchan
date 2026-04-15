@@ -5,7 +5,7 @@ use ec::{
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Ret<'a> {
     #[serde(borrow)]
     Ok(RetVal<'a>),
@@ -18,7 +18,7 @@ pub struct Bin(#[serde(with = "BigArray")] pub [u8; 256]);
 
 /// A ipc call return value. Make a value of this and json serialize it to call.
 /// Look at original functions for reply type to deserialize from
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum RetVal<'a> {
     /// Call returned no data, but was successful
     Empty,

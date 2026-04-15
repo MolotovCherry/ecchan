@@ -172,13 +172,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "ecchan"
+name = "ecchan-dbus"
 version = "0.1.0"
 dependencies = [
+ "cobs",
+ "ctrlc",
  "dbus",
  "dbus-crossroads",
- "ec",
+ "ecchan-ipc",
+ "env_logger",
+ "log",
+ "rustix",
  "sayuri",
+ "serde_json",
+ "snafu",
 ]
 
 [[package]]
@@ -195,12 +202,10 @@ name = "ecchan-server"
 version = "0.1.0"
 dependencies = [
  "cobs",
- "ctrlc",
  "ec",
  "ecchan-ipc",
  "env_logger",
  "log",
- "rustix",
  "serde_json",
  "snafu",
 ]
