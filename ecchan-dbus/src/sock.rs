@@ -32,9 +32,9 @@ pub struct Client {
 
 impl Client {
     pub fn new() -> io::Result<Self> {
-        let conn = Self::connect()?;
+        let conn = Self::connect().ok();
         Ok(Self {
-            conn: Arc::new(Mutex::new(Some(conn))),
+            conn: Arc::new(Mutex::new(conn)),
             buf: vec![0; 1024],
             sentinel_pos: 0,
         })
