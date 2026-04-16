@@ -1,5 +1,7 @@
 use std::{
+    cmp::max,
     io::{self, ErrorKind, Read, Write},
+    iter,
     os::unix::net::UnixStream,
     sync::Arc,
 };
@@ -27,6 +29,7 @@ pub enum ClientError {
 pub struct Client {
     conn: Arc<Mutex<Option<UnixStream>>>,
     buf: Vec<u8>,
+    encode_buf: Vec<u8>,
     sentinel_pos: usize,
 }
 
@@ -36,6 +39,7 @@ impl Client {
         Ok(Self {
             conn: Arc::new(Mutex::new(conn)),
             buf: vec![0; 1024],
+            encode_buf: vec![0; 1024],
             sentinel_pos: 0,
         })
     }
@@ -56,7 +60,7 @@ impl Client {
         // a mutable method again, despite the fact that it is sound to call it again in the Err
         // case because it doesn't borrow from self.
         //
-        // The lifetime infects the functtion. This works around the infected lifetime in the Ok case
+        // The lifetime infects the function. This works around the infected lifetime in the Ok case
         // and lets us call mutable methods again
         let error = polonius!(|this| -> Result<RetVal<'polonius>, ClientError> {
             match lock.as_mut() {
@@ -151,13 +155,25 @@ impl Client {
         }
     }
 
-    fn _call(&mut self, conn: &mut UnixStream, call: &Method) -> Result<RetVal<'_>, ClientError> {
+    fn _call<'a>(
+        &'a mut self,
+        conn: &mut UnixStream,
+        call: &Method,
+    ) -> Result<RetVal<'a>, ClientError> {
         self.buf.clear();
 
         let data = serde_json::to_string(call).context(JsonSnafu)?;
-        let encoded = cobs::encode_vec_including_sentinels(data.as_bytes());
 
-        conn.write_all(&encoded).context(IoSnafu)?;
+        let cap = max(self.encode_buf.len(), cobs::max_encoding_length(data.len()));
+        if cap > self.encode_buf.len() {
+            let count = cap - self.encode_buf.len();
+            self.encode_buf.extend(iter::repeat_n(0, count));
+        }
+
+        let size = cobs::encode_including_sentinels(data.as_bytes(), &mut self.encode_buf);
+        let encoded = &self.encode_buf[..size];
+
+        conn.write_all(encoded).context(IoSnafu)?;
 
         let mut buf = [0; 1024];
 

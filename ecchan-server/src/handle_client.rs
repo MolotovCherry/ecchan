@@ -1,4 +1,8 @@
-use std::io::{self, ErrorKind};
+use std::{
+    cmp::max,
+    io::{self, ErrorKind},
+    iter,
+};
 
 use ec::{Ec, EcError};
 use ecchan_ipc::{
@@ -24,6 +28,7 @@ pub async fn handle_client(
 ) -> Result<(), ClientError> {
     let mut buf = [0u8; 1024];
     let mut msg_buf = Vec::with_capacity(1024);
+    let mut encode_buf = vec![0; 1024];
 
     log::debug!("client connected");
 
@@ -112,7 +117,17 @@ pub async fn handle_client(
         };
 
         let ser = serde_json::to_string(&response).context(SerdeSnafu)?;
-        let data = cobs::encode_vec_including_sentinels(ser.as_bytes());
+
+        let cap = max(encode_buf.len(), cobs::max_encoding_length(ser.len()));
+        if cap > encode_buf.len() {
+            let count = cap - encode_buf.len();
+            encode_buf.extend(iter::repeat_n(0, count));
+        }
+
+        let size = cobs::encode_including_sentinels(ser.as_bytes(), &mut encode_buf);
+
+        // slice of our actual encoded data
+        let data = &encode_buf[..size];
 
         log::debug!("server response: {ser}");
 
