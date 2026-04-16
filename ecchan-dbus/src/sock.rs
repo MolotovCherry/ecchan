@@ -60,6 +60,7 @@ impl Client {
                             source: io::Error::new(ErrorKind::BrokenPipe, "no data left in socket"),
                         });
                     }
+
                     n => {
                         let msg = &buf[..n];
 

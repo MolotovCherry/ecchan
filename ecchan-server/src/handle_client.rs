@@ -107,7 +107,7 @@ pub async fn handle_client(
         };
 
         let response = match ret {
-            Ok(d) => d.map(Ret::Ok).unwrap_or(Ret::Ok(RetVal::Empty)),
+            Ok(d) => Ret::Ok(d),
             Err(e) => Ret::Err(e.to_string()),
         };
 
@@ -142,7 +142,7 @@ pub async fn handle_client(
     Ok(())
 }
 
-fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError> {
+fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
     let val = match ty {
         Method::FwVersion => {
             let data = ec.fw_version().context(EcSnafu)?;
@@ -171,7 +171,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::SetShiftMode { mode } => {
             ec.set_shift_mode(mode).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::ShiftModeSupported => {
@@ -186,7 +186,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::SetBatteryChargeMode { mode } => {
             ec.set_battery_charge_mode(mode).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::BatteryChargeModeSupported => {
@@ -201,7 +201,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::SetSuperBattery { state } => {
             ec.set_super_battery(state).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::SuperBatterySupported => {
@@ -261,7 +261,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::SetFanMode { mode } => {
             ec.set_fan_mode(mode).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::FanModeSupported => {
@@ -281,12 +281,12 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::SetWebcam { state } => {
             ec.set_webcam(state).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::SetWebcamBlock { state } => {
             ec.set_webcam_block(state).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::WebcamSupported => {
@@ -306,7 +306,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::SetCoolerBoost { state } => {
             ec.set_cooler_boost(state).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::CoolerBoostSupported => {
@@ -326,12 +326,12 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::SetFnKey { state } => {
             ec.set_fn_key(state).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::SetWinkey { state } => {
             ec.set_win_key(state).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::FnWinSwapSupported => {
@@ -351,12 +351,12 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::SetMicMuteLed { state } => {
             ec.set_mic_mute_led(state).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::SetMuteLed { state } => {
             ec.set_mute_led(state).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::MicMuteLedSupported => {
@@ -421,32 +421,32 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::SetCpuFanCurveWmi2 { curve } => {
             ec.set_cpu_fan_curve_wmi2(curve).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::SetCpuTempCurveWmi2 { curve } => {
             ec.set_cpu_temp_curve_wmi2(curve).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::SetCpuHysteresisCurveWmi2 { curve } => {
             ec.set_cpu_hysteresis_curve_wmi2(curve).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::SetGpuFanCurveWmi2 { curve } => {
             ec.set_gpu_fan_curve_wmi2(curve).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::SetGpuTempCurveWmi2 { curve } => {
             ec.set_gpu_temp_curve_wmi2(curve).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::SetGpuHysteresisCurveWmi2 { curve } => {
             ec.set_gpu_hysteresis_curve_wmi2(curve).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
 
         Method::EcDumpRaw => {
@@ -471,9 +471,9 @@ fn call(ty: Method, ec: &mut Ec) -> Result<Option<RetVal<'static>>, ClientError>
 
         Method::MethodWrite { method, op, data } => {
             ec.method_write(method, op, data).context(EcSnafu)?;
-            return Ok(None);
+            RetVal::Empty
         }
     };
 
-    Ok(Some(val))
+    Ok(val)
 }
