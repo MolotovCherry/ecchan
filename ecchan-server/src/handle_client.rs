@@ -116,10 +116,10 @@ pub async fn handle_client(
 
         log::debug!("server response: {ser}");
 
-        client.writable().await.context(IoSnafu)?;
-
         let mut n = 0;
         loop {
+            client.writable().await.context(IoSnafu)?;
+
             let data_slice = &data[n..];
 
             match client.try_write(data_slice) {
