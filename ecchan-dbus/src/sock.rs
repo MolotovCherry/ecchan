@@ -1,59 +1,169 @@
 use std::{
     io::{self, ErrorKind, Read, Write},
     os::unix::net::UnixStream,
+    sync::Arc,
 };
 
 use ecchan_ipc::{
     method::Method,
     ret::{Ret, RetVal},
 };
+use polonius_the_crab::prelude::*;
+use sayuri::sync::Mutex;
 use snafu::{ResultExt as _, Snafu};
 
 #[derive(Debug, Snafu)]
 pub enum ClientError {
     #[snafu(display("{msg}"))]
-    Call {
-        msg: String,
-    },
+    Call { msg: String },
 
-    Json {
-        source: serde_json::Error,
-    },
+    #[snafu(display("{source}"))]
+    Json { source: serde_json::Error },
 
-    Io {
-        source: io::Error,
-    },
+    #[snafu(display("{source}"))]
+    Io { source: io::Error },
 }
 
 pub struct Client {
-    conn: UnixStream,
+    conn: Arc<Mutex<Option<UnixStream>>>,
     buf: Vec<u8>,
     sentinel_pos: usize,
 }
 
 impl Client {
     pub fn new() -> io::Result<Self> {
-        let conn = UnixStream::connect(ecchan_ipc::get_socket_path())?;
+        let conn = Self::connect()?;
         Ok(Self {
-            conn,
+            conn: Arc::new(Mutex::new(Some(conn))),
             buf: vec![0; 1024],
             sentinel_pos: 0,
         })
     }
 
-    pub fn call<'a>(&'a mut self, call: Method) -> Result<RetVal<'a>, ClientError> {
+    fn connect() -> io::Result<UnixStream> {
+        UnixStream::connect(ecchan_ipc::get_socket_path())
+    }
+
+    pub fn call(&mut self, call: Method) -> Result<RetVal<'_>, ClientError> {
+        let mut this = self; // to make it work with polonius macro
+        // we need to use/set the conn, but we can't call a mutable method at the same time,
+        // so we'll grab an owned copy of this and reset it back as needed
+        let conn = this.conn.clone(); // get free of self lifetime
+        let mut lock = conn.lock();
+
+        // We have an unfortunate issue here; due to Ok case returning a borrowed value of self,
+        // the borrow checker extends the borrow to the entire function, disallowing us to call
+        // a mutable method again, despite the fact that it is sound to call it again in the Err
+        // case because it doesn't borrow from self.
+        //
+        // The lifetime infects the functtion. This works around the infected lifetime in the Ok case
+        // and lets us call mutable methods again
+        let error = polonius!(|this| -> Result<RetVal<'polonius>, ClientError> {
+            match lock.as_mut() {
+                Some(conn) => match this._call(conn, &call) {
+                    // return value containing infected lifetime
+                    v @ Ok(_) => polonius_return!(v),
+                    Err(e) => Some(e),
+                },
+
+                None => None,
+            }
+        });
+
+        // handle the errors free of the infected lifetime
+
+        match error {
+            Some(e) => match e {
+                // io failure
+                ClientError::Io { source } => {
+                    log::error!("server conn failed: {source}");
+
+                    match Self::connect() {
+                        // reconnected successfully, so we can retry the call
+                        Ok(mut s) => {
+                            log::info!("reconnected to server");
+
+                            match this._call(&mut s, &call) {
+                                Ok(v) => {
+                                    *lock = Some(s);
+                                    Ok(v)
+                                }
+
+                                e @ Err(ClientError::Io { .. }) => {
+                                    *lock = None;
+                                    e
+                                }
+
+                                e @ Err(_) => {
+                                    *lock = Some(s);
+                                    e
+                                }
+                            }
+                        }
+
+                        // can't connect for some reason; return same error as before
+                        Err(e) => {
+                            log::error!("reconnection failed: {e}");
+                            // socket is useless since we couldn't reconnect
+                            *lock = None;
+                            Err(ClientError::Io { source })
+                        }
+                    }
+                }
+
+                // all other errors, just return them
+                e => {
+                    log::error!("call error: {e}");
+                    Err(e)
+                }
+            },
+
+            None => match Self::connect() {
+                // reconnected successfully, so we can retry the call
+                Ok(mut s) => {
+                    log::info!("reconnected to server");
+                    match this._call(&mut s, &call) {
+                        Ok(v) => {
+                            *lock = Some(s);
+                            Ok(v)
+                        }
+
+                        Err(e @ ClientError::Io { .. }) => {
+                            log::error!("server conn failed: {e}");
+                            *lock = None;
+                            Err(e)
+                        }
+
+                        Err(e) => {
+                            log::error!("server conn failed: {e}");
+                            *lock = Some(s);
+                            Err(e)
+                        }
+                    }
+                }
+
+                // can't connect for some reason; return same error as before
+                Err(e) => {
+                    log::error!("reconnection failed: {e}");
+                    Err(ClientError::Io { source: e })
+                }
+            },
+        }
+    }
+
+    fn _call(&mut self, conn: &mut UnixStream, call: &Method) -> Result<RetVal<'_>, ClientError> {
         self.buf.clear();
 
-        let data = serde_json::to_string(&call).context(JsonSnafu)?;
+        let data = serde_json::to_string(call).context(JsonSnafu)?;
         let encoded = cobs::encode_vec_including_sentinels(data.as_bytes());
 
-        self.conn.write_all(&encoded).context(IoSnafu)?;
+        conn.write_all(&encoded).context(IoSnafu)?;
 
         let mut buf = [0; 1024];
 
         let mut zeroes = 0;
         let data = loop {
-            match self.conn.read(&mut buf) {
+            match conn.read(&mut buf) {
                 Ok(n) => match n {
                     0 => {
                         return Err(ClientError::Io {
