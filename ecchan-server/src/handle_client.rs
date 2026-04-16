@@ -101,7 +101,7 @@ pub async fn handle_client(
             continue;
         };
 
-        log::debug!("client call: {msg}");
+        log::debug!("got client req: {msg}");
 
         let ret = match serde_json::from_str::<Method>(msg) {
             Ok(c) => call(c, ec),
@@ -129,7 +129,7 @@ pub async fn handle_client(
         // slice of our actual encoded data
         let data = &encode_buf[..size];
 
-        log::debug!("server response: {ser}");
+        log::debug!("sending reply: {ser}");
 
         let mut n = 0;
         loop {

@@ -49,6 +49,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         if let Err(e) = handle_client(&mut stream, &mut ec, &sh1).await {
             log::error!("Client error: {e}");
         }
+
+        log::debug!("client disconnected");
     }
 
     Ok(())

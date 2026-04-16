@@ -40,9 +40,9 @@ fn setup() {
     env_logger::builder()
         .format_timestamp(None)
         .filter_level(if cfg!(debug_assertions) {
-            LevelFilter::Info
-        } else {
             LevelFilter::Debug
+        } else {
+            LevelFilter::Info
         })
         .parse_env(env)
         .init();

@@ -164,6 +164,8 @@ impl Client {
 
         let data = serde_json::to_string(call).context(JsonSnafu)?;
 
+        log::debug!("sending req: {data}");
+
         let cap = max(self.encode_buf.len(), cobs::max_encoding_length(data.len()));
         if cap > self.encode_buf.len() {
             let count = cap - self.encode_buf.len();
@@ -226,7 +228,9 @@ impl Client {
                 }
             };
 
-            break serde_json::from_slice::<Ret>(data).context(JsonSnafu)?;
+            let t = serde_json::from_slice::<Ret>(data).context(JsonSnafu)?;
+            log::debug!("got server reply: {}", str::from_utf8(data).unwrap());
+            break t;
         };
 
         let val = match data {
