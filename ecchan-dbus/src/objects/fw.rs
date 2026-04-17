@@ -5,25 +5,37 @@ use crate::{Data, err::ToMethodErr};
 
 pub fn build(b: &mut IfaceBuilder<Data>) {
     b.method("version", (), ("version",), |_, data, ()| {
-        let client = &mut data.client;
+        let mut client = data.get();
 
-        let version = client.call(Method::FwVersion).to_method_err()?.str();
+        let version = client
+            .call(Method::FwVersion)
+            .to_method_err()?
+            .str()
+            .to_method_err()?;
 
         Ok((version,))
     });
 
     b.method("date", (), ("date",), |_, data, ()| {
-        let client = &mut data.client;
+        let mut client = data.get();
 
-        let date = client.call(Method::FwDate).to_method_err()?.str();
+        let date = client
+            .call(Method::FwDate)
+            .to_method_err()?
+            .str()
+            .to_method_err()?;
 
         Ok((date,))
     });
 
     b.method("time", (), ("time",), |_, data, ()| {
-        let client = &mut data.client;
+        let mut client = data.get();
 
-        let time = client.call(Method::FwTime).to_method_err()?.str();
+        let time = client
+            .call(Method::FwTime)
+            .to_method_err()?
+            .str()
+            .to_method_err()?;
 
         Ok((time,))
     });

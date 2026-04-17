@@ -1,3 +1,4 @@
+mod data;
 mod err;
 mod objects;
 mod sock;
@@ -9,13 +10,9 @@ use dbus_crossroads::Crossroads;
 use env_logger::Env;
 use log::LevelFilter;
 
-use crate::sock::Client;
+use data::Data;
 
 const DBUS_NAME: &str = "com.cherry.ecchan";
-
-struct Data {
-    client: Client,
-}
 
 fn main() -> Result<(), Box<dyn Error>> {
     setup();
@@ -24,11 +21,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     c.request_name(DBUS_NAME, false, true, false)?;
     let mut cr = Crossroads::new();
 
-    let client = Client::new()?;
+    let client = Data::new()?;
 
+    let utils = cr.register(DBUS_NAME, objects::utils::build);
     let fw = cr.register(DBUS_NAME, objects::fw::build);
 
-    cr.insert("/fw", &[fw], Data { client });
+    cr.insert("/", &[utils], client.clone());
+    cr.insert("/fw", &[fw], client);
 
     cr.serve(&c)?;
     unreachable!();

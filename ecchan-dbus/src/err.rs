@@ -1,14 +1,13 @@
+use std::fmt::Display;
+
 use dbus::MethodErr;
-use ecchan_ipc::ret::RetVal;
 
-use crate::sock::ClientError;
-
-pub trait ToMethodErr<'a> {
-    fn to_method_err(self) -> Result<RetVal<'a>, MethodErr>;
+pub trait ToMethodErr<'a, T> {
+    fn to_method_err(self) -> Result<T, MethodErr>;
 }
 
-impl<'a> ToMethodErr<'a> for Result<RetVal<'a>, ClientError> {
-    fn to_method_err(self) -> Result<RetVal<'a>, MethodErr> {
+impl<'a, T, E: Display> ToMethodErr<'a, T> for Result<T, E> {
+    fn to_method_err(self) -> Result<T, MethodErr> {
         self.map_err(|e| MethodErr::failed(&e))
     }
 }

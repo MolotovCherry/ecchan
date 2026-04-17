@@ -196,6 +196,8 @@ dependencies = [
  "ec",
  "serde",
  "serde-big-array",
+ "snafu",
+ "strum",
 ]
 
 [[package]]

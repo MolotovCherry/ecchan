@@ -3,7 +3,7 @@ use std::{
     io::{self, ErrorKind, Read, Write},
     iter,
     os::unix::net::UnixStream,
-    sync::Arc,
+    sync::{Arc, MutexGuard},
 };
 
 use ecchan_ipc::{
@@ -26,15 +26,36 @@ pub enum ClientError {
     Io { source: io::Error },
 }
 
+#[derive(Clone)]
 pub struct Client {
+    inner: Arc<Mutex<ClientInner>>,
+}
+
+impl Client {
+    pub fn new() -> io::Result<Self> {
+        let inner = ClientInner::new()?;
+
+        let this = Self {
+            inner: Arc::new(Mutex::new(inner)),
+        };
+
+        Ok(this)
+    }
+
+    pub fn get(&self) -> MutexGuard<'_, ClientInner> {
+        self.inner.lock()
+    }
+}
+
+pub struct ClientInner {
     conn: Arc<Mutex<Option<UnixStream>>>,
     buf: Vec<u8>,
     encode_buf: Vec<u8>,
     sentinel_pos: usize,
 }
 
-impl Client {
-    pub fn new() -> io::Result<Self> {
+impl ClientInner {
+    fn new() -> io::Result<Self> {
         let conn = Self::connect().ok();
         Ok(Self {
             conn: Arc::new(Mutex::new(conn)),

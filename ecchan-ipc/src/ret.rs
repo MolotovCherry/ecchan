@@ -4,6 +4,35 @@ use ec::{
 };
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
+use snafu::Snafu;
+use strum::IntoStaticStr;
+
+macro_rules! extract_val {
+    ($pat:ident, $variant:pat, $name:expr) => {
+        extract_val!($pat, $variant, $name, v)
+    };
+
+    ($pat:ident, $variant:pat, $name:expr, $val:expr) => {
+        match $pat {
+            $variant => Ok($val),
+            f => {
+                return Err($crate::ret::RetValError::Unexpected {
+                    expected: stringify!($variant),
+                    got: f.into(),
+                })
+            }
+        }
+    };
+}
+
+#[derive(Debug, Clone, Snafu)]
+pub enum RetValError {
+    #[snafu(display("Expected {expected}, instead got {got}"))]
+    Unexpected {
+        expected: &'static str,
+        got: &'static str,
+    },
+}
 
 pub type Ret<'a> = Result<RetVal<'a>, String>;
 
@@ -21,8 +50,9 @@ enum _Ret<'a> {
 pub struct Bin(#[serde(with = "BigArray")] pub [u8; 256]);
 
 /// A ipc call return value
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, IntoStaticStr)]
 pub enum RetVal<'a> {
+    Pong,
     /// Call returned no data, but was successful
     Unit,
     Byte(u8),
@@ -50,150 +80,91 @@ pub enum RetVal<'a> {
 }
 
 impl RetVal<'_> {
-    pub fn byte(self) -> u8 {
-        match self {
-            Self::Byte(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn pong(self) -> Result<(), RetValError> {
+        extract_val!(self, RetVal::Pong, "Pong", ())
     }
 
-    pub fn word(self) -> u16 {
-        match self {
-            Self::Word(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn byte(self) -> Result<u8, RetValError> {
+        extract_val!(self, RetVal::Byte(v), "Byte", v)
     }
 
-    pub fn state(self) -> bool {
-        match self {
-            Self::State(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn word(self) -> Result<u16, RetValError> {
+        extract_val!(self, RetVal::Word(v), "Word", v)
     }
 
-    pub fn str(self) -> String {
-        match self {
-            Self::Str(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn state(self) -> Result<bool, RetValError> {
+        extract_val!(self, RetVal::State(v), "State", v)
     }
 
-    pub fn fans(self) -> Fans {
-        match self {
-            Self::Fans(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn str(self) -> Result<String, RetValError> {
+        extract_val!(self, RetVal::Str(v), "Str", v)
     }
 
-    pub fn wmi_ver(self) -> WmiVer {
-        match self {
-            Self::WmiVer(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn fans(self) -> Result<Fans, RetValError> {
+        extract_val!(self, RetVal::Fans(v), "Fans", v)
     }
 
-    pub fn shift_modes(self) -> Vec<ShiftMode> {
-        match self {
-            Self::ShiftModes(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn wmi_ver(self) -> Result<WmiVer, RetValError> {
+        extract_val!(self, RetVal::WmiVer(v), "WmiVer", v)
     }
 
-    pub fn shift_mode(self) -> ShiftMode {
-        match self {
-            Self::ShiftMode(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn shift_modes(self) -> Result<Vec<ShiftMode>, RetValError> {
+        extract_val!(self, RetVal::ShiftModes(v), "ShiftModes", v)
     }
 
-    pub fn battery_charge_mode(self) -> BatteryChargeMode {
-        match self {
-            Self::BatteryChargeMode(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn shift_mode(self) -> Result<ShiftMode, RetValError> {
+        extract_val!(self, RetVal::ShiftMode(v), "ShiftMode", v)
     }
 
-    pub fn super_battery(self) -> SuperBattery {
-        match self {
-            Self::SuperBattery(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn battery_charge_mode(self) -> Result<BatteryChargeMode, RetValError> {
+        extract_val!(self, RetVal::BatteryChargeMode(v), "BatteryChargeMode", v)
     }
 
-    pub fn fan_modes(self) -> Vec<FanMode> {
-        match self {
-            Self::FanModes(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn super_battery(self) -> Result<SuperBattery, RetValError> {
+        extract_val!(self, RetVal::SuperBattery(v), "SuperBattery", v)
     }
 
-    pub fn fan_mode(self) -> FanMode {
-        match self {
-            Self::FanMode(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn fan_modes(self) -> Result<Vec<FanMode>, RetValError> {
+        extract_val!(self, RetVal::FanModes(v), "FanModes", v)
     }
 
-    pub fn webcam(self) -> Webcam {
-        match self {
-            Self::Webcam(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn fan_mode(self) -> Result<FanMode, RetValError> {
+        extract_val!(self, RetVal::FanMode(v), "FanMode", v)
     }
 
-    pub fn cooler_boost(self) -> CoolerBoost {
-        match self {
-            Self::CoolerBoost(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn webcam(self) -> Result<Webcam, RetValError> {
+        extract_val!(self, RetVal::Webcam(v), "Webcam", v)
     }
 
-    pub fn key_direction(self) -> KeyDirection {
-        match self {
-            Self::KeyDirection(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn cooler_boost(self) -> Result<CoolerBoost, RetValError> {
+        extract_val!(self, RetVal::CoolerBoost(v), "CoolerBoost", v)
     }
 
-    pub fn led(self) -> Led {
-        match self {
-            Self::Led(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn key_direction(self) -> Result<KeyDirection, RetValError> {
+        extract_val!(self, RetVal::KeyDirection(v), "KeyDirection", v)
     }
 
-    pub fn curve6(self) -> Curve6 {
-        match self {
-            Self::Curve6(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn led(self) -> Result<Led, RetValError> {
+        extract_val!(self, RetVal::Led(v), "Led", v)
     }
 
-    pub fn curve7(self) -> Curve7 {
-        match self {
-            Self::Curve7(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn curve6(self) -> Result<Curve6, RetValError> {
+        extract_val!(self, RetVal::Curve6(v), "Curve6", v)
     }
 
-    pub fn ec_dump(self) -> Box<Bin> {
-        match self {
-            Self::EcDump(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn curve7(self) -> Result<Curve7, RetValError> {
+        extract_val!(self, RetVal::Curve7(v), "Curve7", v)
     }
 
-    pub fn methods(&self) -> &[Method<'_>] {
-        match self {
-            Self::Methods(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn ec_dump(self) -> Result<Box<Bin>, RetValError> {
+        extract_val!(self, RetVal::EcDump(v), "EcDump", v)
     }
 
-    pub fn method_data(self) -> MethodData {
-        match self {
-            Self::MethodData(v) => v,
-            _ => unreachable!(),
-        }
+    pub fn methods(&self) -> Result<&[Method<'_>], RetValError> {
+        extract_val!(self, RetVal::Methods(v), "Methods", v)
+    }
+
+    pub fn method_data(self) -> Result<MethodData, RetValError> {
+        extract_val!(self, RetVal::MethodData(v), "MethodData", v)
     }
 }

@@ -8,4 +8,5 @@ pub mod methods;
 pub mod rt;
 pub mod shift_mode;
 pub mod thermal;
+pub mod utils;
 pub mod webcam;

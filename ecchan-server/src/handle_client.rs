@@ -159,6 +159,8 @@ pub async fn handle_client(
 
 fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
     let val = match ty {
+        Method::Ping => RetVal::Pong,
+
         Method::FwVersion => {
             let data = ec.fw_version().context(EcSnafu)?;
             RetVal::Str(data)

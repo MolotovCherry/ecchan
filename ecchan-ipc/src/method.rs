@@ -8,6 +8,9 @@ use serde::{Deserialize, Serialize};
 /// Returns an equivalent return type in Ret (see original fn for type)
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Method<'a> {
+    // Utils
+    Ping,
+
     // Firmware
     FwVersion,
     FwDate,
