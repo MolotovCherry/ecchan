@@ -186,7 +186,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::SetShiftMode { mode } => {
             ec.set_shift_mode(mode).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::ShiftModeSupported => {
@@ -201,7 +201,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::SetBatteryChargeMode { mode } => {
             ec.set_battery_charge_mode(mode).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::BatteryChargeModeSupported => {
@@ -216,7 +216,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::SetSuperBattery { state } => {
             ec.set_super_battery(state).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::SuperBatterySupported => {
@@ -276,7 +276,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::SetFanMode { mode } => {
             ec.set_fan_mode(mode).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::FanModeSupported => {
@@ -296,12 +296,12 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::SetWebcam { state } => {
             ec.set_webcam(state).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::SetWebcamBlock { state } => {
             ec.set_webcam_block(state).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::WebcamSupported => {
@@ -321,7 +321,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::SetCoolerBoost { state } => {
             ec.set_cooler_boost(state).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::CoolerBoostSupported => {
@@ -341,12 +341,12 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::SetFnKey { state } => {
             ec.set_fn_key(state).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::SetWinkey { state } => {
             ec.set_win_key(state).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::FnWinSwapSupported => {
@@ -366,12 +366,12 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::SetMicMuteLed { state } => {
             ec.set_mic_mute_led(state).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::SetMuteLed { state } => {
             ec.set_mute_led(state).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::MicMuteLedSupported => {
@@ -436,32 +436,32 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::SetCpuFanCurveWmi2 { curve } => {
             ec.set_cpu_fan_curve_wmi2(curve).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::SetCpuTempCurveWmi2 { curve } => {
             ec.set_cpu_temp_curve_wmi2(curve).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::SetCpuHysteresisCurveWmi2 { curve } => {
             ec.set_cpu_hysteresis_curve_wmi2(curve).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::SetGpuFanCurveWmi2 { curve } => {
             ec.set_gpu_fan_curve_wmi2(curve).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::SetGpuTempCurveWmi2 { curve } => {
             ec.set_gpu_temp_curve_wmi2(curve).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::SetGpuHysteresisCurveWmi2 { curve } => {
             ec.set_gpu_hysteresis_curve_wmi2(curve).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
 
         Method::EcDumpRaw => {
@@ -486,7 +486,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
 
         Method::MethodWrite { method, op, data } => {
             ec.method_write(method, op, data).context(EcSnafu)?;
-            RetVal::Empty
+            RetVal::Unit
         }
     };
 

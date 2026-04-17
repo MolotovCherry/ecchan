@@ -21,7 +21,7 @@ pub struct Bin(#[serde(with = "BigArray")] pub [u8; 256]);
 #[derive(Debug, Serialize, Deserialize)]
 pub enum RetVal<'a> {
     /// Call returned no data, but was successful
-    Empty,
+    Unit,
     Byte(u8),
     Word(u16),
     State(bool),
