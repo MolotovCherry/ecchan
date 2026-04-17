@@ -1,7 +1,7 @@
 use dbus_crossroads::IfaceBuilder;
 use ecchan_ipc::method::Method;
 
-use crate::{Data, err::ToMethodErr};
+use crate::{data::Data, err::ToMethodErr};
 
 pub fn build(b: &mut IfaceBuilder<Data>) {
     b.method("ping", (), ("pong",), |_, data, ()| {

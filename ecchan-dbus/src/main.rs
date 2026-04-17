@@ -1,48 +1,31 @@
 mod data;
+mod dbus;
 mod err;
 mod objects;
+mod setup;
 mod sock;
 
 use std::error::Error;
 
-use dbus::blocking::Connection;
+use ::dbus::blocking::Connection;
 use dbus_crossroads::Crossroads;
-use env_logger::Env;
-use log::LevelFilter;
 
-use data::Data;
+use sayuri::convert::Never;
+use setup::setup;
+
+use crate::dbus::setup_dbus;
 
 const DBUS_NAME: &str = "com.cherry.ecchan";
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<Never, Box<dyn Error>> {
     setup();
 
     let c = Connection::new_session()?;
     c.request_name(DBUS_NAME, false, true, false)?;
     let mut cr = Crossroads::new();
 
-    let client = Data::new()?;
+    setup_dbus(&mut cr)?;
 
-    let utils = cr.register(DBUS_NAME, objects::utils::build);
-    let fw = cr.register(DBUS_NAME, objects::fw::build);
-
-    cr.insert("/", &[utils], client.clone());
-    cr.insert("/fw", &[fw], client);
-
-    cr.serve(&c)?;
-    unreachable!();
-}
-
-fn setup() {
-    let env = Env::new().filter("ECCHAN_LOG").write_style("ECCHAN_STYLE");
-
-    env_logger::builder()
-        .format_timestamp(None)
-        .filter_level(if cfg!(debug_assertions) {
-            LevelFilter::Debug
-        } else {
-            LevelFilter::Info
-        })
-        .parse_env(env)
-        .init();
+    #[allow(clippy::empty_loop)]
+    cr.serve(&c).map(|_| loop {})?
 }
