@@ -5,7 +5,7 @@ use ec::{
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 use snafu::Snafu;
-use strum::IntoStaticStr;
+use strum::{Display, IntoStaticStr};
 
 macro_rules! extract_val {
     ($pat:ident, $variant:pat, $name:expr) => {
@@ -50,7 +50,7 @@ enum _Ret<'a> {
 pub struct Bin(#[serde(with = "BigArray")] pub [u8; 256]);
 
 /// A ipc call return value
-#[derive(Debug, Serialize, Deserialize, IntoStaticStr)]
+#[derive(Debug, Serialize, Deserialize, IntoStaticStr, Display)]
 pub enum RetVal<'a> {
     Pong,
     /// Call returned no data, but was successful

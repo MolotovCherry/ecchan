@@ -3,7 +3,7 @@ mod titan_gt77_12uhs;
 use std::fs;
 
 use serde::{Deserialize, Serialize};
-use strum::EnumDiscriminants;
+use strum::{Display, EnumDiscriminants, IntoStaticStr};
 
 use crate::fw::{Addr, Bit};
 
@@ -33,7 +33,7 @@ pub struct Method {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumDiscriminants)]
 #[strum_discriminants(name(MethodOp))]
-#[strum_discriminants(derive(Serialize, Deserialize))]
+#[strum_discriminants(derive(Serialize, Deserialize, IntoStaticStr, Display))]
 pub enum MethodTy {
     // single bit read/write
     // requires addr to be Addr::Single

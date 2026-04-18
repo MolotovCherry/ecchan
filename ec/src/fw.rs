@@ -14,6 +14,7 @@
 use std::ops::{BitAnd, BitOrAssign, BitXor, Not, RangeInclusive};
 
 use serde::{Deserialize, Serialize};
+use strum::{Display, EnumString, IntoStaticStr};
 
 mod wmi2;
 
@@ -81,13 +82,17 @@ impl ShiftModeConfig {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, IntoStaticStr, Display, EnumString,
+)]
 pub enum ShiftMode {
     /// User High / Extreme Performance (old: Sport Mode)
+    #[strum(to_string = "Extreme Performance")]
     ExtremePerformance,
     /// User Medium / Balance / Silent (old: Comfort Mode)
     Balanced,
     /// User_Low / Super Battery (old: ECO Mode)
+    #[strum(to_string = "Super Battery")]
     SuperBattery,
     /// Turbo Mode
     Turbo,
@@ -118,7 +123,9 @@ impl FanModeConfig {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, IntoStaticStr, Display, EnumString,
+)]
 pub enum FanMode {
     Auto,
     Silent,
@@ -417,7 +424,7 @@ impl BitSet for u8 {
 // Battery
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, IntoStaticStr, Display)]
 pub enum SuperBattery {
     Off,
     On,
@@ -429,10 +436,62 @@ impl SuperBattery {
     }
 }
 
+/// Use BatteryChargeMode functions to make a custom threshold and to read it
+///
+/// While this impls a safe Default, it is hardcoded to 100;
+/// You should reset any Custom types made from Default. So far this only
+/// happens if you convert a string into BatteryChargeMode::Custom, or if you
+/// default on this type directly and add it to Custom (you should not do this)
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Threshold(u8);
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+impl Default for Threshold {
+    fn default() -> Self {
+        Self(100)
+    }
+}
+
+impl Threshold {
+    /// The start threshold. Charges between N..=N+10
+    /// Valid values: 0..=90
+    ///
+    /// Note: 90 means total charge of 100..=100
+    pub fn from_start(val: u8) -> Option<Self> {
+        let this = match val {
+            0..=90 => Self(val + 10),
+            _ => return None,
+        };
+
+        Some(this)
+    }
+
+    /// The end threshold. Charges between N-10..=N
+    /// Valid values: 10..=100
+    ///
+    /// Note: 100 means 100..=100
+    pub fn from_end(val: u8) -> Option<Self> {
+        let this = match val {
+            10..=100 => Self(val),
+            _ => return None,
+        };
+
+        Some(this)
+    }
+
+    /// Note: 90 means total charge of 100..=100
+    pub fn as_start(&self) -> u8 {
+        self.0 - 10
+    }
+
+    /// Note: 100 means 100..=100
+    pub fn as_end(&self) -> u8 {
+        self.0
+    }
+}
+
+#[derive(
+    Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, IntoStaticStr, Display, EnumString,
+)]
 pub enum BatteryChargeMode {
     /// 50-60
     Healthy,
@@ -460,7 +519,7 @@ impl BatteryChargeMode {
             50 => Self::Healthy,
             70 => Self::Balanced,
             90 => Self::Mobility,
-            0..=90 => Self::Custom(Threshold(val + 10)),
+            0..=90 => Self::Custom(Threshold::from_start(val).unwrap()),
             _ => return None,
         };
 
@@ -476,7 +535,7 @@ impl BatteryChargeMode {
             60 => Self::Healthy,
             80 => Self::Balanced,
             100 => Self::Mobility,
-            10..=100 => Self::Custom(Threshold(val)),
+            10..=100 => Self::Custom(Threshold::from_end(val).unwrap()),
             _ => return None,
         };
 
@@ -489,7 +548,7 @@ impl BatteryChargeMode {
             Self::Healthy => 50,
             Self::Balanced => 70,
             Self::Mobility => 90,
-            Self::Custom(Threshold(t)) => t - 10,
+            Self::Custom(t) => t.as_start(),
         }
     }
 
@@ -499,7 +558,7 @@ impl BatteryChargeMode {
             Self::Healthy => 60,
             Self::Balanced => 80,
             Self::Mobility => 100,
-            Self::Custom(Threshold(t)) => t,
+            Self::Custom(t) => t.as_end(),
         }
     }
 }
@@ -508,7 +567,9 @@ impl BatteryChargeMode {
 // Webcam
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, IntoStaticStr, Display, EnumString,
+)]
 pub enum Webcam {
     On,
     Off,
@@ -524,7 +585,7 @@ impl Webcam {
 // Cooler Boost
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, IntoStaticStr, Display)]
 pub enum CoolerBoost {
     On,
     Off,
@@ -540,7 +601,9 @@ impl CoolerBoost {
 // Fn Win Swap
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, IntoStaticStr, Display, EnumString,
+)]
 pub enum KeyDirection {
     Left,
     Right,
@@ -550,17 +613,25 @@ pub enum KeyDirection {
 // LEDs
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, IntoStaticStr, Display)]
 pub enum Led {
     On,
     Off,
+}
+
+impl Led {
+    pub fn enabled(&self) -> bool {
+        matches!(self, Self::On)
+    }
 }
 
 //
 // Format
 //
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, IntoStaticStr, Display, EnumString,
+)]
 pub enum WmiVer {
     Wmi1,
     Wmi2,

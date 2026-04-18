@@ -1,3 +1,4 @@
+mod args;
 mod data;
 mod dbus;
 mod err;

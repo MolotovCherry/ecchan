@@ -9,16 +9,28 @@ use ecchan_ipc::{
     method::Method,
     ret::{Bin, Ret, RetVal},
 };
-use snafu::{ResultExt, Snafu};
+use snafu::{OptionExt, ResultExt, Snafu};
 use tokio::{net::UnixStream, select};
 
 use crate::signal::ShutdownSignal;
 
 #[derive(Debug, Snafu)]
 pub enum ClientError {
-    Io { source: io::Error },
-    Ec { source: EcError },
-    Serde { source: serde_json::Error },
+    Io {
+        source: io::Error,
+    },
+    Ec {
+        source: EcError,
+    },
+    Serde {
+        source: serde_json::Error,
+    },
+    #[snafu(whatever, display("{message}"))]
+    Whatever {
+        message: String,
+        #[snafu(source(from(Box<dyn std::error::Error>, Some)))]
+        source: Option<Box<dyn std::error::Error>>,
+    },
 }
 
 pub async fn handle_client(
@@ -160,6 +172,26 @@ pub async fn handle_client(
 fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
     let val = match ty {
         Method::Ping => RetVal::Pong,
+
+        Method::FanCount => {
+            let data = ec.fan_count();
+            RetVal::Fans(data)
+        }
+
+        Method::FanMax => {
+            let data = ec.fan_max().whatever_context("model not supported")?;
+            RetVal::Byte(data)
+        }
+
+        Method::HasDGpu => {
+            let data = ec.has_dgpu();
+            RetVal::State(data)
+        }
+
+        Method::WmiVer => {
+            let data = ec.wmi_ver().whatever_context("model not supported")?;
+            RetVal::WmiVer(data)
+        }
 
         Method::FwVersion => {
             let data = ec.fw_version().context(EcSnafu)?;

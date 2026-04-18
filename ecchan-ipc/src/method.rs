@@ -10,6 +10,10 @@ use serde::{Deserialize, Serialize};
 pub enum Method<'a> {
     // Utils
     Ping,
+    FanCount,
+    FanMax,
+    HasDGpu,
+    WmiVer,
 
     // Firmware
     FwVersion,
