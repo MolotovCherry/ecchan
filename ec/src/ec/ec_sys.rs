@@ -1,12 +1,14 @@
-#[cfg(test)]
-mod tests;
+cfg_select! {
+    test => {
+        mod tests;
+        use tests::EcTestFile as File;
+        pub(crate) use tests::HAS_DGPU;
+    }
 
-#[cfg(not(test))]
-use std::fs::File;
-#[cfg(test)]
-use tests::EcTestFile as File;
-#[cfg(test)]
-pub(crate) use tests::HAS_DGPU;
+    not(test) => {
+        use std::fs::File;
+    }
+}
 
 use std::{io, ops::RangeInclusive, os::unix::fs::FileExt as _};
 
