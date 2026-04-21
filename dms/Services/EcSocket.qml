@@ -26,7 +26,7 @@ Singleton {
         parser: SplitParser {
             onRead: line => {
                 try {
-                    // { "Ok": { .. } } / { "Err": { .. } }
+                    // { "Ok": { .. } } / { "Err": "" }
                     const reply = JSON.parse(line);
 
                     if (reply.hasOwnProperty("Err")) {
