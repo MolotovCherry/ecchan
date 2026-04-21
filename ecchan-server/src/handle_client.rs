@@ -1,8 +1,4 @@
-use std::{
-    cmp::max,
-    io::{self, ErrorKind},
-    iter,
-};
+use std::io::{self, ErrorKind};
 
 use ec::{Ec, EcError};
 use ecchan_ipc::{
@@ -40,12 +36,10 @@ pub async fn handle_client(
 ) -> Result<(), ClientError> {
     let mut buf = [0u8; 1024];
     let mut msg_buf = Vec::with_capacity(1024);
-    let mut encode_buf = vec![0; 1024];
 
     log::debug!("client connected");
 
     let mut sentinel_pos = 0;
-    let mut zeroes = 0;
     let mut drain = false;
 
     loop {
@@ -59,7 +53,7 @@ pub async fn handle_client(
             v = client.readable() => v.context(IoSnafu)?,
         }
 
-        match client.try_read(&mut buf) {
+        let data = match client.try_read(&mut buf) {
             Ok(n) => match n {
                 0 => break,
                 n => {
@@ -68,26 +62,15 @@ pub async fn handle_client(
                     // accumulate full message
                     msg_buf.extend_from_slice(msg);
 
-                    // count zeroes
-                    zeroes += msg.iter().filter(|b| **b == 0).count();
-
-                    // ensure we have 2 zeroes (begin and end sentinel)
-                    if zeroes < 2 {
-                        continue;
+                    // if we finally reached our sentinel (newline)
+                    match msg_buf.iter().position(|n| *n == b'\n') {
+                        Some(pos) => sentinel_pos = pos,
+                        None => continue,
                     }
 
                     drain = true;
 
-                    // we got past initial read, so reset z for next time
-                    zeroes = 0;
-
-                    sentinel_pos = msg_buf
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, b)| **b == 0)
-                        .map(|(pos, _)| pos)
-                        .nth(1)
-                        .unwrap();
+                    &msg_buf[..sentinel_pos]
                 }
             },
 
@@ -95,17 +78,6 @@ pub async fn handle_client(
                 ErrorKind::WouldBlock => continue,
                 _ => return Err(e).context(IoSnafu),
             },
-        }
-
-        // skip initial sentinel, but include last sentinel
-        let buf = &mut msg_buf[1..sentinel_pos];
-
-        let data = match cobs::decode_in_place(buf) {
-            Ok(s) => &buf[..s],
-            Err(e) => {
-                log::error!("Client COBs decode error: {e}");
-                continue;
-            }
         };
 
         let Ok(msg) = str::from_utf8(data) else {
@@ -128,20 +100,14 @@ pub async fn handle_client(
             Err(e) => Ret::Err(e.to_string()),
         };
 
-        let ser = serde_json::to_string(&response).context(SerdeSnafu)?;
-
-        let cap = max(encode_buf.len(), cobs::max_encoding_length(ser.len()));
-        if cap > encode_buf.len() {
-            let count = cap - encode_buf.len();
-            encode_buf.extend(iter::repeat_n(0, count));
-        }
-
-        let size = cobs::encode_including_sentinels(ser.as_bytes(), &mut encode_buf);
-
-        // slice of our actual encoded data
-        let data = &encode_buf[..size];
+        let mut ser = serde_json::to_string(&response).context(SerdeSnafu)?;
 
         log::debug!("sending reply: {ser}");
+
+        // push sentinel back on
+        ser.push('\n');
+
+        let data = ser.as_bytes();
 
         let mut n = 0;
         loop {

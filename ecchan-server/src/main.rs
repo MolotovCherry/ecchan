@@ -32,6 +32,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let listener = sock.listen(1)?;
 
+    log::info!("listening @ {}", sock_path.display());
+
     loop {
         let client = select! {
             _ = sh1.wait() => break,

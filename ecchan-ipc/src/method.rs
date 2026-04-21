@@ -79,7 +79,7 @@ pub enum Method<'a> {
     },
     CoolerBoostSupported,
 
-    // Swap keys
+    // Swap Keys
     FnKey,
     WinKey,
     SetFnKey {

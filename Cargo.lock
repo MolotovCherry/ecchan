@@ -204,7 +204,6 @@ dependencies = [
 name = "ecchan-server"
 version = "0.1.0"
 dependencies = [
- "cobs",
  "ec",
  "ecchan-ipc",
  "env_logger",

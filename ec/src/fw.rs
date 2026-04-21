@@ -88,11 +88,13 @@ impl ShiftModeConfig {
 pub enum ShiftMode {
     /// User High / Extreme Performance (old: Sport Mode)
     #[strum(to_string = "Extreme Performance")]
+    #[serde(rename = "Extreme Performance")]
     ExtremePerformance,
     /// User Medium / Balance / Silent (old: Comfort Mode)
     Balanced,
     /// User_Low / Super Battery (old: ECO Mode)
     #[strum(to_string = "Super Battery")]
+    #[serde(rename = "Super Battery")]
     SuperBattery,
     /// Turbo Mode
     Turbo,
