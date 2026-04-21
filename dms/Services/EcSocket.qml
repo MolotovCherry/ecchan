@@ -41,7 +41,7 @@ Singleton {
                         return;
                     }
 
-                    let data = root.handleReply(reply.Ok);
+                    let data = root._handleReply(reply.Ok);
 
                     try {
                         root._cb(data);
@@ -67,7 +67,7 @@ Singleton {
         }
     }
 
-    function reset() {
+    function _reset() {
         watchdogTimer.stop();
         pingTimer.stop();
 
@@ -84,7 +84,7 @@ Singleton {
     // data: { socketFile: "/path/to/file.sock" }
     function init(data) {
         if (_socket !== null) {
-            reset();
+            _reset();
         }
 
         _socket = _socketComponent.createObject(root, {
@@ -104,7 +104,7 @@ Singleton {
         id: watchdogTimer
         interval: 2000
         repeat: false
-        onTriggered: reset()
+        onTriggered: _reset()
     }
 
     Timer {
@@ -130,7 +130,7 @@ Singleton {
         }
     }
 
-    function handleReply(reply) {
+    function _handleReply(reply) {
         let key;
         let value;
 
