@@ -92,6 +92,12 @@ Singleton {
         pingTimer.start();
     }
 
+    function reconnect() {
+        init({
+            socketFile: _socket.path
+        });
+    }
+
     Timer {
         id: watchdogTimer
         interval: 2000
@@ -119,14 +125,6 @@ Singleton {
                     watchdogTimer.restart();
                 });
             }
-        }
-    }
-
-    function reconnect() {
-        if (_socket !== null) {
-            _socket = _socketComponent.createObject(root);
-            pingTimer.interval = 400;
-            pingTimer.start();
         }
     }
 
