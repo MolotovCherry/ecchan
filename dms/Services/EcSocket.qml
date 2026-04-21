@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Common
+import qs.Services
 
 Singleton {
     id: root
@@ -29,18 +30,26 @@ Singleton {
                     const reply = JSON.parse(line);
 
                     if (reply.hasOwnProperty("Err")) {
-                        console.error("EcSocket: Call returned error:", reply.Err);
+                        console.error("Call returned error:", reply.Err);
+                        ToastService.showError("Ecchan ipc call failed", reply.Err);
                         return;
                     } else if (!reply.hasOwnProperty("Ok")) {
-                        console.error("EcSocket: Failed to parse reply:", line);
+                        console.error("Failed to parse reply:", line);
+                        ToastService.showError("Ecchan failed to parse server reply", line);
                         return;
                     }
 
                     let data = root.handleReply(reply.Ok);
 
-                    root._cb(data);
+                    try {
+                        root._cb(data);
+                    } catch (e) {
+                        console.error("Cb failed:", e);
+                        ToastService.showError("Ecchan ipc cb failed", e);
+                    }
                 } catch (e) {
-                    console.error("EcSocket: Failed to parse reply:", line, e);
+                    console.error("Failed to parse reply:", line, e);
+                    ToastService.showError("Ecchan failed to parse server reply", `${e}\n\n${line}`);
                 }
             }
         }
