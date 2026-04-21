@@ -1,0 +1,12 @@
+{
+  "id": "ecchan",
+  "name": "Ecchan",
+  "description": "MSI laptop control center",
+  "version": "1.0.0",
+  "author": "Cherry",
+  "icon": "memory",
+  "type": "widget",
+  "component": "./Ecchan.qml",
+  "settings": "./Settings.qml",
+  "permissions": ["settings_read", "settings_write"]
+}
