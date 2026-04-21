@@ -16,15 +16,6 @@ Singleton {
     property var _cb: null
     property var _callQueue: ([])
 
-    signal _callQueueNext
-
-    on_CallQueueNext: {
-        if (_cb === null && _callQueue.length > 0) {
-            let call = _callQueue.shift();
-            call();
-        }
-    }
-
     property string _method
     property var _method_data
 
@@ -66,6 +57,13 @@ Singleton {
                 root._cb = null;
                 _callQueueNext();
             }
+        }
+    }
+
+    function _callQueueNext() {
+        if (_cb === null && _callQueue.length > 0) {
+            let call = _callQueue.shift();
+            call();
         }
     }
 
