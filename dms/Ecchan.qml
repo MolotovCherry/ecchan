@@ -12,9 +12,20 @@ PluginComponent {
     id: root
 
     Component.onCompleted: {
-        EcSocket.fanCount(data => {
-            console.error("callback", data, JSON.stringify(data));
-        });
+        // EcSocket.fanCount(data => {
+        //     ToastService.showInfo(data, JSON.stringify(data));
+        // });
+
+    }
+
+    Connections {
+        target: EcSocket
+        function onConnectedChanged() {
+            if (!EcSocket.connected) {
+                console.warn("trying reconnect in connection changed", EcSocket.connected);
+                //EcSocket.reconnect();
+            }
+        }
     }
 
     horizontalBarPill: Component {

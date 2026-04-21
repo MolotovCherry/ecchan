@@ -6,7 +6,7 @@ use ecchan_ipc::{
     ret::{Bin, Ret, RetVal},
 };
 use snafu::{OptionExt, ResultExt, Snafu};
-use tokio::{net::UnixStream, select};
+use tokio::{io::AsyncWriteExt as _, net::UnixStream, select};
 
 use crate::signal::ShutdownSignal;
 
@@ -49,7 +49,10 @@ pub async fn handle_client(
         }
 
         select! {
-            _ = shutdown.wait() => break,
+            _ = shutdown.wait() => {
+                client.shutdown().await.context(IoSnafu)?;
+                break;
+            },
             v = client.readable() => v.context(IoSnafu)?,
         }
 

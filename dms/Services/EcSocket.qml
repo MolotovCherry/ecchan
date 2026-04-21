@@ -1,4 +1,5 @@
 pragma Singleton
+pragma ComponentBehavior: Bound
 
 import QtQuick
 
@@ -10,7 +11,7 @@ import qs.Services
 Singleton {
     id: root
 
-    property alias connected: socket.connected
+    property bool connected: false
     property string socketPath: Quickshell.env("ECCHAN_SOCK") || "/run/ecchan.sock"
 
     property var _cb
@@ -18,7 +19,9 @@ Singleton {
     property string _method
     property var _method_data
 
-    DankSocket {
+    property DankSocket _socket: _socketComponent.createObject(root) as DankSocket
+
+    property Component _socketComponent: DankSocket {
         id: socket
         path: root.socketPath
         connected: true
@@ -55,8 +58,55 @@ Singleton {
         }
     }
 
+    Component.onCompleted: {
+        pingTimer.start();
+    }
+
+    Timer {
+        id: watchdogTimer
+        interval: 2000
+        repeat: false
+        onTriggered: {
+            pingTimer.stop();
+            root.connected = false;
+
+            root._socket.destroy();
+            root._socket = null;
+        }
+    }
+
+    Timer {
+        id: pingTimer
+        interval: 1500
+        repeat: true
+        onTriggered: {
+            pingTimer.interval = 1500;
+
+            if (root._socket !== null) {
+                if (!watchdogTimer.running) {
+                    watchdogTimer.start();
+                }
+
+                root.ping(() => {
+                    if (!root.connected) {
+                        root.connected = true;
+                    }
+
+                    watchdogTimer.restart();
+                });
+            }
+        }
+    }
+
+    function reconnect() {
+        if (_socket !== null) {
+            _socket = _socketComponent.createObject(root);
+            pingTimer.interval = 400;
+            pingTimer.start();
+        }
+    }
+
     function handleReply(reply) {
-        console.error("handling", JSON.stringify(reply));
         let key;
         let value;
 
@@ -180,9 +230,11 @@ Singleton {
             return;
         }
 
-        console.info("Calling", json);
+        if (json !== "\"Ping\"") {
+            console.info("Calling", json);
+        }
 
-        socket.send(json);
+        _socket.send(json);
     }
 
     // Utils
