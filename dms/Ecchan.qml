@@ -11,21 +11,12 @@ import "./Services"
 PluginComponent {
     id: root
 
-    Component.onCompleted: {
-        // EcSocket.fanCount(data => {
-        //     ToastService.showInfo(data, JSON.stringify(data));
-        // });
+    property string socketFile: pluginData.socketFile
 
-    }
-
-    Connections {
-        target: EcSocket
-        function onConnectedChanged() {
-            if (!EcSocket.connected) {
-                console.warn("trying reconnect in connection changed", EcSocket.connected);
-                //EcSocket.reconnect();
-            }
-        }
+    onSocketFileChanged: {
+        EcSocket.init({
+            "socketFile": socketFile
+        });
     }
 
     horizontalBarPill: Component {

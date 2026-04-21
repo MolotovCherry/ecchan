@@ -12,7 +12,6 @@ Singleton {
     id: root
 
     property bool connected: false
-    property string socketPath: Quickshell.env("ECCHAN_SOCK") || "/run/ecchan.sock"
 
     property var _cb: null
     property var _callQueue: ([])
@@ -29,11 +28,10 @@ Singleton {
     property string _method
     property var _method_data
 
-    property DankSocket _socket: _socketComponent.createObject(root) as DankSocket
+    property DankSocket _socket
 
     property Component _socketComponent: DankSocket {
         id: socket
-        path: root.socketPath
         connected: true
 
         parser: SplitParser {
@@ -71,7 +69,28 @@ Singleton {
         }
     }
 
-    Component.onCompleted: {
+    function reset() {
+        watchdogTimer.stop();
+        pingTimer.stop();
+
+        _socket.destroy();
+        _socket = null;
+
+        _callQueue = [];
+        _cb = null;
+
+        connected = false;
+    }
+
+    function init(data) {
+        if (_socket !== null) {
+            reset();
+        }
+
+        _socket = _socketComponent.createObject(root, {
+            path: data.socketFile
+        });
+
         pingTimer.start();
     }
 
@@ -79,13 +98,7 @@ Singleton {
         id: watchdogTimer
         interval: 2000
         repeat: false
-        onTriggered: {
-            pingTimer.stop();
-            root.connected = false;
-
-            root._socket.destroy();
-            root._socket = null;
-        }
+        onTriggered: reset()
     }
 
     Timer {
