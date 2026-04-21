@@ -19,6 +19,11 @@ Ecchan is a Rust-based ecram library for Rust. It allows you to control a lot of
 - get raw/pretty ec dump
 - custom model specific functions (things like overdrive, usb power share, etc)
 
+In addition to that, it also has:
+
+- an ipc server so client programs can control hardware
+- dms (dankmaterialshell) control panel
+
 Currently only supports WMI2 models.
 
 # Using
@@ -34,13 +39,9 @@ This currently requires the Linux `ec_sys` driver is loaded with `write_support`
 
 You may add support for model specific features that are unavailable under fw in the `models` directory. You may find the the model string for your laptop by doing a `cat /sys/class/dmi/id/product_name`.
 
-# Long term goals
-
-Might think about upgrading this to a kernel driver in the far future. But this will have to be when most kernels enable Rust support by default.
-
 # Alternatives
 
-[msi-ec](https://github.com/BeardOverflow/msi-ec) is a great project and is already a kernel driver. Building and installing it is relatively trivial too. However it does not support fan curves and model specific features.
+[msi-ec](https://github.com/BeardOverflow/msi-ec) is a great project and is already a kernel driver. Building and installing it is relatively trivial too. However it does not support gpu fan/temp/hysteresis curves and model specific features, nor does it have an ipc api.
 
 # AI Policy
 
