@@ -14,7 +14,17 @@ Singleton {
     property bool connected: false
     property string socketPath: Quickshell.env("ECCHAN_SOCK") || "/run/ecchan.sock"
 
-    property var _cb
+    property var _cb: null
+    property var _callQueue: ([])
+
+    signal _callQueueNext
+
+    on_CallQueueNext: {
+        if (_cb === null && _callQueue.length > 0) {
+            let call = _callQueue.shift();
+            call();
+        }
+    }
 
     property string _method
     property var _method_data
@@ -54,6 +64,9 @@ Singleton {
                     console.error("Failed to parse reply:", line, e);
                     ToastService.showError("Ecchan failed to parse server reply", `${e}\n\n${line}`);
                 }
+
+                root._cb = null;
+                _callQueueNext();
             }
         }
     }
@@ -216,25 +229,29 @@ Singleton {
     }
 
     function _call(cb) {
-        root._cb = cb;
+        _callQueue.push(() => {
+            root._cb = cb;
 
-        let json;
-        if (typeof (root._method) != "undefined" && typeof (root._method_data) == "undefined") {
-            json = JSON.stringify(root._method);
-        } else if (typeof (root._method) != "undefined" && typeof (root._method_data) != "undefined") {
-            json = JSON.stringify({
-                _method: _method_data
-            });
-        } else {
-            console.error("why is _method undefined?");
-            return;
-        }
+            let json;
+            if (typeof (root._method) != "undefined" && typeof (root._method_data) == "undefined") {
+                json = JSON.stringify(root._method);
+            } else if (typeof (root._method) != "undefined" && typeof (root._method_data) != "undefined") {
+                json = JSON.stringify({
+                    _method: _method_data
+                });
+            } else {
+                console.error("why is _method undefined?");
+                return;
+            }
 
-        if (json !== "\"Ping\"") {
-            console.info("Calling", json);
-        }
+            if (json !== "\"Ping\"") {
+                console.info("Calling", json);
+            }
 
-        _socket.send(json);
+            _socket.send(json);
+        });
+
+        _callQueueNext();
     }
 
     // Utils
