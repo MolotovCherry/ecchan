@@ -80,6 +80,8 @@ Singleton {
         connected = false;
     }
 
+    // args:
+    // data: { socketFile: "/path/to/file.sock" }
     function init(data) {
         if (_socket !== null) {
             reset();
