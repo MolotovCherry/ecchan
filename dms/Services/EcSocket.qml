@@ -237,12 +237,14 @@ Singleton {
     }
 
     function shiftMode(mode, cb) {
-        if (mode) {
-            root._method = "SetShiftMode";
-            root._method_data = mode;
-        } else {
-            root._method = "ShiftMode";
-        }
+        root._method = "ShiftMode";
+
+        root._call(cb);
+    }
+
+    function setShiftMode(mode, cb) {
+        root._method = "SetShiftMode";
+        root._method_data = mode;
 
         root._call(cb);
     }
@@ -255,16 +257,19 @@ Singleton {
 
     // Battery
 
-    function batteryChargeMode(mode, cb) {
-        if (typeof (mode) == "undefined") {
-            root._method = "BatteryChargeMode";
-        } else if (typeof (mode) == "string") {
-            root._method = "SetBatteryChargeMode";
+    function batteryChargeMode(cb) {
+        root._method = "BatteryChargeMode";
+        root._call(cb);
+    }
+
+    function setBatteryChargeMode(mode, cb) {
+        root._method = "SetBatteryChargeMode";
+
+        if (typeof (mode) == "string") {
             root._methodData = {
                 "mode": mode
             };
         } else if (typeof (mode) == "number") {
-            root._method = "SetBatteryChargeMode";
             root._methodData = {
                 "mode": {
                     "Custom": mode
@@ -279,23 +284,25 @@ Singleton {
         root._method = "BatteryChargeModeSupported";
     }
 
-    function superBattery(mode, cb) {
-        if (typeof (mode) == "undefined") {
-            root._method = "SuperBattery";
+    function superBattery(cb) {
+        root._method = "SuperBattery";
+
+        root._call(cb);
+    }
+
+    function setSuperBattery(mode, cb) {
+        root._method = "SetSuperBattery";
+
+        let state;
+        if (mode) {
+            state = "On";
         } else {
-            root._method = "SetSuperBattery";
-
-            let state;
-            if (mode) {
-                state = "On";
-            } else {
-                state = "Off";
-            }
-
-            root._methodData = {
-                "state": state
-            };
+            state = "Off";
         }
+
+        root._methodData = {
+            "state": state
+        };
 
         root._call(cb);
     }
@@ -361,15 +368,17 @@ Singleton {
         root._call(cb);
     }
 
-    function fanMode(mode, cb) {
-        if (typeof (mode) == "undefined") {
-            root._method = "FanMode";
-        } else {
-            root._method = "SetFanMode";
-            root._methodData = {
-                "mode": mode
-            };
-        }
+    function fanMode(cb) {
+        root._method = "FanMode";
+
+        root._call(cb);
+    }
+
+    function setFanMode(mode, cb) {
+        root._method = "SetFanMode";
+        root._methodData = {
+            "mode": mode
+        };
 
         root._call(cb);
     }
@@ -383,43 +392,47 @@ Singleton {
     // Webcam
 
     function webcam(mode, cb) {
-        if (typeof (mode) == "undefined") {
-            root._method = "Webcam";
+        root._method = "Webcam";
+
+        root._call(cb);
+    }
+
+    function setWebcam(mode, cb) {
+        root._method = "SetWebcam";
+
+        let state;
+        if (mode) {
+            state = "On";
         } else {
-            root._method = "SetWebcam";
-
-            let state;
-            if (mode) {
-                state = "On";
-            } else {
-                state = "Off";
-            }
-
-            root._methodData = {
-                "state": state
-            };
+            state = "Off";
         }
+
+        root._methodData = {
+            "state": state
+        };
 
         root._call(cb);
     }
 
     function webcamBlock(mode, cb) {
-        if (typeof (mode) == "undefined") {
-            root._method = "WebcamBlock";
+        root._method = "WebcamBlock";
+
+        root._call(cb);
+    }
+
+    function setWebcamBlock(mode, cb) {
+        root._method = "SetWebcamBlock";
+
+        let state;
+        if (mode) {
+            state = "On";
         } else {
-            root._method = "SetWebcamBlock";
-
-            let state;
-            if (mode) {
-                state = "On";
-            } else {
-                state = "Off";
-            }
-
-            root._methodData = {
-                "state": state
-            };
+            state = "Off";
         }
+
+        root._methodData = {
+            "state": state
+        };
 
         root._call(cb);
     }
@@ -438,23 +451,25 @@ Singleton {
 
     // Cooler Boost
 
-    function coolerBoost(mode, cb) {
-        if (typeof (mode) == "undefined") {
-            root._method = "CoolerBoost";
+    function coolerBoost(cb) {
+        root._method = "CoolerBoost";
+
+        root._call(cb);
+    }
+
+    function setCoolerBoost(mode, cb) {
+        root._method = "SetCoolerBoost";
+
+        let state;
+        if (mode) {
+            state = "On";
         } else {
-            root._method = "SetCoolerBoost";
-
-            let state;
-            if (mode) {
-                state = "On";
-            } else {
-                state = "Off";
-            }
-
-            root._methodData = {
-                "state": state
-            };
+            state = "Off";
         }
+
+        root._methodData = {
+            "state": state
+        };
 
         root._call(cb);
     }
@@ -467,30 +482,34 @@ Singleton {
 
     // Swap Keys
 
-    function fnKey(dir, cb) {
-        if (typeof (dir) == "undefined") {
-            root._method = "FnKey";
-        } else {
-            root._method = "SetFnKey";
-
-            root._methodData = {
-                "state": dir
-            };
-        }
+    function fnKey(cb) {
+        root._method = "FnKey";
 
         root._call(cb);
     }
 
-    function winKey(dir, cb) {
-        if (typeof (dir) == "undefined") {
-            root._method = "WinKey";
-        } else {
-            root._method = "SetWinKey";
+    function setFnKey(dir, cb) {
+        root._method = "SetFnKey";
 
-            root._methodData = {
-                "state": dir
-            };
-        }
+        root._methodData = {
+            "state": dir
+        };
+
+        root._call(cb);
+    }
+
+    function winKey(cb) {
+        root._method = "WinKey";
+
+        root._call(cb);
+    }
+
+    function setWinKey(dir, cb) {
+        root._method = "SetWinKey";
+
+        root._methodData = {
+            "state": dir
+        };
 
         root._call(cb);
     }
@@ -503,44 +522,48 @@ Singleton {
 
     // Mute LEDs
 
-    function micMuteLed(state, cb) {
-        if (typeof (state) == "undefined") {
-            root._method = "MicMuteLed";
-        } else {
-            root._method = "SetMicMuteLed";
-
-            let val;
-            if (state) {
-                val = "On";
-            } else {
-                val = "Off";
-            }
-
-            root._methodData = {
-                "state": val
-            };
-        }
+    function micMuteLed(cb) {
+        root._method = "MicMuteLed";
 
         root._call(cb);
     }
 
-    function muteLed(state, cb) {
-        if (typeof (state) == "undefined") {
-            root._method = "MuteLed";
+    function setMicMuteLed(state, cb) {
+        root._method = "SetMicMuteLed";
+
+        let val;
+        if (state) {
+            val = "On";
         } else {
-            root._method = "SetMuteLed";
-
-            let val;
-            if (state) {
-                val = "On";
-            } else {
-                val = "Off";
-            }
-
-            root._methodData = {
-                "state": val
-            };
+            val = "Off";
         }
+
+        root._methodData = {
+            "state": val
+        };
+
+        root._call(cb);
+    }
+
+    function muteLed(cb) {
+        root._method = "MuteLed";
+
+        root._call(cb);
+    }
+
+    function setMuteLed(state, cb) {
+        root._method = "SetMuteLed";
+
+        let val;
+        if (state) {
+            val = "On";
+        } else {
+            val = "Off";
+        }
+
+        root._methodData = {
+            "state": val
+        };
 
         root._call(cb);
     }
@@ -585,126 +608,138 @@ Singleton {
 
     // Curves
 
-    function cpuFanCurveWmi2(curve, cb) {
-        if (typeof (curve) == "undefined") {
-            root._method = "CpuFanCurveWmi2";
-        } else {
-            root._method = "SetCpuFanCurveWmi2";
-            root._methodData = {
-                "curve": {
-                    "n1": curve[0],
-                    "n2": curve[1],
-                    "n3": curve[2],
-                    "n4": curve[3],
-                    "n5": curve[4],
-                    "n6": curve[5],
-                    "n7": curve[6]
-                }
-            };
-        }
+    function cpuFanCurveWmi2(cb) {
+        root._method = "CpuFanCurveWmi2";
 
         root._call(cb);
     }
 
-    function cpuTempCurveWmi2(curve, cb) {
-        if (typeof (curve) == "undefined") {
-            root._method = "CpuTempCurveWmi2";
-        } else {
-            root._method = "SetCpuTempCurveWmi2";
-            root._methodData = {
-                "curve": {
-                    "n1": curve[0],
-                    "n2": curve[1],
-                    "n3": curve[2],
-                    "n4": curve[3],
-                    "n5": curve[4],
-                    "n6": curve[5],
-                    "n7": curve[6]
-                }
-            };
-        }
+    function setCpuFanCurveWmi2(curve, cb) {
+        root._method = "SetCpuFanCurveWmi2";
+        root._methodData = {
+            "curve": {
+                "n1": curve[0],
+                "n2": curve[1],
+                "n3": curve[2],
+                "n4": curve[3],
+                "n5": curve[4],
+                "n6": curve[5],
+                "n7": curve[6]
+            }
+        };
 
         root._call(cb);
     }
 
-    function cpuHysteresisCurveWmi2(curve, cb) {
-        if (typeof (curve) == "undefined") {
-            root._method = "CpuHysteresisCurveWmi2";
-        } else {
-            root._method = "SetCpuHysteresisCurveWmi2";
-            root._methodData = {
-                "curve": {
-                    "n1": curve[0],
-                    "n2": curve[1],
-                    "n3": curve[2],
-                    "n4": curve[3],
-                    "n5": curve[4],
-                    "n6": curve[5]
-                }
-            };
-        }
+    function cpuTempCurveWmi2(cb) {
+        root._method = "CpuTempCurveWmi2";
+
+        root._call(cb);
+    }
+
+    function setCpuTempCurveWmi2(curve, cb) {
+        root._method = "SetCpuTempCurveWmi2";
+        root._methodData = {
+            "curve": {
+                "n1": curve[0],
+                "n2": curve[1],
+                "n3": curve[2],
+                "n4": curve[3],
+                "n5": curve[4],
+                "n6": curve[5],
+                "n7": curve[6]
+            }
+        };
+
+        root._call(cb);
+    }
+
+    function cpuHysteresisCurveWmi2(cb) {
+        root._method = "CpuHysteresisCurveWmi2";
+
+        root._call(cb);
+    }
+
+    function setCpuHysteresisCurveWmi2(curve, cb) {
+        root._method = "SetCpuHysteresisCurveWmi2";
+        root._methodData = {
+            "curve": {
+                "n1": curve[0],
+                "n2": curve[1],
+                "n3": curve[2],
+                "n4": curve[3],
+                "n5": curve[4],
+                "n6": curve[5]
+            }
+        };
 
         root._call(cb);
     }
 
     function gpuFanCurveWmi2(curve, cb) {
-        if (typeof (curve) == "undefined") {
-            root._method = "GpuFanCurveWmi2";
-        } else {
-            root._method = "SetGpuFanCurveWmi2";
-            root._methodData = {
-                "curve": {
-                    "n1": curve[0],
-                    "n2": curve[1],
-                    "n3": curve[2],
-                    "n4": curve[3],
-                    "n5": curve[4],
-                    "n6": curve[5],
-                    "n7": curve[6]
-                }
-            };
-        }
+        root._method = "GpuFanCurveWmi2";
 
         root._call(cb);
     }
 
-    function gpuTempCurveWmi2(curve, cb) {
-        if (typeof (curve) == "undefined") {
-            root._method = "GpuTempCurveWmi2";
-        } else {
-            root._method = "SetGpuTempCurveWmi2";
-            root._methodData = {
-                "curve": {
-                    "n1": curve[0],
-                    "n2": curve[1],
-                    "n3": curve[2],
-                    "n4": curve[3],
-                    "n5": curve[4],
-                    "n6": curve[5],
-                    "n7": curve[6]
-                }
-            };
-        }
+    function setGpuFanCurveWmi2(curve, cb) {
+        root._method = "SetGpuFanCurveWmi2";
+        root._methodData = {
+            "curve": {
+                "n1": curve[0],
+                "n2": curve[1],
+                "n3": curve[2],
+                "n4": curve[3],
+                "n5": curve[4],
+                "n6": curve[5],
+                "n7": curve[6]
+            }
+        };
 
         root._call(cb);
     }
 
-    function gpuHysteresisCurveWmi2(curve, cb) {
-        if (typeof (curve) == "undefined") {
-            root._method = "GpuHysteresisCurveWmi2";
-        } else {
-            root._method = "SetGpuHysteresisCurveWmi2";
-            root._methodData = {
-                "curve": {
-                    "n1": curve[0],
-                    "n2": curve[1],
-                    "n3": curve[2],
-                    "n4": curve[3],
-                    "n5": curve[4],
-                    "n6": curve[5]
-                }
-            };
-        }
+    function gpuTempCurveWmi2(cb) {
+        root._method = "GpuTempCurveWmi2";
+
+        root._call(cb);
+    }
+
+    function setGpuTempCurveWmi2(curve, cb) {
+        root._method = "SetGpuTempCurveWmi2";
+        root._methodData = {
+            "curve": {
+                "n1": curve[0],
+                "n2": curve[1],
+                "n3": curve[2],
+                "n4": curve[3],
+                "n5": curve[4],
+                "n6": curve[5],
+                "n7": curve[6]
+            }
+        };
+
+        root._call(cb);
+    }
+
+    function gpuHysteresisCurveWmi2(cb) {
+        root._method = "GpuHysteresisCurveWmi2";
+
+        root._call(cb);
+    }
+
+    function setGpuHysteresisCurveWmi2(curve, cb) {
+        root._method = "SetGpuHysteresisCurveWmi2";
+        root._methodData = {
+            "curve": {
+                "n1": curve[0],
+                "n2": curve[1],
+                "n3": curve[2],
+                "n4": curve[3],
+                "n5": curve[4],
+                "n6": curve[5]
+            }
+        };
 
         root._call(cb);
     }
