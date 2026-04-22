@@ -27,10 +27,12 @@ Singleton {
 
         onConnectionStateChanged: {
             if (connected) {
+                root.connected = true;
                 pingTimer.start();
             }
 
             if (!connected) {
+                root.connected = false;
                 _reset();
             }
         }
@@ -81,21 +83,23 @@ Singleton {
         watchdogTimer.stop();
         pingTimer.stop();
 
-        _socket.destroy();
-        _socket = null;
+        if (_socket !== null) {
+            _socket.destroy();
+            _socket = null;
+        }
 
         _callQueue = [];
         _cb = null;
 
-        connected = false;
+        if (connected) {
+            connected = false;
+        }
     }
 
     // args:
     // data: { socketFile: "/path/to/file.sock" }
     function init(socketFile) {
-        if (_socket !== null) {
-            _reset();
-        }
+        _reset();
 
         _socket = _socketComponent.createObject(root, {
             path: socketFile
@@ -109,9 +113,7 @@ Singleton {
     }
 
     function shutdown() {
-        if (_socket !== null) {
-            _reset();
-        }
+        _reset();
     }
 
     Timer {
@@ -127,19 +129,11 @@ Singleton {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (root._socket !== null) {
-                if (!watchdogTimer.running) {
-                    watchdogTimer.start();
-                }
-
-                root.ping(() => {
-                    if (!root.connected) {
-                        root.connected = true;
-                    }
-
-                    watchdogTimer.restart();
-                });
+            if (!watchdogTimer.running) {
+                watchdogTimer.start();
             }
+
+            root.ping(() => watchdogTimer.restart());
         }
     }
 
