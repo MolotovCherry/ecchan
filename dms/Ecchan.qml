@@ -14,9 +14,11 @@ PluginComponent {
     property string socketFile: pluginData.socketFile
 
     onSocketFileChanged: {
-        EcSocket.init({
-            "socketFile": socketFile
-        });
+        EcSocket.init(socketFile);
+    }
+
+    Component.onDestruction: {
+        EcSocket.shutdown();
     }
 
     horizontalBarPill: Component {

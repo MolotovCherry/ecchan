@@ -82,13 +82,13 @@ Singleton {
 
     // args:
     // data: { socketFile: "/path/to/file.sock" }
-    function init(data) {
+    function init(socketFile) {
         if (_socket !== null) {
             _reset();
         }
 
         _socket = _socketComponent.createObject(root, {
-            path: data.socketFile
+            path: socketFile
         });
 
         pingTimer.start();
@@ -98,6 +98,12 @@ Singleton {
         init({
             socketFile: _socket.path
         });
+    }
+
+    function shutdown() {
+        if (_socket !== null) {
+            _reset();
+        }
     }
 
     Timer {
