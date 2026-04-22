@@ -25,6 +25,16 @@ Singleton {
         id: socket
         connected: true
 
+        onConnectionStateChanged: {
+            if (connected) {
+                pingTimer.start();
+            }
+
+            if (!connected) {
+                _reset();
+            }
+        }
+
         parser: SplitParser {
             onRead: line => {
                 try {
@@ -90,8 +100,6 @@ Singleton {
         _socket = _socketComponent.createObject(root, {
             path: socketFile
         });
-
-        pingTimer.start();
     }
 
     function reconnect() {
@@ -117,9 +125,8 @@ Singleton {
         id: pingTimer
         interval: 1500
         repeat: true
+        triggeredOnStart: true
         onTriggered: {
-            pingTimer.interval = 1500;
-
             if (root._socket !== null) {
                 if (!watchdogTimer.running) {
                     watchdogTimer.start();
