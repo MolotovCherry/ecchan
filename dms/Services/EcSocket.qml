@@ -54,7 +54,7 @@ Singleton {
                         return;
                     }
 
-                    let data = root._handleReply(reply.Ok);
+                    const data = root._handleReply(reply.Ok);
 
                     try {
                         root._cb(data);
@@ -75,7 +75,7 @@ Singleton {
 
     function _callQueueNext() {
         if (_cb === null && _callQueue.length > 0) {
-            let call = _callQueue.shift();
+            const call = _callQueue.shift();
             call();
         }
     }
@@ -197,8 +197,8 @@ Singleton {
                 if (typeof (value) == "string") {
                     return value;
                 } else {
-                    let ckey = Object.keys(value)[0];
-                    let cvalue = Object.values(value)[0];
+                    const ckey = Object.keys(value)[0];
+                    const cvalue = Object.values(value)[0];
 
                     switch (ckey) {
                         case "Custom":
@@ -230,8 +230,8 @@ Singleton {
                 return [value.n1, value.n2, value.n3, value.n4, value.n5, value.n6, value.n7];
 
             case "MethodData":
-                let mkey = Object.keys(value)[0];
-                let mvalue = Object.values(value)[0];
+                const mkey = Object.keys(value)[0];
+                const mvalue = Object.values(value)[0];
 
                 switch (mkey) {
                     case "Bit":
