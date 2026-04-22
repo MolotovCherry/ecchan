@@ -13,6 +13,7 @@ Singleton {
 
     property bool connected: false
 
+    property string _socketFile
     property var _cb: null
     property var _callQueue: ([])
 
@@ -101,15 +102,16 @@ Singleton {
     function init(socketFile) {
         _reset();
 
+        _socketFile = socketFile;
         _socket = _socketComponent.createObject(root, {
             path: socketFile
         });
     }
 
     function reconnect() {
-        init({
-            socketFile: _socket.path
-        });
+        if (_socketFile !== null) {
+            init(_socketFile);
+        }
     }
 
     function shutdown() {
