@@ -18,9 +18,6 @@ Singleton {
     property var _cbErr: null
     property var _callQueue: []
 
-    property string _method
-    property var _method_data
-
     property DankSocket _socket
 
     property Component _socketComponent: DankSocket {
@@ -68,7 +65,7 @@ Singleton {
                     const data = root._handleReply(reply.Ok);
 
                     try {
-                        root?._cb(data);
+                        _cb?.(data);
                     } catch (e) {
                         console.error("Cb failed:", e);
                         ToastService.showError("Ecchan ipc cb failed", e);
@@ -263,20 +260,20 @@ Singleton {
         }
     }
 
-    function _call(cb, cbErr) {
+    function _call(method, data, cb, cbErr) {
         _callQueue.push(() => {
             root._cb = cb;
             root._cbErr = cbErr || null;
 
             let json;
-            if (typeof (root._method) != "undefined" && typeof (root._method_data) == "undefined") {
-                json = JSON.stringify(root._method);
-            } else if (typeof (root._method) != "undefined" && typeof (root._method_data) != "undefined") {
+            if (typeof (method) === "string" && data == null) {
+                json = JSON.stringify(method);
+            } else if (typeof (method) === "string" && data != null) {
                 json = JSON.stringify({
-                    _method: _method_data
+                    method: data
                 });
             } else {
-                console.error("why is _method undefined?");
+                console.error("why is method undefined?");
                 return;
             }
 
@@ -287,112 +284,96 @@ Singleton {
         _callQueueNext();
     }
 
+    function _plainCall(method, cb, cbErr) {
+        _call(method, null, cb, cbErr);
+    }
+
     // Utils
 
     function ping(cb) {
-        root._method = "Ping";
-        root._call(cb);
+        _plainCall("Ping", cb);
     }
 
     function fanCount(cb) {
-        root._method = "FanCount";
-        root._call(cb);
+        _plainCall("FanCount", cb);
     }
 
     function fanMax(cb, cbErr) {
-        root._method = "FanMax";
-        root._call(cb, cbErr);
+        _plainCall("FanMax", cb, cbErr);
     }
 
     function hasDGpu(cb) {
-        root._method = "HasDGpu";
-        root._call(cb);
+        _plainCall("HasDGpu", cb);
     }
 
     function wmiVer(cb, cbErr) {
-        root._method = "WmiVer";
-        root._call(cb, cbErr);
+        _plainCall("WmiVer", cb, cbErr);
     }
 
     // Firmware
 
     function fwVersion(cb, cbErr) {
-        root._method = "FwVersion";
-        root._call(cb);
+        _plainCall("FwVersion", cb);
     }
 
     function fwDate(cb, cbErr) {
-        root._method = "FwDate";
-        root._call(cb, cbErr);
+        _plainCall("FwDate", cb, cbErr);
     }
 
     function fwTime(cb, cbErr) {
-        root._method = "FwTime";
-        root._call(cb, cbErr);
+        _plainCall("FwTime", cb, cbErr);
     }
 
     // Shift Modes
 
     function shiftModes(cb, cbErr) {
-        root._method = "ShiftModes";
-        root._call(cb, cbErr);
+        _plainCall("ShiftModes", cb, cbErr);
     }
 
     function shiftMode(mode, cb, cbErr) {
-        root._method = "ShiftMode";
-        root._call(cb);
+        _plainCall("ShiftMode", cb);
     }
 
     function setShiftMode(mode, cb, cbErr) {
-        root._method = "SetShiftMode";
-        root._method_data = mode;
-
-        root._call(cb, cbErr);
+        _call("SetShiftMode", mode, cb, cbErr);
     }
 
     function shiftModeSupported(cb) {
-        root._method = "ShiftModeSupported";
-        root._call(cb);
+        _plainCall("ShiftModeSupported", cb);
     }
 
     // Battery
 
     function batteryChargeMode(cb, cbErr) {
-        root._method = "BatteryChargeMode";
-        root._call(cb, cbErr);
+        _plainCall("BatteryChargeMode", cb, cbErr);
     }
 
     function setBatteryChargeMode(mode, cb, cbErr) {
-        root._method = "SetBatteryChargeMode";
-
+        let data;
         if (typeof (mode) == "string") {
-            root._methodData = {
+            data = {
                 "mode": mode
             };
         } else if (typeof (mode) == "number") {
-            root._methodData = {
+            data = {
                 "mode": {
                     "Custom": mode
                 }
             };
         }
 
-        root._call(cb, cbErr);
+        _call("SetBatteryChargeMode", data, cb, cbErr);
     }
 
     function batteryChargeModeSupported(cb) {
-        root._method = "BatteryChargeModeSupported";
-        root._call(cb);
+        _plainCall("BatteryChargeModeSupported", cb);
     }
 
     function superBattery(cb, cbErr) {
-        root._method = "SuperBattery";
-        root._call(cb);
+        _plainCall("SuperBattery", cb);
     }
 
     function setSuperBattery(mode, cb, cbErr) {
-        root._method = "SetSuperBattery";
-
         let state;
         if (mode) {
             state = "On";
@@ -400,95 +381,77 @@ Singleton {
             state = "Off";
         }
 
-        root._methodData = {
+        let data = {
             "state": state
         };
 
-        root._call(cb, cbErr);
+        _call("SetSuperBattery", data, cb, cbErr);
     }
 
     function superBatterySupported(cb) {
-        root._method = "SuperBatterySupported";
-        root._call(cb);
+        _plainCall("SuperBatterySupported", cb);
     }
 
     // Fan
     function fan1Rpm(cb, cbErr) {
-        root._method = "Fan1Rpm";
-        root._call(cb);
+        _plainCall("Fan1Rpm", cb);
     }
 
     function fan2Rpm(cb, cbErr) {
-        root._method = "Fan2Rpm";
-        root._call(cb, cbErr);
+        _plainCall("Fan2Rpm", cb, cbErr);
     }
 
     function fan3Rpm(cb, cbErr) {
-        root._method = "Fan3Rpm";
-        root._call(cb, cbErr);
+        _plainCall("Fan3Rpm", cb, cbErr);
     }
 
     function fan4Rpm(cb, cbErr) {
-        root._method = "Fan4Rpm";
-        root._call(cb, cbErr);
+        _plainCall("Fan4Rpm", cb, cbErr);
     }
 
     function fan1Supported(cb) {
-        root._method = "Fan1Supported";
-
-        root._call(cb);
+        _plainCall("Fan1Supported", cb);
     }
 
     function fan2Supported(cb) {
-        root._method = "Fan2Supported";
-
-        root._call(cb);
+        _plainCall("Fan2Supported", cb);
     }
 
     function fan3Supported(cb) {
-        root._method = "Fan3Supported";
-        root._call(cb);
+        _plainCall("Fan3Supported", cb);
     }
 
     function fan4Supported(cb) {
-        root._method = "Fan4Supported";
-        root._call(cb);
+        _plainCall("Fan4Supported", cb);
     }
 
     function fanModes(cb, cbErr) {
-        root._method = "FanModes";
-        root._call(cb, cbErr);
+        _plainCall("FanModes", cb, cbErr);
     }
 
     function fanMode(cb, cbErr) {
-        root._method = "FanMode";
-        root._call(cb, cbErr);
+        _plainCall("FanMode", cb, cbErr);
     }
 
     function setFanMode(mode, cb, cbErr) {
-        root._method = "SetFanMode";
-        root._methodData = {
+        let data = {
             "mode": mode
         };
 
-        root._call(cb, cbErr);
+        _call("SetFanMode", data, cb, cbErr);
     }
 
     function fanModeSupported(cb) {
-        root._method = "FanModeSupported";
-        root._call(cb);
+        _plainCall("FanModeSupported", cb);
     }
 
     // Webcam
 
     function webcam(mode, cb, cbErr) {
-        root._method = "Webcam";
-        root._call(cb, cbErr);
+        _plainCall("Webcam", cb, cbErr);
     }
 
     function setWebcam(mode, cb, cbErr) {
-        root._method = "SetWebcam";
-
         let state;
         if (mode) {
             state = "On";
@@ -496,21 +459,18 @@ Singleton {
             state = "Off";
         }
 
-        root._methodData = {
+        let data = {
             "state": state
         };
 
-        root._call(cb, cbErr);
+        _call("SetWebcam", data, cb, cbErr);
     }
 
     function webcamBlock(mode, cb, cbErr) {
-        root._method = "WebcamBlock";
-        root._call(cb, cbErr);
+        _plainCall("WebcamBlock", cb, cbErr);
     }
 
     function setWebcamBlock(mode, cb, cbErr) {
-        root._method = "SetWebcamBlock";
-
         let state;
         if (mode) {
             state = "On";
@@ -518,33 +478,28 @@ Singleton {
             state = "Off";
         }
 
-        root._methodData = {
+        let data = {
             "state": state
         };
 
-        root._call(cb, cbErr);
+        _call("SetWebcamBlock", data, cb, cbErr);
     }
 
     function webcamSupported(cb) {
-        root._method = "WebcamSupported";
-        root._call(cb);
+        _plainCall("WebcamSupported", cb);
     }
 
     function webcamBlockSupported(cb) {
-        root._method = "WebcamBlockSupported";
-        root._call(cb);
+        _plainCall("WebcamBlockSupported", cb);
     }
 
     // Cooler Boost
 
     function coolerBoost(cb, cbErr) {
-        root._method = "CoolerBoost";
-        root._call(cb, cbErr);
+        _plainCall("CoolerBoost", cb, cbErr);
     }
 
     function setCoolerBoost(mode, cb, cbErr) {
-        root._method = "SetCoolerBoost";
-
         let state;
         if (mode) {
             state = "On";
@@ -552,66 +507,54 @@ Singleton {
             state = "Off";
         }
 
-        root._methodData = {
+        let data = {
             "state": state
         };
 
-        root._call(cb, cbErr);
+        _call("SetCoolerBoost", data, cb, cbErr);
     }
 
     function coolerBoostSupported(cb) {
-        root._method = "CoolerBoostSupported";
-        root._call(cb);
+        _plainCall("CoolerBoostSupported", cb);
     }
 
     // Swap Keys
 
     function fnKey(cb, cbErr) {
-        root._method = "FnKey";
-        root._call(cb, cbErr);
+        _plainCall("FnKey", cb, cbErr);
     }
 
     function setFnKey(dir, cb, cbErr) {
-        root._method = "SetFnKey";
-
-        root._methodData = {
+        let data = {
             "state": dir
         };
 
-        root._call(cb, cbErr);
+        _call("SetFnKey", data, cb, cbErr);
     }
 
     function winKey(cb, cbErr) {
-        root._method = "WinKey";
-        root._call(cb, cbErr);
+        _plainCall("WinKey", cb, cbErr);
     }
 
     function setWinKey(dir, cb, cbErr) {
-        root._method = "SetWinKey";
-
-        root._methodData = {
+        let data = {
             "state": dir
         };
 
-        root._call(cb, cbErr);
+        _call("SetWinKey", data, cb, cbErr);
     }
 
     function fnWinSwapSupported(cb) {
-        root._method = "FnWinSwapSupported";
-
-        root._call(cb);
+        _plainCall("FnWinSwapSupported", cb);
     }
 
     // Mute LEDs
 
     function micMuteLed(cb, cbErr) {
-        root._method = "MicMuteLed";
-        root._call(cb, cbErr);
+        _plainCall("MicMuteLed", cb, cbErr);
     }
 
     function setMicMuteLed(state, cb, cbErr) {
-        root._method = "SetMicMuteLed";
-
         let val;
         if (state) {
             val = "On";
@@ -619,21 +562,18 @@ Singleton {
             val = "Off";
         }
 
-        root._methodData = {
+        let data = {
             "state": val
         };
 
-        root._call(cb, cbErr);
+        _call("SetMicMuteLed", data, cb, cbErr);
     }
 
     function muteLed(cb, cbErr) {
-        root._method = "MuteLed";
-        root._call(cb, cbErr);
+        _plainCall("MuteLed", cb, cbErr);
     }
 
     function setMuteLed(state, cb, cbErr) {
-        root._method = "SetMuteLed";
-
         let val;
         if (state) {
             val = "On";
@@ -641,55 +581,47 @@ Singleton {
             val = "Off";
         }
 
-        root._methodData = {
+        let data = {
             "state": val
         };
 
-        root._call(cb, cbErr);
+        _call("SetMuteLed", data, cb, cbErr);
     }
 
     function micMuteLedSupported(cb) {
-        root._method = "MicMuteLedSupported";
-        root._call(cb);
+        _plainCall("MicMuteLedSupported", cb);
     }
 
     function muteLedSupported(cb) {
-        root._method = "MuteLedSupported";
-        root._call(cb);
+        _plainCall("MuteLedSupported", cb);
     }
 
     // Realtime Stats
 
     function cpuRtFanSpeed(cb, cbErr) {
-        root._method = "CpuRtFanSpeed";
-        root._call(cb, cbErr);
+        _plainCall("CpuRtFanSpeed", cb, cbErr);
     }
 
     function cpuRtTemp(cb, cbErr) {
-        root._method = "CpuRtTemp";
-        root._call(cb, cbErr);
+        _plainCall("CpuRtTemp", cb, cbErr);
     }
 
     function gpuRtFanSpeed(cb, cbErr) {
-        root._method = "GpuRtFanSpeed";
-        root._call(cb, cbErr);
+        _plainCall("GpuRtFanSpeed", cb, cbErr);
     }
 
     function gpuRtTemp(cb, cbErr) {
-        root._method = "GpuRtTemp";
-        root._call(cb, cbErr);
+        _plainCall("GpuRtTemp", cb, cbErr);
     }
 
     // Curves
 
     function cpuFanCurveWmi2(cb, cbErr) {
-        root._method = "CpuFanCurveWmi2";
-        root._call(cb, cbErr);
+        _plainCall("CpuFanCurveWmi2", cb, cbErr);
     }
 
     function setCpuFanCurveWmi2(curve, cb, cbErr) {
-        root._method = "SetCpuFanCurveWmi2";
-        root._methodData = {
+        let data = {
             "curve": {
                 "n1": curve[0],
                 "n2": curve[1],
@@ -701,18 +633,15 @@ Singleton {
             }
         };
 
-        root._call(cb, cbErr);
+        _call("SetCpuFanCurveWmi2", data, cb, cbErr);
     }
 
     function cpuTempCurveWmi2(cb, cbErr) {
-        root._method = "CpuTempCurveWmi2";
-
-        root._call(cb, cbErr);
+        _plainCall("CpuTempCurveWmi2", cb, cbErr);
     }
 
     function setCpuTempCurveWmi2(curve, cb, cbErr) {
-        root._method = "SetCpuTempCurveWmi2";
-        root._methodData = {
+        let data = {
             "curve": {
                 "n1": curve[0],
                 "n2": curve[1],
@@ -724,17 +653,15 @@ Singleton {
             }
         };
 
-        root._call(cb, cbErr);
+        _call("SetCpuTempCurveWmi2", data, cb, cbErr);
     }
 
     function cpuHysteresisCurveWmi2(cb, cbErr) {
-        root._method = "CpuHysteresisCurveWmi2";
-        root._call(cb, cbErr);
+        _plainCall("CpuHysteresisCurveWmi2", cb, cbErr);
     }
 
     function setCpuHysteresisCurveWmi2(curve, cb, cbErr) {
-        root._method = "SetCpuHysteresisCurveWmi2";
-        root._methodData = {
+        let data = {
             "curve": {
                 "n1": curve[0],
                 "n2": curve[1],
@@ -745,17 +672,15 @@ Singleton {
             }
         };
 
-        root._call(cb, cbErr);
+        _call("SetCpuHysteresisCurveWmi2", data, cb, cbErr);
     }
 
     function gpuFanCurveWmi2(curve, cb, cbErr) {
-        root._method = "GpuFanCurveWmi2";
-        root._call(cb, cbErr);
+        _plainCall("GpuFanCurveWmi2", cb, cbErr);
     }
 
     function setGpuFanCurveWmi2(curve, cb, cbErr) {
-        root._method = "SetGpuFanCurveWmi2";
-        root._methodData = {
+        let data = {
             "curve": {
                 "n1": curve[0],
                 "n2": curve[1],
@@ -767,17 +692,15 @@ Singleton {
             }
         };
 
-        root._call(cb, cbErr);
+        _call("SetGpuFanCurveWmi2", data, cb, cbErr);
     }
 
     function gpuTempCurveWmi2(cb, cbErr) {
-        root._method = "GpuTempCurveWmi2";
-        root._call(cb, cbErr);
+        _plainCall("GpuTempCurveWmi2", cb, cbErr);
     }
 
     function setGpuTempCurveWmi2(curve, cb, cbErr) {
-        root._method = "SetGpuTempCurveWmi2";
-        root._methodData = {
+        let data = {
             "curve": {
                 "n1": curve[0],
                 "n2": curve[1],
@@ -789,17 +712,15 @@ Singleton {
             }
         };
 
-        root._call(cb, cbErr);
+        _call("SetGpuTempCurveWmi2", data, cb, cbErr);
     }
 
     function gpuHysteresisCurveWmi2(cb, cbErr) {
-        root._method = "GpuHysteresisCurveWmi2";
-        root._call(cb, cbErr);
+        _plainCall("GpuHysteresisCurveWmi2", cb, cbErr);
     }
 
     function setGpuHysteresisCurveWmi2(curve, cb, cbErr) {
-        root._method = "SetGpuHysteresisCurveWmi2";
-        root._methodData = {
+        let data = {
             "curve": {
                 "n1": curve[0],
                 "n2": curve[1],
@@ -810,58 +731,52 @@ Singleton {
             }
         };
 
-        root._call(cb, cbErr);
+        _call("SetGpuHysteresisCurveWmi2", data, cb, cbErr);
     }
 
     // Ec
 
     function ecDump(cb, cbErr) {
-        root._method = "EcDump";
-        root._call(cb, cbErr);
+        _plainCall("EcDump", cb, cbErr);
     }
 
     function ecDumpPretty(cb, cbErr) {
-        root._method = "EcDumpPretty";
-        root._call(cb, cbErr);
+        _plainCall("EcDumpPretty", cb, cbErr);
     }
 
     // Methods
 
     function methodList(cb) {
-        root._method = "MethodList";
-        root._call(cb);
+        _plainCall("MethodList", cb);
     }
 
     function methodRead(method, op, cb, cbErr) {
-        root.method = "MethodRead";
-        root._methodData = {
+        let data = {
             "method": method,
             "op": op
         };
 
-        root._call(cb, cbErr);
+        _call("MethodRead", data, cb, cbErr);
     }
 
-    function methodWrite(method, op, data, cb, cbErr) {
-        root.method = "MethodWrite";
-
+    function methodWrite(method, op, mdata, cb, cbErr) {
         let ty;
-        if (typeof (data) == "boolean") {
+        if (typeof (mdata) == "boolean") {
             ty = "Bit";
-        } else if (typeof (data) == "number") {
+        } else if (typeof (mdata) == "number") {
             ty = "Byte";
-        } else if (Array.isArray(data)) {
+        } else if (Array.isArray(mdata)) {
             ty = "Range";
         }
 
-        root._methodData = {
+        let data = {
             "method": method,
             "op": op,
             "data": {
-                ty: data
+                ty: mdata
             }
         };
 
-        root._call(cb, cbErr);
+        _call("MethodWrite", data, cb, cbErr);
     }
 }
