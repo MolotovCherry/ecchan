@@ -29,6 +29,35 @@ PluginComponent {
         EcSocket.shutdown();
     }
 
+    property var socketCache: ({})
+
+    function call(name, cb, cbErr) {
+        const fn = EcSocket?.[name];
+
+        if (typeof fn !== "function") {
+            const msg = `No function: ${name}`;
+            cbErr?.(msg);
+            ToastService.showError(msg);
+            return;
+        }
+
+        const wrappedCb = value => {
+            socketCache[name] = value;
+            cb?.(value);
+        };
+
+        return fn.call(EcSocket, wrappedCb, cbErr);
+    }
+
+    function cachedCall(name, cb, cbErr) {
+        const value = socketCache?.[name];
+        if (value !== undefined) {
+            cb?.(value);
+        } else {
+            call(name, cb, cbErr);
+        }
+    }
+
     horizontalBarPill: Component {
         Row {
             spacing: Theme.spacingS
