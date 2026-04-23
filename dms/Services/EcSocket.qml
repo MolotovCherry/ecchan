@@ -260,7 +260,7 @@ Singleton {
         }
     }
 
-    function _call(method, data, cb, cbErr) {
+    function _callData(method, data, cb, cbErr) {
         _callQueue.push(() => {
             root._cb = cb;
             root._cbErr = cbErr || null;
@@ -284,68 +284,68 @@ Singleton {
         _callQueueNext();
     }
 
-    function _plainCall(method, cb, cbErr) {
-        _call(method, null, cb, cbErr);
+    function _call(method, cb, cbErr) {
+        _callData(method, null, cb, cbErr);
     }
 
     // Utils
 
     function ping(cb) {
-        _plainCall("Ping", cb);
+        _call("Ping", cb);
     }
 
     function fanCount(cb) {
-        _plainCall("FanCount", cb);
+        _call("FanCount", cb);
     }
 
     function fanMax(cb, cbErr) {
-        _plainCall("FanMax", cb, cbErr);
+        _call("FanMax", cb, cbErr);
     }
 
     function hasDGpu(cb) {
-        _plainCall("HasDGpu", cb);
+        _call("HasDGpu", cb);
     }
 
     function wmiVer(cb, cbErr) {
-        _plainCall("WmiVer", cb, cbErr);
+        _call("WmiVer", cb, cbErr);
     }
 
     // Firmware
 
     function fwVersion(cb, cbErr) {
-        _plainCall("FwVersion", cb);
+        _call("FwVersion", cb);
     }
 
     function fwDate(cb, cbErr) {
-        _plainCall("FwDate", cb, cbErr);
+        _call("FwDate", cb, cbErr);
     }
 
     function fwTime(cb, cbErr) {
-        _plainCall("FwTime", cb, cbErr);
+        _call("FwTime", cb, cbErr);
     }
 
     // Shift Modes
 
     function shiftModes(cb, cbErr) {
-        _plainCall("ShiftModes", cb, cbErr);
+        _call("ShiftModes", cb, cbErr);
     }
 
     function shiftMode(mode, cb, cbErr) {
-        _plainCall("ShiftMode", cb);
+        _call("ShiftMode", cb);
     }
 
     function setShiftMode(mode, cb, cbErr) {
-        _call("SetShiftMode", mode, cb, cbErr);
+        _callData("SetShiftMode", mode, cb, cbErr);
     }
 
     function shiftModeSupported(cb) {
-        _plainCall("ShiftModeSupported", cb);
+        _call("ShiftModeSupported", cb);
     }
 
     // Battery
 
     function batteryChargeMode(cb, cbErr) {
-        _plainCall("BatteryChargeMode", cb, cbErr);
+        _call("BatteryChargeMode", cb, cbErr);
     }
 
     function setBatteryChargeMode(mode, cb, cbErr) {
@@ -362,15 +362,15 @@ Singleton {
             };
         }
 
-        _call("SetBatteryChargeMode", data, cb, cbErr);
+        _callData("SetBatteryChargeMode", data, cb, cbErr);
     }
 
     function batteryChargeModeSupported(cb) {
-        _plainCall("BatteryChargeModeSupported", cb);
+        _call("BatteryChargeModeSupported", cb);
     }
 
     function superBattery(cb, cbErr) {
-        _plainCall("SuperBattery", cb);
+        _call("SuperBattery", cb);
     }
 
     function setSuperBattery(mode, cb, cbErr) {
@@ -385,52 +385,52 @@ Singleton {
             "state": state
         };
 
-        _call("SetSuperBattery", data, cb, cbErr);
+        _callData("SetSuperBattery", data, cb, cbErr);
     }
 
     function superBatterySupported(cb) {
-        _plainCall("SuperBatterySupported", cb);
+        _call("SuperBatterySupported", cb);
     }
 
     // Fan
     function fan1Rpm(cb, cbErr) {
-        _plainCall("Fan1Rpm", cb);
+        _call("Fan1Rpm", cb);
     }
 
     function fan2Rpm(cb, cbErr) {
-        _plainCall("Fan2Rpm", cb, cbErr);
+        _call("Fan2Rpm", cb, cbErr);
     }
 
     function fan3Rpm(cb, cbErr) {
-        _plainCall("Fan3Rpm", cb, cbErr);
+        _call("Fan3Rpm", cb, cbErr);
     }
 
     function fan4Rpm(cb, cbErr) {
-        _plainCall("Fan4Rpm", cb, cbErr);
+        _call("Fan4Rpm", cb, cbErr);
     }
 
     function fan1Supported(cb) {
-        _plainCall("Fan1Supported", cb);
+        _call("Fan1Supported", cb);
     }
 
     function fan2Supported(cb) {
-        _plainCall("Fan2Supported", cb);
+        _call("Fan2Supported", cb);
     }
 
     function fan3Supported(cb) {
-        _plainCall("Fan3Supported", cb);
+        _call("Fan3Supported", cb);
     }
 
     function fan4Supported(cb) {
-        _plainCall("Fan4Supported", cb);
+        _call("Fan4Supported", cb);
     }
 
     function fanModes(cb, cbErr) {
-        _plainCall("FanModes", cb, cbErr);
+        _call("FanModes", cb, cbErr);
     }
 
     function fanMode(cb, cbErr) {
-        _plainCall("FanMode", cb, cbErr);
+        _call("FanMode", cb, cbErr);
     }
 
     function setFanMode(mode, cb, cbErr) {
@@ -438,17 +438,17 @@ Singleton {
             "mode": mode
         };
 
-        _call("SetFanMode", data, cb, cbErr);
+        _callData("SetFanMode", data, cb, cbErr);
     }
 
     function fanModeSupported(cb) {
-        _plainCall("FanModeSupported", cb);
+        _call("FanModeSupported", cb);
     }
 
     // Webcam
 
     function webcam(mode, cb, cbErr) {
-        _plainCall("Webcam", cb, cbErr);
+        _call("Webcam", cb, cbErr);
     }
 
     function setWebcam(mode, cb, cbErr) {
@@ -463,11 +463,11 @@ Singleton {
             "state": state
         };
 
-        _call("SetWebcam", data, cb, cbErr);
+        _callData("SetWebcam", data, cb, cbErr);
     }
 
     function webcamBlock(mode, cb, cbErr) {
-        _plainCall("WebcamBlock", cb, cbErr);
+        _call("WebcamBlock", cb, cbErr);
     }
 
     function setWebcamBlock(mode, cb, cbErr) {
@@ -482,21 +482,21 @@ Singleton {
             "state": state
         };
 
-        _call("SetWebcamBlock", data, cb, cbErr);
+        _callData("SetWebcamBlock", data, cb, cbErr);
     }
 
     function webcamSupported(cb) {
-        _plainCall("WebcamSupported", cb);
+        _call("WebcamSupported", cb);
     }
 
     function webcamBlockSupported(cb) {
-        _plainCall("WebcamBlockSupported", cb);
+        _call("WebcamBlockSupported", cb);
     }
 
     // Cooler Boost
 
     function coolerBoost(cb, cbErr) {
-        _plainCall("CoolerBoost", cb, cbErr);
+        _call("CoolerBoost", cb, cbErr);
     }
 
     function setCoolerBoost(mode, cb, cbErr) {
@@ -511,17 +511,17 @@ Singleton {
             "state": state
         };
 
-        _call("SetCoolerBoost", data, cb, cbErr);
+        _callData("SetCoolerBoost", data, cb, cbErr);
     }
 
     function coolerBoostSupported(cb) {
-        _plainCall("CoolerBoostSupported", cb);
+        _call("CoolerBoostSupported", cb);
     }
 
     // Swap Keys
 
     function fnKey(cb, cbErr) {
-        _plainCall("FnKey", cb, cbErr);
+        _call("FnKey", cb, cbErr);
     }
 
     function setFnKey(dir, cb, cbErr) {
@@ -529,11 +529,11 @@ Singleton {
             "state": dir
         };
 
-        _call("SetFnKey", data, cb, cbErr);
+        _callData("SetFnKey", data, cb, cbErr);
     }
 
     function winKey(cb, cbErr) {
-        _plainCall("WinKey", cb, cbErr);
+        _call("WinKey", cb, cbErr);
     }
 
     function setWinKey(dir, cb, cbErr) {
@@ -541,17 +541,17 @@ Singleton {
             "state": dir
         };
 
-        _call("SetWinKey", data, cb, cbErr);
+        _callData("SetWinKey", data, cb, cbErr);
     }
 
     function fnWinSwapSupported(cb) {
-        _plainCall("FnWinSwapSupported", cb);
+        _call("FnWinSwapSupported", cb);
     }
 
     // Mute LEDs
 
     function micMuteLed(cb, cbErr) {
-        _plainCall("MicMuteLed", cb, cbErr);
+        _call("MicMuteLed", cb, cbErr);
     }
 
     function setMicMuteLed(state, cb, cbErr) {
@@ -566,11 +566,11 @@ Singleton {
             "state": val
         };
 
-        _call("SetMicMuteLed", data, cb, cbErr);
+        _callData("SetMicMuteLed", data, cb, cbErr);
     }
 
     function muteLed(cb, cbErr) {
-        _plainCall("MuteLed", cb, cbErr);
+        _call("MuteLed", cb, cbErr);
     }
 
     function setMuteLed(state, cb, cbErr) {
@@ -585,39 +585,39 @@ Singleton {
             "state": val
         };
 
-        _call("SetMuteLed", data, cb, cbErr);
+        _callData("SetMuteLed", data, cb, cbErr);
     }
 
     function micMuteLedSupported(cb) {
-        _plainCall("MicMuteLedSupported", cb);
+        _call("MicMuteLedSupported", cb);
     }
 
     function muteLedSupported(cb) {
-        _plainCall("MuteLedSupported", cb);
+        _call("MuteLedSupported", cb);
     }
 
     // Realtime Stats
 
     function cpuRtFanSpeed(cb, cbErr) {
-        _plainCall("CpuRtFanSpeed", cb, cbErr);
+        _call("CpuRtFanSpeed", cb, cbErr);
     }
 
     function cpuRtTemp(cb, cbErr) {
-        _plainCall("CpuRtTemp", cb, cbErr);
+        _call("CpuRtTemp", cb, cbErr);
     }
 
     function gpuRtFanSpeed(cb, cbErr) {
-        _plainCall("GpuRtFanSpeed", cb, cbErr);
+        _call("GpuRtFanSpeed", cb, cbErr);
     }
 
     function gpuRtTemp(cb, cbErr) {
-        _plainCall("GpuRtTemp", cb, cbErr);
+        _call("GpuRtTemp", cb, cbErr);
     }
 
     // Curves
 
     function cpuFanCurveWmi2(cb, cbErr) {
-        _plainCall("CpuFanCurveWmi2", cb, cbErr);
+        _call("CpuFanCurveWmi2", cb, cbErr);
     }
 
     function setCpuFanCurveWmi2(curve, cb, cbErr) {
@@ -633,11 +633,11 @@ Singleton {
             }
         };
 
-        _call("SetCpuFanCurveWmi2", data, cb, cbErr);
+        _callData("SetCpuFanCurveWmi2", data, cb, cbErr);
     }
 
     function cpuTempCurveWmi2(cb, cbErr) {
-        _plainCall("CpuTempCurveWmi2", cb, cbErr);
+        _call("CpuTempCurveWmi2", cb, cbErr);
     }
 
     function setCpuTempCurveWmi2(curve, cb, cbErr) {
@@ -653,11 +653,11 @@ Singleton {
             }
         };
 
-        _call("SetCpuTempCurveWmi2", data, cb, cbErr);
+        _callData("SetCpuTempCurveWmi2", data, cb, cbErr);
     }
 
     function cpuHysteresisCurveWmi2(cb, cbErr) {
-        _plainCall("CpuHysteresisCurveWmi2", cb, cbErr);
+        _call("CpuHysteresisCurveWmi2", cb, cbErr);
     }
 
     function setCpuHysteresisCurveWmi2(curve, cb, cbErr) {
@@ -672,11 +672,11 @@ Singleton {
             }
         };
 
-        _call("SetCpuHysteresisCurveWmi2", data, cb, cbErr);
+        _callData("SetCpuHysteresisCurveWmi2", data, cb, cbErr);
     }
 
     function gpuFanCurveWmi2(curve, cb, cbErr) {
-        _plainCall("GpuFanCurveWmi2", cb, cbErr);
+        _call("GpuFanCurveWmi2", cb, cbErr);
     }
 
     function setGpuFanCurveWmi2(curve, cb, cbErr) {
@@ -692,11 +692,11 @@ Singleton {
             }
         };
 
-        _call("SetGpuFanCurveWmi2", data, cb, cbErr);
+        _callData("SetGpuFanCurveWmi2", data, cb, cbErr);
     }
 
     function gpuTempCurveWmi2(cb, cbErr) {
-        _plainCall("GpuTempCurveWmi2", cb, cbErr);
+        _call("GpuTempCurveWmi2", cb, cbErr);
     }
 
     function setGpuTempCurveWmi2(curve, cb, cbErr) {
@@ -712,11 +712,11 @@ Singleton {
             }
         };
 
-        _call("SetGpuTempCurveWmi2", data, cb, cbErr);
+        _callData("SetGpuTempCurveWmi2", data, cb, cbErr);
     }
 
     function gpuHysteresisCurveWmi2(cb, cbErr) {
-        _plainCall("GpuHysteresisCurveWmi2", cb, cbErr);
+        _call("GpuHysteresisCurveWmi2", cb, cbErr);
     }
 
     function setGpuHysteresisCurveWmi2(curve, cb, cbErr) {
@@ -731,23 +731,23 @@ Singleton {
             }
         };
 
-        _call("SetGpuHysteresisCurveWmi2", data, cb, cbErr);
+        _callData("SetGpuHysteresisCurveWmi2", data, cb, cbErr);
     }
 
     // Ec
 
     function ecDump(cb, cbErr) {
-        _plainCall("EcDump", cb, cbErr);
+        _call("EcDump", cb, cbErr);
     }
 
     function ecDumpPretty(cb, cbErr) {
-        _plainCall("EcDumpPretty", cb, cbErr);
+        _call("EcDumpPretty", cb, cbErr);
     }
 
     // Methods
 
     function methodList(cb) {
-        _plainCall("MethodList", cb);
+        _call("MethodList", cb);
     }
 
     function methodRead(method, op, cb, cbErr) {
@@ -756,7 +756,7 @@ Singleton {
             "op": op
         };
 
-        _call("MethodRead", data, cb, cbErr);
+        _callData("MethodRead", data, cb, cbErr);
     }
 
     function methodWrite(method, op, mdata, cb, cbErr) {
@@ -777,6 +777,6 @@ Singleton {
             }
         };
 
-        _call("MethodWrite", data, cb, cbErr);
+        _callData("MethodWrite", data, cb, cbErr);
     }
 }
