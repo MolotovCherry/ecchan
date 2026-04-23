@@ -99,7 +99,7 @@ PluginComponent {
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 2
+                    anchors.margins: Theme.spacingXS
                     spacing: Theme.spacingXS
 
                     // Branding
@@ -253,21 +253,26 @@ PluginComponent {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
-                            ColumnLayout {
+                            Flow {
                                 Layout.fillHeight: true
-                                Layout.preferredWidth: root.popoutWidth / 2
+                                Layout.minimumWidth: root.popoutWidth / 2
+                                Layout.preferredWidth: (root.popoutWidth / 2) + (gpuGauge.hasDGpu ? 40 : 0)
+                                spacing: Theme.spacingXS
+
+                                flow: Flow.TopToBottom
 
                                 Item {
                                     id: cpuGauge
 
                                     implicitHeight: 180
                                     implicitWidth: 180
+                                    Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignCenter
 
                                     Connections {
                                         target: page0
                                         function onVisibleChanged() {
-                                            if (page0.visible && EcSocket.connected) {
+                                            if (page0.visible) {
                                                 cpuUpdate.start();
                                             } else {
                                                 cpuUpdate.stop();
@@ -295,23 +300,13 @@ PluginComponent {
                                             return Theme.primary;
                                         }
 
-                                        value: Math.min(1, cpuGauge.temp / 100)
-                                        label: cpuGauge.temp > 0 ? (cpuGauge.temp.toFixed(0) + "°C") : "--"
+                                        value: DgopService.cpuUsage / 100
+                                        label: DgopService.cpuUsage.toFixed(1) + "%"
+                                        detail: cpuGauge.temp > 0 ? (cpuGauge.temp.toFixed(0) + "°C") : ""
                                         sublabel: "CPU"
-                                        accentColor: {
-                                            const temp = cpuGauge.temp;
-                                            if (temp > 85)
-                                                return Theme.error;
-                                            if (temp > 70)
-                                                return Theme.warning;
-                                            return vendorColor;
-                                        }
+                                        accentColor: DgopService.cpuUsage > 80 ? Theme.error : (DgopService.cpuUsage > 50 ? Theme.warning : Theme.primary)
+                                        detailColor: cpuGauge.temp > 85 ? Theme.error : (cpuGauge.temp > 70 ? Theme.warning : Theme.surfaceVariantText)
                                     }
-                                }
-
-                                Item {
-                                    Layout.fillHeight: true
-                                    visible: gpuGauge.hasDGpu
                                 }
 
                                 Item {
@@ -319,14 +314,13 @@ PluginComponent {
 
                                     implicitHeight: 180
                                     implicitWidth: 180
-                                    Layout.alignment: Qt.AlignCenter
 
                                     visible: hasDGpu
 
                                     Connections {
                                         target: page0
                                         function onVisibleChanged() {
-                                            if (page0.visible && EcSocket.connected) {
+                                            if (page0.visible) {
                                                 gpuUpdate.start();
                                             } else {
                                                 gpuUpdate.stop();
@@ -344,6 +338,11 @@ PluginComponent {
                                         triggeredOnStart: true
                                         onTriggered: {
                                             root.cachedCall('hasDGpu', state => gpuGauge.hasDGpu = state);
+
+                                            if (!gpuGauge.hasDGpu) {
+                                                gpuUpdate.stop();
+                                            }
+
                                             root.call('gpuRtTemp', temp => gpuGauge.temp = temp);
                                         }
                                     }
@@ -369,31 +368,242 @@ PluginComponent {
                                         }
                                     }
                                 }
+
+                                Item {
+                                    width: 180
+                                    height: gpuGauge.hasDGpu ? 180 * 2 : 180
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignCenter
+
+                                    CircleGauge {
+                                        anchors.centerIn: gpuGauge.hasDGpu ? parent : undefined
+                                        width: 180
+                                        height: 180
+                                        value: DgopService.memoryUsage / 100
+                                        label: compactMem(DgopService.usedMemoryKB)
+                                        sublabel: "Memory"
+                                        detail: DgopService.totalSwapKB > 0 ? ("+" + compactMem(DgopService.usedSwapKB)) : ""
+                                        accentColor: DgopService.memoryUsage > 90 ? Theme.error : (DgopService.memoryUsage > 70 ? Theme.warning : Theme.secondary)
+
+                                        function compactMem(kb) {
+                                            if (kb < 1024 * 1024) {
+                                                const mb = kb / 1024;
+                                                return mb.toFixed(1) + " MB";
+                                            }
+                                            const gb = kb / (1024 * 1024);
+                                            return gb.toFixed(1) + " GB";
+                                        }
+                                    }
+                                }
                             }
 
                             ColumnLayout {
                                 Layout.fillHeight: true
-                                Layout.preferredWidth: root.popoutWidth / 2
+                                Layout.maximumWidth: root.popoutWidth / 2
+                                Layout.preferredWidth: (root.popoutWidth / 2) - (gpuGauge.hasDGpu ? 40 : 0)
 
                                 // Fans
-                                Rectangle {
+                                Item {
+                                    id: fanSection
+
+                                    Layout.fillHeight: true
                                     Layout.fillWidth: true
-                                    radius: Theme.cornerRadius
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
 
                                     property int fanCount: 1
+                                    property int fan1Rpm: 0
+                                    property int fan2Rpm: 0
+                                    property int fan3Rpm: 0
+                                    property int fan4Rpm: 0
 
-                                    DankIcon {
-                                        name: "mode_fan"
-                                        size: Theme.iconSizeSmall
-                                        color: Theme.primary
+                                    Connections {
+                                        target: page0
+                                        function onVisibleChanged() {
+                                            if (page0.visible) {
+                                                fanUpdate.start();
+                                            } else {
+                                                fanUpdate.stop();
+                                            }
+                                        }
                                     }
 
-                                    StyledText {
-                                        text: "Fans"
-                                        font.pixelSize: Theme.fontSizeMedium
-                                        font.weight: Font.Medium
-                                        color: Theme.surfaceText
+                                    Timer {
+                                        id: fanUpdate
+                                        interval: 1500
+                                        repeat: true
+                                        triggeredOnStart: true
+                                        onTriggered: {
+                                            root.cachedCall('fanCount', count => fanSection.fanCount = count);
+
+                                            if (fanSection.fanCount >= 1) {
+                                                root.call('fan1Rpm', rpm => fanSection.fan1Rpm = rpm);
+                                            }
+                                            if (fanSection.fanCount >= 2) {
+                                                root.call('fan2Rpm', rpm => fanSection.fan2Rpm = rpm);
+                                            }
+                                            if (fanSection.fanCount >= 3) {
+                                                root.call('fan3Rpm', rpm => fanSection.fan3Rpm = rpm);
+                                            }
+                                            if (fanSection.fanCount >= 4) {
+                                                root.call('fan4Rpm', rpm => fanSection.fan4Rpm = rpm);
+                                            }
+                                        }
+                                    }
+
+                                    StyledRect {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+
+                                        implicitHeight: fanCol.implicitHeight + Theme.spacingM * 2
+
+                                        radius: Theme.cornerRadius
+                                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+
+                                        ColumnLayout {
+                                            id: fanCol
+                                            anchors.fill: parent
+                                            anchors.margins: Theme.spacingM
+                                            spacing: Theme.spacingL
+
+                                            Row {
+                                                spacing: Theme.spacingS
+
+                                                DankIcon {
+                                                    id: modeFanIcon
+                                                    name: "mode_fan"
+                                                    size: Theme.iconSize
+                                                    color: Theme.primary
+                                                }
+
+                                                StyledText {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    text: "Fans"
+                                                    font.pixelSize: Theme.fontSizeLarge
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+                                                }
+                                            }
+
+                                            Rectangle {
+                                                Layout.alignment: Qt.AlignCenter
+                                                implicitWidth: parent.width
+                                                implicitHeight: 1
+                                                color: Theme.outline
+                                                opacity: 0.3
+                                            }
+
+                                            RowLayout {
+                                                StyledText {
+                                                    text: "Fan 1"
+                                                    font.pixelSize: Theme.fontSizeLarge
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+                                                }
+
+                                                Item {
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                StyledText {
+                                                    text: fanSection.fan1Rpm + " rpm"
+                                                    font.pixelSize: Theme.fontSizeLarge
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+                                                }
+                                            }
+
+                                            Rectangle {
+                                                visible: fanSection.fanCount >= 2
+                                                Layout.alignment: Qt.AlignCenter
+                                                implicitWidth: parent.width
+                                                implicitHeight: 1
+                                                color: Theme.outline
+                                                opacity: 0.3
+                                            }
+
+                                            RowLayout {
+                                                visible: fanSection.fanCount >= 2
+
+                                                StyledText {
+                                                    text: "Fan 2"
+                                                    font.pixelSize: Theme.fontSizeLarge
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+                                                }
+
+                                                Item {
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                StyledText {
+                                                    text: fanSection.fan2Rpm + " rpm"
+                                                    font.pixelSize: Theme.fontSizeLarge
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+                                                }
+                                            }
+
+                                            Rectangle {
+                                                visible: fanSection.fanCount >= 3
+                                                Layout.alignment: Qt.AlignCenter
+                                                implicitWidth: parent.width
+                                                implicitHeight: 1
+                                                color: Theme.outline
+                                                opacity: 0.3
+                                            }
+
+                                            RowLayout {
+                                                visible: fanSection.fanCount >= 3
+
+                                                StyledText {
+                                                    text: "Fan 3"
+                                                    font.pixelSize: Theme.fontSizeLarge
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+                                                }
+
+                                                Item {
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                StyledText {
+                                                    text: fanSection.fan3Rpm + " rpm"
+                                                    font.pixelSize: Theme.fontSizeLarge
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+                                                }
+                                            }
+
+                                            Rectangle {
+                                                visible: fanSection.fanCount >= 4
+                                                Layout.alignment: Qt.AlignCenter
+                                                implicitWidth: parent.width
+                                                implicitHeight: 1
+                                                color: Theme.outline
+                                                opacity: 0.3
+                                            }
+
+                                            RowLayout {
+                                                visible: fanSection.fanCount >= 4
+
+                                                StyledText {
+                                                    text: "Fan 4"
+                                                    font.pixelSize: Theme.fontSizeLarge
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+                                                }
+
+                                                Item {
+                                                    Layout.fillWidth: true
+                                                }
+
+                                                StyledText {
+                                                    text: fanSection.fan4Rpm + " rpm"
+                                                    font.pixelSize: Theme.fontSizeLarge
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
