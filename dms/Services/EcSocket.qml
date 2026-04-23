@@ -49,22 +49,18 @@ Singleton {
                         console.error("Call returned error:", reply.Err);
                         ToastService.showError("Ecchan ipc call failed", reply.Err);
 
-                        if (_cbErr !== null) {
-                            try {
-                                _cbErr(reply.Err);
-                            } catch (e) {}
-                        }
+                        try {
+                            _cbErr?.(reply.Err);
+                        } catch (e) {}
 
                         return;
                     } else if (!reply.hasOwnProperty("Ok")) {
                         console.error("Failed to parse reply:", line);
                         ToastService.showError("Ecchan failed to parse server reply", line);
 
-                        if (_cbErr !== null) {
-                            try {
-                                _cbErr(line);
-                            } catch (e) {}
-                        }
+                        try {
+                            _cbErr?.(line);
+                        } catch (e) {}
 
                         return;
                     }
@@ -72,7 +68,7 @@ Singleton {
                     const data = root._handleReply(reply.Ok);
 
                     try {
-                        root._cb(data);
+                        root?._cb(data);
                     } catch (e) {
                         console.error("Cb failed:", e);
                         ToastService.showError("Ecchan ipc cb failed", e);
@@ -81,11 +77,9 @@ Singleton {
                     console.error("Failed to parse reply:", line, e);
                     ToastService.showError("Ecchan failed to parse server reply", `${e}\n\n${line}`);
 
-                    if (_cbErr !== null) {
-                        try {
-                            _cbErr(reply.Err);
-                        } catch (e) {}
-                    }
+                    try {
+                        _cbErr?.(reply.Err);
+                    } catch (e) {}
                 }
 
                 root._cb = null;
@@ -106,10 +100,8 @@ Singleton {
         watchdogTimer.stop();
         pingTimer.stop();
 
-        if (_socket !== null) {
-            _socket.destroy();
-            _socket = null;
-        }
+        _socket?.destroy();
+        _socket = null;
 
         _callQueue = [];
         _cb = null;
