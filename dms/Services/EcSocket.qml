@@ -280,11 +280,8 @@ Singleton {
                 return;
             }
 
-            if (json !== "\"Ping\"") {
-                console.info("Calling", json);
-            }
-
-            _socket.send(json);
+            // calls will be lost if not connected; this is acceptable
+            _socket?.send(json);
         });
 
         _callQueueNext();

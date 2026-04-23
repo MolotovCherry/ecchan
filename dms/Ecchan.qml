@@ -6,8 +6,10 @@ import QtQuick.Layouts
 import qs.Common
 import qs.Widgets
 import qs.Modules.Plugins
+import qs.Services
 
 import "./Services"
+import "./Widgets"
 
 PluginComponent {
     id: root
@@ -17,10 +19,9 @@ PluginComponent {
     Connections {
         target: root.pluginData
         function onPluginDataChanged() {
-            const socketFile = root.pluginData.socketFile;
-
-            if (typeof (socketFile) === "string") {
-                EcSocket.init(root.pluginData.socketFile);
+            const socket = root.pluginData.socket;
+            if (typeof (socket) === "string") {
+                EcSocket.init(socket);
             }
         }
     }
@@ -89,7 +90,6 @@ PluginComponent {
             id: popout
 
             property int currentTab: 0
-            onCurrentTabChanged: {}
 
             FocusScope {
                 width: parent.width
@@ -99,31 +99,50 @@ PluginComponent {
 
                 ColumnLayout {
                     anchors.fill: parent
-                    spacing: 0
+                    anchors.margins: 2
+                    spacing: Theme.spacingXS
 
                     // Branding
-                    Item {
+
+                    RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: Math.round(Theme.fontSizeMedium * 3.4)
+                        spacing: Theme.spacingXS
 
-                        Row {
-                            Row {
-                                spacing: Theme.spacingXS
+                        DankIcon {
+                            id: memIcon
+                            name: "memory"
+                            size: Theme.iconSizeLarge - 6
+                            color: Theme.primary
+                        }
 
-                                DankIcon {
-                                    name: "memory"
-                                    size: Theme.iconSizeLarge - 6
-                                    color: Theme.primary
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
+                        StyledText {
+                            text: "Ecchan"
+                            font.pixelSize: Theme.fontSizeLarge
+                            font.weight: Font.Bold
+                            color: Theme.surfaceText
+                        }
 
-                                StyledText {
-                                    text: "Ecchan"
-                                    font.pixelSize: Theme.fontSizeLarge
-                                    font.weight: Font.Bold
-                                    color: Theme.surfaceText
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
+                        DankButton {
+                            Layout.preferredWidth: 30
+                            Layout.preferredHeight: 30
+                            hovered: false
+                            pressed: false
+                            backgroundColor: "transparent"
+                            enableRipple: false
+
+                            onClicked: EcSocket.connected ? EcSocket.shutdown() : EcSocket.reconnect()
+
+                            DankIcon {
+                                anchors.centerIn: parent
+                                name: "circle"
+                                filled: true
+                                grade: 700
+                                color: EcSocket.connected ? Theme.primary : Theme.surfaceText
+                                size: Theme.iconSize - 6
                             }
                         }
                     }
@@ -222,50 +241,159 @@ PluginComponent {
                     }
 
                     // Content
-                    Item {
-                        Layout.fillWidth: true
+
+                    RowLayout {
                         Layout.fillHeight: true
+                        Layout.fillWidth: true
 
-                        Layout.topMargin: Theme.spacingXS
-
-                        Item {
-                            id: tab1
-
-                            anchors.fill: parent
+                        RowLayout {
+                            id: page0
 
                             visible: popout.currentTab == 0
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
 
-                            onVisibleChanged: {
-                                if (!visible) {
-                                    return;
-                                }
-                            }
+                            ColumnLayout {
+                                Layout.fillHeight: true
+                                Layout.preferredWidth: root.popoutWidth / 2
 
-                            RowLayout {
-                                anchors.fill: parent
+                                Item {
+                                    id: cpuGauge
 
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
+                                    implicitHeight: 180
+                                    implicitWidth: 180
+                                    Layout.alignment: Qt.AlignCenter
 
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        color: 'transparent'
+                                    Connections {
+                                        target: page0
+                                        function onVisibleChanged() {
+                                            if (page0.visible && EcSocket.connected) {
+                                                cpuUpdate.start();
+                                            } else {
+                                                cpuUpdate.stop();
+                                            }
+                                        }
+                                    }
+
+                                    property int temp: 0
+
+                                    Timer {
+                                        id: cpuUpdate
+                                        interval: 1500
+                                        repeat: true
+                                        triggeredOnStart: true
+                                        onTriggered: {
+                                            root.call('cpuRtTemp', temp => cpuGauge.temp = temp);
+                                        }
+                                    }
+
+                                    CircleGauge {
+                                        width: parent.implicitHeight
+                                        height: parent.implicitWidth
+
+                                        readonly property color vendorColor: {
+                                            return Theme.primary;
+                                        }
+
+                                        value: Math.min(1, cpuGauge.temp / 100)
+                                        label: cpuGauge.temp > 0 ? (cpuGauge.temp.toFixed(0) + "°C") : "--"
+                                        sublabel: "CPU"
+                                        accentColor: {
+                                            const temp = cpuGauge.temp;
+                                            if (temp > 85)
+                                                return Theme.error;
+                                            if (temp > 70)
+                                                return Theme.warning;
+                                            return vendorColor;
+                                        }
                                     }
                                 }
 
-                                ColumnLayout {
-                                    Layout.fillWidth: true
+                                Item {
                                     Layout.fillHeight: true
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
+                                    visible: gpuGauge.hasDGpu
+                                }
 
-                                        radius: Theme.cornerRadius
-                                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-                                        border.color: Theme.outlineLight
-                                        border.width: 1
+                                Item {
+                                    id: gpuGauge
+
+                                    implicitHeight: 180
+                                    implicitWidth: 180
+                                    Layout.alignment: Qt.AlignCenter
+
+                                    visible: hasDGpu
+
+                                    Connections {
+                                        target: page0
+                                        function onVisibleChanged() {
+                                            if (page0.visible && EcSocket.connected) {
+                                                gpuUpdate.start();
+                                            } else {
+                                                gpuUpdate.stop();
+                                            }
+                                        }
+                                    }
+
+                                    property bool hasDGpu: false
+                                    property int temp: 0
+
+                                    Timer {
+                                        id: gpuUpdate
+                                        interval: 1500
+                                        repeat: true
+                                        triggeredOnStart: true
+                                        onTriggered: {
+                                            root.cachedCall('hasDGpu', state => gpuGauge.hasDGpu = state);
+                                            root.call('gpuRtTemp', temp => gpuGauge.temp = temp);
+                                        }
+                                    }
+
+                                    CircleGauge {
+                                        width: parent.implicitHeight
+                                        height: parent.implicitWidth
+
+                                        readonly property color vendorColor: {
+                                            return Theme.success;
+                                        }
+
+                                        value: Math.min(1, gpuGauge.temp / 100)
+                                        label: gpuGauge.temp > 0 ? (gpuGauge.temp.toFixed(0) + "°C") : "--"
+                                        sublabel: "GPU"
+                                        accentColor: {
+                                            const temp = gpuGauge.temp;
+                                            if (temp > 85)
+                                                return Theme.error;
+                                            if (temp > 70)
+                                                return Theme.warning;
+                                            return vendorColor;
+                                        }
+                                    }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillHeight: true
+                                Layout.preferredWidth: root.popoutWidth / 2
+
+                                // Fans
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    radius: Theme.cornerRadius
+                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+
+                                    property int fanCount: 1
+
+                                    DankIcon {
+                                        name: "mode_fan"
+                                        size: Theme.iconSizeSmall
+                                        color: Theme.primary
+                                    }
+
+                                    StyledText {
+                                        text: "Fans"
+                                        font.pixelSize: Theme.fontSizeMedium
+                                        font.weight: Font.Medium
+                                        color: Theme.surfaceText
                                     }
                                 }
                             }
