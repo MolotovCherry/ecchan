@@ -30,35 +30,6 @@ PluginComponent {
         EcSocket.shutdown();
     }
 
-    property var socketCache: ({})
-
-    function call(name, cb, cbErr) {
-        const fn = EcSocket?.[name];
-
-        if (typeof fn !== "function") {
-            const msg = `No function: ${name}`;
-            cbErr?.(msg);
-            ToastService.showError(msg);
-            return;
-        }
-
-        const wrappedCb = value => {
-            socketCache[name] = value;
-            cb?.(value);
-        };
-
-        return fn.call(EcSocket, wrappedCb, cbErr);
-    }
-
-    function cachedCall(name, cb, cbErr) {
-        const value = socketCache?.[name];
-        if (value !== undefined) {
-            cb?.(value);
-        } else {
-            call(name, cb, cbErr);
-        }
-    }
-
     horizontalBarPill: Component {
         Row {
             spacing: Theme.spacingS
@@ -176,10 +147,6 @@ PluginComponent {
                                 {
                                     text: "Battery",
                                     icon: "battery_android_full"
-                                },
-                                {
-                                    text: "Methods",
-                                    icon: "switch_access"
                                 }
                             ]
 
@@ -282,16 +249,14 @@ PluginComponent {
                                         }
                                     }
 
-                                    property int temp: 0
+                                    property int temp: EcSocket.state.cpuRtTemp || 0
 
                                     Timer {
                                         id: cpuUpdate
                                         interval: 1000
                                         repeat: true
                                         triggeredOnStart: true
-                                        onTriggered: {
-                                            root.call('cpuRtTemp', temp => cpuGauge.temp = temp);
-                                        }
+                                        onTriggered: EcSocket.cpuRtTemp()
                                     }
 
                                     CircleGauge {
@@ -330,8 +295,8 @@ PluginComponent {
                                         }
                                     }
 
-                                    property bool hasDGpu: false
-                                    property int temp: 0
+                                    property bool hasDGpu: EcSocket.state.hasDGpu || false
+                                    property int temp: EcSocket.state.gpuRtTemp || 0
 
                                     Timer {
                                         id: gpuUpdate
@@ -339,13 +304,11 @@ PluginComponent {
                                         repeat: true
                                         triggeredOnStart: true
                                         onTriggered: {
-                                            root.cachedCall('hasDGpu', state => gpuGauge.hasDGpu = state);
-
                                             if (!gpuGauge.hasDGpu) {
                                                 gpuUpdate.stop();
                                             }
 
-                                            root.call('gpuRtTemp', temp => gpuGauge.temp = temp);
+                                            EcSocket.gpuRtTemp();
                                         }
                                     }
 
@@ -425,11 +388,11 @@ PluginComponent {
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
-                                    property int fanCount: 1
-                                    property int fan1Rpm: 0
-                                    property int fan2Rpm: 0
-                                    property int fan3Rpm: 0
-                                    property int fan4Rpm: 0
+                                    property int fanCount: EcSocket.state.fanCount || 1
+                                    property int fan1Rpm: EcSocket.state.fan1Rpm || 0
+                                    property int fan2Rpm: EcSocket.state.fan2Rpm || 0
+                                    property int fan3Rpm: EcSocket.state.fan3Rpm || 0
+                                    property int fan4Rpm: EcSocket.state.fan4Rpm || 0
 
                                     Connections {
                                         target: page1
@@ -447,22 +410,22 @@ PluginComponent {
                                         interval: 1000
                                         repeat: true
                                         triggeredOnStart: true
+                                        // qmlformat off
                                         onTriggered: {
-                                            root.cachedCall('fanCount', count => fanSection.fanCount = count);
-
-                                            if (fanSection.fanCount >= 1) {
-                                                root.call('fan1Rpm', rpm => fanSection.fan1Rpm = rpm);
-                                            }
-                                            if (fanSection.fanCount >= 2) {
-                                                root.call('fan2Rpm', rpm => fanSection.fan2Rpm = rpm);
-                                            }
-                                            if (fanSection.fanCount >= 3) {
-                                                root.call('fan3Rpm', rpm => fanSection.fan3Rpm = rpm);
-                                            }
-                                            if (fanSection.fanCount >= 4) {
-                                                root.call('fan4Rpm', rpm => fanSection.fan4Rpm = rpm);
+                                            // qmllint disable unterminated-case
+                                            switch (fanSection.fanCount) {
+                                                case 4:
+                                                    EcSocket.fan4Rpm();
+                                                case 3:
+                                                    EcSocket.fan3Rpm();
+                                                case 2:
+                                                    EcSocket.fan2Rpm();
+                                                case 1:
+                                                default:
+                                                    EcSocket.fan1Rpm();
                                             }
                                         }
+                                        // qmlformat on
                                     }
 
                                     StyledRect {
