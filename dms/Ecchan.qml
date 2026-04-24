@@ -304,7 +304,7 @@ PluginComponent {
                                             return Theme.primary;
                                         }
 
-                                        value: DgopService.dgopAvailable ? (DgopService.cpuUsage / 100) : cpuGauge.temp / 100
+                                        value: DgopService.dgopAvailable ? (DgopService.cpuUsage / 100) : Math.min(1, cpuGauge.temp / 100)
                                         label: DgopService.dgopAvailable ? (DgopService.cpuUsage.toFixed(1) + "%") : (cpuGauge.temp + "°C")
                                         detail: DgopService.dgopAvailable ? (cpuGauge.temp > 0 ? (cpuGauge.temp + "°C") : "") : ""
                                         sublabel: "CPU"
