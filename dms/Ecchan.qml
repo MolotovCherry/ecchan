@@ -255,19 +255,18 @@ PluginComponent {
 
                             Flow {
                                 Layout.fillHeight: true
-                                Layout.minimumWidth: root.popoutWidth / 2
-                                Layout.preferredWidth: (root.popoutWidth / 2) + (gpuGauge.hasDGpu ? 40 : 0)
+                                Layout.fillWidth: true
                                 spacing: Theme.spacingXS
 
                                 flow: Flow.TopToBottom
+
+                                leftPadding: gpuGauge.hasDGpu ? 0 : (width - 180) / 2
 
                                 Item {
                                     id: cpuGauge
 
                                     implicitHeight: 180
                                     implicitWidth: 180
-                                    Layout.fillWidth: true
-                                    Layout.alignment: Qt.AlignCenter
 
                                     Connections {
                                         target: page0
@@ -284,7 +283,7 @@ PluginComponent {
 
                                     Timer {
                                         id: cpuUpdate
-                                        interval: 1500
+                                        interval: 1000
                                         repeat: true
                                         triggeredOnStart: true
                                         onTriggered: {
@@ -333,7 +332,7 @@ PluginComponent {
 
                                     Timer {
                                         id: gpuUpdate
-                                        interval: 1500
+                                        interval: 1000
                                         repeat: true
                                         triggeredOnStart: true
                                         onTriggered: {
@@ -399,8 +398,11 @@ PluginComponent {
 
                             ColumnLayout {
                                 Layout.fillHeight: true
-                                Layout.maximumWidth: root.popoutWidth / 2
-                                Layout.preferredWidth: (root.popoutWidth / 2) - (gpuGauge.hasDGpu ? 40 : 0)
+                                // do not expand past this
+                                Layout.maximumWidth: (root.popoutWidth / 2) - 80
+                                Layout.preferredWidth: (root.popoutWidth / 2) - 80
+                                // stay stuck on right
+                                Layout.alignment: Qt.AlignRight
 
                                 // Fans
                                 Item {
@@ -428,7 +430,7 @@ PluginComponent {
 
                                     Timer {
                                         id: fanUpdate
-                                        interval: 1500
+                                        interval: 1000
                                         repeat: true
                                         triggeredOnStart: true
                                         onTriggered: {
