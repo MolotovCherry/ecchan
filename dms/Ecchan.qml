@@ -273,7 +273,7 @@ PluginComponent {
 
                                 flow: Flow.TopToBottom
 
-                                leftPadding: EcSocket.state.hasDGpu ? 0 : (width - 180) / 2
+                                leftPadding: EcSocket.state.hasDGpu && DgopService.dgopAvailable ? 0 : (width - 180) / 2
 
                                 Item {
                                     id: cpuGauge
