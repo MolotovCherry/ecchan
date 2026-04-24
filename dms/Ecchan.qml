@@ -246,8 +246,9 @@ PluginComponent {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
 
+                        // Dashboard
                         RowLayout {
-                            id: page0
+                            id: page1
 
                             visible: popout.currentTab == 0
                             Layout.fillWidth: true
@@ -269,9 +270,9 @@ PluginComponent {
                                     implicitWidth: 180
 
                                     Connections {
-                                        target: page0
+                                        target: page1
                                         function onVisibleChanged() {
-                                            if (page0.visible) {
+                                            if (page1.visible) {
                                                 cpuUpdate.start();
                                                 DgopService.addRef(["cpu"]);
                                             } else {
@@ -319,9 +320,9 @@ PluginComponent {
                                     visible: hasDGpu
 
                                     Connections {
-                                        target: page0
+                                        target: page1
                                         function onVisibleChanged() {
-                                            if (page0.visible) {
+                                            if (page1.visible) {
                                                 gpuUpdate.start();
                                             } else {
                                                 gpuUpdate.stop();
@@ -377,9 +378,9 @@ PluginComponent {
                                     Layout.alignment: Qt.AlignCenter
 
                                     Connections {
-                                        target: page0
+                                        target: page1
                                         function onVisibleChanged() {
-                                            if (page0.visible) {
+                                            if (page1.visible) {
                                                 DgopService.addRef(["memory"]);
                                             } else {
                                                 DgopService.removeRef(["memory"]);
@@ -431,9 +432,9 @@ PluginComponent {
                                     property int fan4Rpm: 0
 
                                     Connections {
-                                        target: page0
+                                        target: page1
                                         function onVisibleChanged() {
-                                            if (page0.visible) {
+                                            if (page1.visible) {
                                                 fanUpdate.start();
                                             } else {
                                                 fanUpdate.stop();
