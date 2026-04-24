@@ -270,7 +270,7 @@ Singleton {
                 json = JSON.stringify(method);
             } else if (typeof (method) === "string" && data != null) {
                 json = JSON.stringify({
-                    method: data
+                    [method]: data
                 });
             } else {
                 console.error("why is method undefined?");
