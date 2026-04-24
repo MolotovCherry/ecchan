@@ -82,7 +82,7 @@ Singleton {
                 pingTimer.start();
 
                 Qt.callLater(() => {
-                    root._initDefaults();
+                    root._initState();
                 });
             }
 
@@ -316,7 +316,7 @@ Singleton {
         }
     }
 
-    function _initDefaults() {
+    function _initState() {
         fanCount();
         fanMax();
         hasDGpu();
