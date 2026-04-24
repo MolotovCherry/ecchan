@@ -14,7 +14,10 @@ Singleton {
     property bool connected: false
 
     // the state of our api at any given point in time
-    // can also be used for saving/loading prefs
+    // can also be used for saving/loading prefs.
+    //
+    // note that this will likely have other unrelated properties
+    // we don't care about
     //
     // qmlformat off
     property var state: {
@@ -56,7 +59,7 @@ Singleton {
         "methodList": [],
         // (array is keyed by method key above)
         // array[
-        //   method: bool | int | array[int]
+        //   [method]: bool | int | array[int]
         // ]
         "method": []
     }
@@ -423,11 +426,13 @@ Singleton {
             if (isSet) {
                 root._cb = data => {
                     root.state[stateKey] = callData.raw;
+                    root.stateChanged();
                     callData.cb?.(data);
                 };
             } else {
                 root._cb = data => {
                     root.state[stateKey] = data;
+                    root.stateChanged();
                     callData.cb?.(data);
                 };
             }
