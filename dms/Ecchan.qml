@@ -56,6 +56,51 @@ PluginComponent {
         }
     }
 
+    Timer {
+        id: gpuUpdate
+        interval: 1000
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (!EcSocket.state.hasDGpu) {
+                gpuUpdate.stop();
+            }
+
+            EcSocket.gpuRtTemp();
+        }
+    }
+
+    Timer {
+        id: cpuUpdate
+        interval: 1000
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: EcSocket.cpuRtTemp()
+    }
+
+    Timer {
+        id: fanUpdate
+        interval: 1000
+        repeat: true
+        triggeredOnStart: true
+        // qmlformat off
+        onTriggered: {
+            // qmllint disable unterminated-case
+            switch (EcSocket.state.fanCount || 1) {
+                case 4:
+                    EcSocket.fan4Rpm();
+                case 3:
+                    EcSocket.fan3Rpm();
+                case 2:
+                    EcSocket.fan2Rpm();
+                case 1:
+                default:
+                    EcSocket.fan1Rpm();
+            }
+        }
+        // qmlformat on
+    }
+
     popoutContent: Component {
         PopoutComponent {
             id: popout
@@ -228,7 +273,7 @@ PluginComponent {
 
                                 flow: Flow.TopToBottom
 
-                                leftPadding: gpuGauge.hasDGpu ? 0 : (width - 180) / 2
+                                leftPadding: EcSocket.state.hasDGpu ? 0 : (width - 180) / 2
 
                                 Item {
                                     id: cpuGauge
@@ -251,14 +296,6 @@ PluginComponent {
 
                                     property int temp: EcSocket.state.cpuRtTemp || 0
 
-                                    Timer {
-                                        id: cpuUpdate
-                                        interval: 1000
-                                        repeat: true
-                                        triggeredOnStart: true
-                                        onTriggered: EcSocket.cpuRtTemp()
-                                    }
-
                                     CircleGauge {
                                         width: parent.implicitHeight
                                         height: parent.implicitWidth
@@ -267,11 +304,15 @@ PluginComponent {
                                             return Theme.primary;
                                         }
 
-                                        value: DgopService.cpuUsage / 100
-                                        label: DgopService.cpuUsage.toFixed(1) + "%"
-                                        detail: cpuGauge.temp > 0 ? (cpuGauge.temp.toFixed(0) + "°C") : ""
+                                        value: DgopService.dgopAvailable ? (DgopService.cpuUsage / 100) : cpuGauge.temp / 100
+                                        label: DgopService.dgopAvailable ? (DgopService.cpuUsage.toFixed(1) + "%") : (cpuGauge.temp + "°C")
+                                        detail: DgopService.dgopAvailable ? (cpuGauge.temp > 0 ? (cpuGauge.temp + "°C") : "") : ""
                                         sublabel: "CPU"
-                                        accentColor: DgopService.cpuUsage > 80 ? Theme.error : (DgopService.cpuUsage > 50 ? Theme.warning : Theme.primary)
+                                        accentColor: {
+                                            const dgop = DgopService.cpuUsage > 80 ? Theme.error : (DgopService.cpuUsage > 50 ? Theme.warning : Theme.primary);
+                                            const cpu = cpuGauge.temp > 85 ? Theme.error : (cpuGauge.temp > 70 ? Theme.warning : Theme.primary);
+                                            return DgopService.dgopAvailable ? dgop : cpu;
+                                        }
                                         detailColor: cpuGauge.temp > 85 ? Theme.error : (cpuGauge.temp > 70 ? Theme.warning : Theme.surfaceVariantText)
                                     }
                                 }
@@ -298,20 +339,6 @@ PluginComponent {
                                     property bool hasDGpu: EcSocket.state.hasDGpu || false
                                     property int temp: EcSocket.state.gpuRtTemp || 0
 
-                                    Timer {
-                                        id: gpuUpdate
-                                        interval: 1000
-                                        repeat: true
-                                        triggeredOnStart: true
-                                        onTriggered: {
-                                            if (!gpuGauge.hasDGpu) {
-                                                gpuUpdate.stop();
-                                            }
-
-                                            EcSocket.gpuRtTemp();
-                                        }
-                                    }
-
                                     CircleGauge {
                                         width: parent.implicitHeight
                                         height: parent.implicitWidth
@@ -321,7 +348,7 @@ PluginComponent {
                                         }
 
                                         value: Math.min(1, gpuGauge.temp / 100)
-                                        label: gpuGauge.temp > 0 ? (gpuGauge.temp.toFixed(0) + "°C") : "--"
+                                        label: gpuGauge.temp > 0 ? (gpuGauge.temp + "°C") : "--"
                                         sublabel: "GPU"
                                         accentColor: {
                                             const temp = gpuGauge.temp;
@@ -336,7 +363,7 @@ PluginComponent {
 
                                 Item {
                                     width: 180
-                                    height: gpuGauge.hasDGpu ? 180 * 2 : 180
+                                    height: EcSocket.state.hasDGpu ? 180 * 2 : 180
                                     Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignCenter
 
@@ -352,7 +379,8 @@ PluginComponent {
                                     }
 
                                     CircleGauge {
-                                        anchors.centerIn: gpuGauge.hasDGpu ? parent : undefined
+                                        visible: DgopService.dgopAvailable
+                                        anchors.centerIn: EcSocket.state.hasDGpu ? parent : undefined
                                         width: 180
                                         height: 180
                                         value: DgopService.memoryUsage / 100
@@ -405,29 +433,6 @@ PluginComponent {
                                         }
                                     }
 
-                                    Timer {
-                                        id: fanUpdate
-                                        interval: 1000
-                                        repeat: true
-                                        triggeredOnStart: true
-                                        // qmlformat off
-                                        onTriggered: {
-                                            // qmllint disable unterminated-case
-                                            switch (fanSection.fanCount) {
-                                                case 4:
-                                                    EcSocket.fan4Rpm();
-                                                case 3:
-                                                    EcSocket.fan3Rpm();
-                                                case 2:
-                                                    EcSocket.fan2Rpm();
-                                                case 1:
-                                                default:
-                                                    EcSocket.fan1Rpm();
-                                            }
-                                        }
-                                        // qmlformat on
-                                    }
-
                                     StyledRect {
                                         anchors.left: parent.left
                                         anchors.right: parent.right
@@ -444,7 +449,7 @@ PluginComponent {
                                             spacing: Theme.spacingL
 
                                             Row {
-                                                spacing: Theme.spacingS
+                                                spacing: Theme.spacingXS
 
                                                 DankIcon {
                                                     id: modeFanIcon
