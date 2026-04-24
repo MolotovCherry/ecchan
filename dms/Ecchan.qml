@@ -273,8 +273,10 @@ PluginComponent {
                                         function onVisibleChanged() {
                                             if (page0.visible) {
                                                 cpuUpdate.start();
+                                                DgopService.addRef(["cpu"]);
                                             } else {
                                                 cpuUpdate.stop();
+                                                DgopService.removeRef(["cpu"]);
                                             }
                                         }
                                     }
@@ -373,6 +375,17 @@ PluginComponent {
                                     height: gpuGauge.hasDGpu ? 180 * 2 : 180
                                     Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignCenter
+
+                                    Connections {
+                                        target: page0
+                                        function onVisibleChanged() {
+                                            if (page0.visible) {
+                                                DgopService.addRef(["memory"]);
+                                            } else {
+                                                DgopService.removeRef(["memory"]);
+                                            }
+                                        }
+                                    }
 
                                     CircleGauge {
                                         anchors.centerIn: gpuGauge.hasDGpu ? parent : undefined
