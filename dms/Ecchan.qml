@@ -16,13 +16,10 @@ PluginComponent {
 
     layerNamespacePlugin: "ecchan"
 
-    Connections {
-        target: root.pluginData
-        function onPluginDataChanged() {
-            const socket = root.pluginData.socket;
-            if (typeof (socket) === "string") {
-                EcSocket.init(socket);
-            }
+    onPluginDataChanged: {
+        const socket = root.pluginData.socket;
+        if (typeof (socket) === "string") {
+            EcSocket.init(socket);
         }
     }
 
