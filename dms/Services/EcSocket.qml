@@ -221,7 +221,7 @@ Singleton {
 
             case "Pong":
             case "Unit":
-                return null;
+                return;
 
             case "Byte":
             case "Word":
@@ -271,10 +271,9 @@ Singleton {
                             return cvalue;
                         default:
                             console.error("Invalid Custom key", ckey, cvalue);
+                            break;
                     }
                 }
-
-                break;
 
             case "SuperBattery":
             case "Webcam":
@@ -306,9 +305,8 @@ Singleton {
                         return mvalue;
                     default:
                         console.error("Invalid MethodData key", mkey, mvalue);
+                        break;
                 }
-
-                break;
 
             // qmlformat on
         }
