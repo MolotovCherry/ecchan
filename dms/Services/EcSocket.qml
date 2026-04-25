@@ -169,7 +169,7 @@ Singleton {
         _reset();
 
         _socketFile = socketFile;
-        _socket = _socketComponent.createObject(root, {
+        _socket = _socketComponent.createObject(null, {
             path: socketFile
         });
     }
