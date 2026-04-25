@@ -502,36 +502,26 @@ PluginComponent {
 
                                                 model: [
                                                     {
-                                                        "text": "Fan 1",
-                                                        "rpmText": EcSocket.state.fan1Rpm + " rpm",
-                                                        "show": EcSocket.state.fanCount >= 1
+                                                        "rpm": EcSocket.state.fan1Rpm || 0
                                                     },
                                                     {
-                                                        "text": "Fan 2",
-                                                        "rpmText": EcSocket.state.fan2Rpm + " rpm",
-                                                        "show": EcSocket.state.fanCount >= 2
+                                                        "rpm": EcSocket.state.fan2Rpm || 0
                                                     },
                                                     {
-                                                        "text": "Fan 3",
-                                                        "rpmText": EcSocket.state.fan3Rpm + " rpm",
-                                                        "show": EcSocket.state.fanCount >= 3
+                                                        "rpm": EcSocket.state.fan3Rpm || 0
                                                     },
                                                     {
-                                                        "text": "Fan 4",
-                                                        "rpmText": EcSocket.state.fan4Rpm + " rpm",
-                                                        "show": EcSocket.state.fanCount >= 4
+                                                        "rpm": EcSocket.state.fan4Rpm || 0
                                                     }
                                                 ]
 
                                                 ColumnLayout {
                                                     id: fanRow
                                                     spacing: Theme.spacingL
-                                                    visible: show
+                                                    visible: EcSocket.state.fanCount > index
 
                                                     required property int index
-                                                    required property string text
-                                                    required property string rpmText
-                                                    required property bool show
+                                                    required property string rpm
 
                                                     Rectangle {
                                                         Layout.alignment: Qt.AlignCenter
@@ -545,7 +535,7 @@ PluginComponent {
                                                         Layout.fillWidth: true
 
                                                         StyledText {
-                                                            text: fanRow.text
+                                                            text: "Fan " + (fanRow.index + 1)
                                                             font.pixelSize: Theme.fontSizeLarge
                                                             font.weight: Font.Medium
                                                             color: Theme.surfaceText
@@ -554,7 +544,7 @@ PluginComponent {
                                                         StyledText {
                                                             Layout.fillWidth: true
                                                             horizontalAlignment: Text.AlignRight
-                                                            text: fanRow.rpmText
+                                                            text: fanRow.rpm + " rpm"
                                                             font.pixelSize: Theme.fontSizeLarge
                                                             font.weight: Font.Medium
                                                             color: Theme.surfaceText
