@@ -297,7 +297,7 @@ PluginComponent {
                         RowLayout {
                             id: page1
 
-                            visible: popout.currentTab == 0
+                            visible: popout.currentTab === 0
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 

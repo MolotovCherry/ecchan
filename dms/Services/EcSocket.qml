@@ -209,7 +209,7 @@ Singleton {
         let key;
         let value;
 
-        if (typeof (reply) == "string") {
+        if (typeof (reply) === "string") {
             key = reply;
         } else {
             key = Object.keys(reply)[0];
@@ -260,7 +260,7 @@ Singleton {
                 }
 
             case "BatteryChargeMode":
-                if (typeof (value) == "string") {
+                if (typeof (value) === "string") {
                     return value;
                 } else {
                     const ckey = Object.keys(value)[0];
@@ -625,11 +625,11 @@ Singleton {
 
     function setBatteryChargeMode(mode, cb, cbErr) {
         let data;
-        if (typeof (mode) == "string") {
+        if (typeof (mode) === "string") {
             data = {
                 "mode": mode
             };
-        } else if (typeof (mode) == "number") {
+        } else if (typeof (mode) === "number") {
             data = {
                 "mode": {
                     "Custom": mode
@@ -1281,9 +1281,9 @@ Singleton {
 
     function methodWrite(method, op, mdata, cb, cbErr) {
         let ty;
-        if (typeof (mdata) == "boolean") {
+        if (typeof (mdata) === "boolean") {
             ty = "Bit";
-        } else if (typeof (mdata) == "number") {
+        } else if (typeof (mdata) === "number") {
             ty = "Byte";
         } else if (Array.isArray(mdata)) {
             ty = "Range";
