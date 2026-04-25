@@ -16,28 +16,60 @@ Singleton {
     // the state of our api at any given point in time
     // can also be used for saving/loading prefs.
     //
-    // note that this will likely have other unrelated properties
-    // we don't care about
+    // Only keys which can be set are written when imported,
+    // so someone can't for example change "hasDGPU" to true
     //
     // qmlformat off
     property var state: {
-        "fanCount": 1,             // int
-        "fanMax": null,            // null | int
-        "hasDGpu": false,          // bool
-        "wmiVer": 1,               // int
-        "shiftModes": [],          // array[string]
-        "shiftMode": null,         // null | string
-        "batteryChargeMode": null, // null | string | int
-        "superBattery": false,     // bool
-        "fanModes": [],            // array[string]
-        "fanMode": null,           // null | string
-        "webcam": false,           // bool
-        "webcamBlock": false,      // bool
-        "coolerBoost": false,      // bool
-        "fnKey": "Right",          // string
-        "winKey": "Left",          // string
-        "micMuteLed": false,       // bool
-        "muteLed": false,          // bool
+        "fanCount": 1,                       // int
+        "fanMax": null,                      // null | int
+        "hasDGpu": false,                    // bool
+        "wmiVer": 1,                         // int
+
+        "shiftModes": [],                    // array[string]
+        "shiftMode": null,                   // null | string
+        "shiftModeSupported": false,         // bool
+
+        "batteryChargeMode": null,           // null | string | int
+        "batteryChargeModeSupported": false, // bool
+        "superBattery": false,               // bool
+        "superBatterySupported": false,      // bool
+
+        "fan1Rpm": 0,                        // int
+        "fan2Rpm": 0,                        // int
+        "fan3Rpm": 0,                        // int
+        "fan4Rpm": 0,                        // int
+        "fan1Supported": true,               // bool
+        "fan2Supported": true,               // bool
+        "fan3Supported": true,               // bool
+        "fan4Supported": true,               // bool
+
+        "fanModes": [],                      // array[string]
+        "fanMode": null,                     // null | string
+        "fanModeSupported": false,           // bool
+
+        "webcam": false,                     // bool
+        "webcamBlock": false,                // bool
+        "webcamSupported": false,            // bool
+        "webcamBlockSupported": false,       // bool
+
+        "coolerBoost": false,                // bool
+        "coolerBoostSupported": false,       // bool
+
+        "fnKey": "Right",                    // string
+        "winKey": "Left",                    // string
+        "fnWinSwapSupported": false,         // bool
+
+        "micMuteLed": false,                 // bool
+        "muteLed": false,                    // bool
+        "micMuteLedSupported": false,        // bool
+        "muteLedSupported": false,           // bool
+
+        "cpuRtFanSpeed": 0,                  // int
+        "cpuRtTemp": 0,                      // int
+        "gpuRtFanSpeed": 0,                  // int
+        "gpuRtTemp": 0,                      // int
+
         "cpuFanCurveWmi2":  [0, 0, 0, 0, 0, 0, 0],    // array[int]
         "cpuTempCurveWmi2": [0, 0, 0, 0, 0, 0, 0],    // array[int]
         "cpuHysteresisCurveWmi2": [0, 0, 0, 0, 0, 0], // array[int]
@@ -141,7 +173,7 @@ Singleton {
     }
 
     function _callQueueNext() {
-        if (_cb === null && _callQueue.length > 0) {
+        if (_cb == null && _callQueue.length > 0) {
             const call = _callQueue.shift();
             call();
         }
@@ -175,7 +207,7 @@ Singleton {
     }
 
     function reconnect() {
-        if (_socketFile !== null) {
+        if (_socketFile != null) {
             init(_socketFile);
         }
     }
@@ -357,7 +389,7 @@ Singleton {
             setCpuTempCurveWmi2(newState.cpuTempCurveWmi2);
             setCpuHysteresisCurveWmi2(newState.cpuHysteresisCurveWmi2);
 
-            if (state.hasDGpu || false) {
+            if (state.hasDGpu) {
                 setGpuFanCurveWmi2(newState.gpuFanCurveWmi2);
                 setGpuTempCurveWmi2(newState.gpuTempCurveWmi2);
                 setGpuHysteresisCurveWmi2(newState.gpuHysteresisCurveWmi2);
@@ -383,7 +415,7 @@ Singleton {
                 cpuTempCurveWmi2();
                 cpuHysteresisCurveWmi2();
 
-                if (state.hasDGpu || false) {
+                if (state.hasDGpu) {
                     gpuFanCurveWmi2();
                     gpuTempCurveWmi2();
                     gpuHysteresisCurveWmi2();

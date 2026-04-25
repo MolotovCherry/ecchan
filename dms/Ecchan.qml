@@ -83,7 +83,7 @@ PluginComponent {
         // qmlformat off
         onTriggered: {
             // qmllint disable unterminated-case
-            switch (EcSocket.state.fanCount || 1) {
+            switch (EcSocket.state.fanCount) {
                 case 4:
                     EcSocket.fan4Rpm();
                 case 3:
@@ -329,8 +329,6 @@ PluginComponent {
                                         }
                                     }
 
-                                    property int temp: EcSocket.state.cpuRtTemp || 0
-
                                     CircleGauge {
                                         width: parent.implicitHeight
                                         height: parent.implicitWidth
@@ -339,16 +337,16 @@ PluginComponent {
                                             return Theme.primary;
                                         }
 
-                                        value: DgopService.dgopAvailable ? (DgopService.cpuUsage / 100) : Math.min(1, cpuGauge.temp / 100)
-                                        label: DgopService.dgopAvailable ? (DgopService.cpuUsage.toFixed(1) + "%") : (cpuGauge.temp + "°C")
-                                        detail: DgopService.dgopAvailable ? (cpuGauge.temp > 0 ? (cpuGauge.temp + "°C") : "") : ""
+                                        value: DgopService.dgopAvailable ? (DgopService.cpuUsage / 100) : Math.min(1, EcSocket.state.cpuRtTemp / 100)
+                                        label: DgopService.dgopAvailable ? (DgopService.cpuUsage.toFixed(1) + "%") : (EcSocket.state.cpuRtTemp + "°C")
+                                        detail: DgopService.dgopAvailable ? (EcSocket.state.cpuRtTemp > 0 ? (EcSocket.state.cpuRtTemp + "°C") : "") : ""
                                         sublabel: "CPU"
                                         accentColor: {
                                             const dgop = DgopService.cpuUsage > 80 ? Theme.error : (DgopService.cpuUsage > 50 ? Theme.warning : Theme.primary);
-                                            const cpu = cpuGauge.temp > 85 ? Theme.error : (cpuGauge.temp > 70 ? Theme.warning : Theme.primary);
+                                            const cpu = EcSocket.state.cpuRtTemp > 85 ? Theme.error : (EcSocket.state.cpuRtTemp > 70 ? Theme.warning : Theme.primary);
                                             return DgopService.dgopAvailable ? dgop : cpu;
                                         }
-                                        detailColor: cpuGauge.temp > 85 ? Theme.error : (cpuGauge.temp > 70 ? Theme.warning : Theme.surfaceVariantText)
+                                        detailColor: EcSocket.state.cpuRtTemp > 85 ? Theme.error : (EcSocket.state.cpuRtTemp > 70 ? Theme.warning : Theme.surfaceVariantText)
                                     }
                                 }
 
@@ -358,7 +356,7 @@ PluginComponent {
                                     implicitHeight: 180
                                     implicitWidth: 180
 
-                                    visible: hasDGpu
+                                    visible: EcSocket.state.hasDGpu
 
                                     Connections {
                                         target: page1
@@ -371,9 +369,6 @@ PluginComponent {
                                         }
                                     }
 
-                                    property bool hasDGpu: EcSocket.state.hasDGpu || false
-                                    property int temp: EcSocket.state.gpuRtTemp || 0
-
                                     CircleGauge {
                                         width: parent.implicitHeight
                                         height: parent.implicitWidth
@@ -382,11 +377,11 @@ PluginComponent {
                                             return Theme.success;
                                         }
 
-                                        value: Math.min(1, gpuGauge.temp / 100)
-                                        label: gpuGauge.temp > 0 ? (gpuGauge.temp + "°C") : "--"
+                                        value: Math.min(1, EcSocket.state.gpuRtTemp / 100)
+                                        label: EcSocket.state.gpuRtTemp > 0 ? (EcSocket.state.gpuRtTemp + "°C") : "--"
                                         sublabel: "GPU"
                                         accentColor: {
-                                            const temp = gpuGauge.temp;
+                                            const temp = EcSocket.state.gpuRtTemp;
                                             if (temp > 85)
                                                 return Theme.error;
                                             if (temp > 70)
@@ -502,16 +497,16 @@ PluginComponent {
 
                                                 model: [
                                                     {
-                                                        "rpm": EcSocket.state.fan1Rpm || 0
+                                                        "rpm": EcSocket.state.fan1Rpm
                                                     },
                                                     {
-                                                        "rpm": EcSocket.state.fan2Rpm || 0
+                                                        "rpm": EcSocket.state.fan2Rpm
                                                     },
                                                     {
-                                                        "rpm": EcSocket.state.fan3Rpm || 0
+                                                        "rpm": EcSocket.state.fan3Rpm
                                                     },
                                                     {
-                                                        "rpm": EcSocket.state.fan4Rpm || 0
+                                                        "rpm": EcSocket.state.fan4Rpm
                                                     }
                                                 ]
 
