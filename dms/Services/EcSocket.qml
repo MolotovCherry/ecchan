@@ -81,9 +81,7 @@ Singleton {
                 root.connected = true;
                 pingTimer.start();
 
-                Qt.callLater(() => {
-                    root._initState();
-                });
+                Qt.callLater(root._initState);
             }
 
             if (!connected) {
@@ -203,7 +201,7 @@ Singleton {
                 watchdogTimer.start();
             }
 
-            root.ping(() => watchdogTimer.restart());
+            root.ping(watchdogTimer.restart);
         }
     }
 
