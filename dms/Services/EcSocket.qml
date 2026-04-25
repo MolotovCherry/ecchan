@@ -61,7 +61,7 @@ Singleton {
         // array[
         //   [method]: bool | int | array[int]
         // ]
-        "method": []
+        "methods": []
     }
     // qmlformat on
 
@@ -314,6 +314,67 @@ Singleton {
         }
     }
 
+    function applyState(newState) {
+        if (state.shiftModeSupported) {
+            setShiftMode(newState.shiftMode);
+        }
+
+        if (state.batteryChargeModeSupported) {
+            setBatteryChargeMode(newState.batteryChargeMode);
+        }
+        if (state.superBatterySupported) {
+            setSuperBattery(newState.superBattery);
+        }
+
+        if (state.fanModeSupported) {
+            setFanMode(snewSate.fanMode);
+        }
+
+        if (state.webcamSupported) {
+            setWebcam(newState.webcam);
+        }
+        if (state.webcamBlockSupported) {
+            setWebcamBlock(newState.webcamBlock);
+        }
+
+        if (state.coolerBoostSupported) {
+            setCoolerBoost(newState.coolerBoost);
+        }
+
+        // we only need to set one of these because it swaps the
+        // win key at the same time; so setting Win key is redundant
+        if (state.fnWinSwapSupported) {
+            setFnKey(newState.fnKey);
+        }
+
+        if (state.micMuteLedSupported) {
+            setMicMuteLed(newState.micMuteLed);
+        }
+        if (state.muteLedSupported) {
+            setMuteLed(newState.muteLed);
+        }
+
+        if (state.wmiVer === 2) {
+            setCpuFanCurveWmi2(newState.cpuFanCurveWmi2);
+            setCpuTempCurveWmi2(newState.cpuTempCurveWmi2);
+            setCpuHysteresisCurveWmi2(newState.cpuHysteresisCurveWmi2);
+
+            if (state.hasDGpu || false) {
+                setGpuFanCurveWmi2(newState.gpuFanCurveWmi2);
+                setGpuTempCurveWmi2(newState.gpuTempCurveWmi2);
+                setGpuHysteresisCurveWmi2(newState.gpuHysteresisCurveWmi2);
+            }
+        }
+
+        for (const m of newState.methodList) {
+            for (const op of m.ops) {
+                if (op.startsWith("Write")) {
+                    methodWrite(m.method, op, newState.methods[m.method]);
+                }
+            }
+        }
+    }
+
     function _initState() {
         fanCount();
         fanMax();
@@ -412,7 +473,7 @@ Singleton {
             switch (callData.method) {
                 case "MethodRead":
                 case "MethodWrite":
-                    stateKey = "method";
+                    stateKey = "methods";
                     break;
 
                 default:
