@@ -89,11 +89,11 @@ Singleton {
         //   }
         // ]
         "methodList": [],
-        // (array is keyed by method key above)
-        // array[
+        // (object is keyed by method key above)
+        // {
         //   [method]: bool | int | array[int]
-        // ]
-        "methods": []
+        // }
+        "methods": {}
     }
     // qmlformat on
 
@@ -345,61 +345,78 @@ Singleton {
     }
 
     function applyState(newState) {
-        if (state.shiftModeSupported) {
+        if (state.shiftModeSupported && (typeof (newState.shiftMode) === "string")) {
             setShiftMode(newState.shiftMode);
         }
 
-        if (state.batteryChargeModeSupported) {
+        if (state.batteryChargeModeSupported && ((typeof (newState.batteryChargeMode) === "string") || (typeof (newState.batteryChargeMode) === "number"))) {
             setBatteryChargeMode(newState.batteryChargeMode);
         }
-        if (state.superBatterySupported) {
+        if (state.superBatterySupported && (typeof (newState.superBattery) === "boolean")) {
             setSuperBattery(newState.superBattery);
         }
 
-        if (state.fanModeSupported) {
-            setFanMode(snewSate.fanMode);
+        if (state.fanModeSupported && (typeof (newState.fanMode) === "string")) {
+            setFanMode(newState.fanMode);
         }
 
-        if (state.webcamSupported) {
+        if (state.webcamSupported && (typeof (newState.webcam) === "boolean")) {
             setWebcam(newState.webcam);
         }
-        if (state.webcamBlockSupported) {
+        if (state.webcamBlockSupported && (typeof (newState.webcamBlock) === "boolean")) {
             setWebcamBlock(newState.webcamBlock);
         }
 
-        if (state.coolerBoostSupported) {
+        if (state.coolerBoostSupported && (typeof (newState.coolerBoost) === "boolean")) {
             setCoolerBoost(newState.coolerBoost);
         }
 
         // we only need to set one of these because it swaps the
         // win key at the same time; so setting Win key is redundant
-        if (state.fnWinSwapSupported) {
+        if (state.fnWinSwapSupported && (typeof (newState.fnKey) === "string")) {
             setFnKey(newState.fnKey);
         }
 
-        if (state.micMuteLedSupported) {
+        if (state.micMuteLedSupported && (typeof (newState.micMuteLed) === "boolean")) {
             setMicMuteLed(newState.micMuteLed);
         }
-        if (state.muteLedSupported) {
+        if (state.muteLedSupported && (typeof (newState.muteLed) === "boolean")) {
             setMuteLed(newState.muteLed);
         }
 
         if (state.wmiVer === 2) {
-            setCpuFanCurveWmi2(newState.cpuFanCurveWmi2);
-            setCpuTempCurveWmi2(newState.cpuTempCurveWmi2);
-            setCpuHysteresisCurveWmi2(newState.cpuHysteresisCurveWmi2);
+            if (Array.isArray(newState.cpuFanCurveWmi2)) {
+                setCpuFanCurveWmi2(newState.cpuFanCurveWmi2);
+            }
+            if (Array.isArray(newState.cpuTempCurveWmi2)) {
+                setCpuTempCurveWmi2(newState.cpuTempCurveWmi2);
+            }
+            if (Array.isArray(newState.cpuHysteresisCurveWmi2)) {
+                setCpuHysteresisCurveWmi2(newState.cpuHysteresisCurveWmi2);
+            }
 
             if (state.hasDGpu) {
-                setGpuFanCurveWmi2(newState.gpuFanCurveWmi2);
-                setGpuTempCurveWmi2(newState.gpuTempCurveWmi2);
-                setGpuHysteresisCurveWmi2(newState.gpuHysteresisCurveWmi2);
+                if (Array.isArray(newState.gpuFanCurveWmi2)) {
+                    setGpuFanCurveWmi2(newState.gpuFanCurveWmi2);
+                }
+                if (Array.isArray(newState.gpuTempCurveWmi2)) {
+                    setGpuTempCurveWmi2(newState.gpuTempCurveWmi2);
+                }
+                if (Array.isArray(newState.gpuHysteresisCurveWmi2)) {
+                    setGpuHysteresisCurveWmi2(newState.gpuHysteresisCurveWmi2);
+                }
             }
         }
 
-        for (const m of newState.methodList) {
-            for (const op of m.ops) {
-                if (op.startsWith("Write")) {
-                    methodWrite(m.method, op, newState.methods[m.method]);
+        // https://stackoverflow.com/a/51458052/9423933
+        if (Array.isArray(newState.methodList) && (newState.methods != null && newState.methods.constructor.name === "Object")) {
+            for (const m of newState.methodList) {
+                if (Array.isArray(m.ops) && typeof (m.method) === "string") {
+                    for (const op of m.ops) {
+                        if (typeof (op) === "string" && op.startsWith("Write")) {
+                            methodWrite(m.method, op, newState.methods[m.method]);
+                        }
+                    }
                 }
             }
         }
@@ -514,13 +531,23 @@ Singleton {
 
             if (isSet) {
                 root._cb = data => {
-                    root.state[stateKey] = callData.raw;
+                    if (stateKey === "methods") {
+                        root.state[stateKey][callData.raw.method] = callData.raw.data;
+                    } else {
+                        root.state[stateKey] = callData.raw;
+                    }
+
                     root.stateChanged();
                     callData.cb?.(data);
                 };
             } else {
                 root._cb = data => {
-                    root.state[stateKey] = data;
+                    if (stateKey === "methods") {
+                        root.state[stateKey][callData.raw.method] = data;
+                    } else {
+                        root.state[stateKey] = data;
+                    }
+
                     root.stateChanged();
                     callData.cb?.(data);
                 };
@@ -1305,6 +1332,9 @@ Singleton {
 
         _call({
             "method": "MethodRead",
+            "raw": {
+                "method": method
+            },
             "payload": data,
             "cb": cb,
             "cbErr": cbErr
@@ -1331,7 +1361,10 @@ Singleton {
 
         _call({
             "method": "MethodWrite",
-            "raw": mdata,
+            "raw": {
+                "data": mdata,
+                "method": method
+            },
             "payload": data,
             "cb": cb,
             "cbErr": cbErr
