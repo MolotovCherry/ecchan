@@ -140,7 +140,7 @@ PluginComponent {
 
                         Rectangle {
                             Layout.alignment: Qt.AlignHCenter
-                            implicitWidth: 1
+                            implicitWidth: 1.1
                             implicitHeight: 20
                             color: Theme.outline
                             opacity: 0.3
@@ -451,12 +451,6 @@ PluginComponent {
                                     Layout.fillHeight: true
                                     Layout.fillWidth: true
 
-                                    property int fanCount: EcSocket.state.fanCount || 1
-                                    property int fan1Rpm: EcSocket.state.fan1Rpm || 0
-                                    property int fan2Rpm: EcSocket.state.fan2Rpm || 0
-                                    property int fan3Rpm: EcSocket.state.fan3Rpm || 0
-                                    property int fan4Rpm: EcSocket.state.fan4Rpm || 0
-
                                     Connections {
                                         target: page1
                                         function onVisibleChanged() {
@@ -469,6 +463,7 @@ PluginComponent {
                                     }
 
                                     StyledRect {
+                                        id: fanRect
                                         anchors.left: parent.left
                                         anchors.right: parent.right
 
@@ -502,124 +497,69 @@ PluginComponent {
                                                 }
                                             }
 
-                                            Rectangle {
-                                                Layout.alignment: Qt.AlignCenter
-                                                implicitWidth: parent.width
-                                                implicitHeight: 1
-                                                color: Theme.outline
-                                                opacity: 0.3
-                                            }
+                                            Repeater {
+                                                id: fanRptr
 
-                                            RowLayout {
-                                                StyledText {
-                                                    text: "Fan 1"
-                                                    font.pixelSize: Theme.fontSizeLarge
-                                                    font.weight: Font.Medium
-                                                    color: Theme.surfaceText
-                                                }
+                                                model: [
+                                                    {
+                                                        "text": "Fan 1",
+                                                        "rpmText": EcSocket.state.fan1Rpm + " rpm",
+                                                        "show": EcSocket.state.fanCount >= 1
+                                                    },
+                                                    {
+                                                        "text": "Fan 2",
+                                                        "rpmText": EcSocket.state.fan2Rpm + " rpm",
+                                                        "show": EcSocket.state.fanCount >= 2
+                                                    },
+                                                    {
+                                                        "text": "Fan 3",
+                                                        "rpmText": EcSocket.state.fan3Rpm + " rpm",
+                                                        "show": EcSocket.state.fanCount >= 3
+                                                    },
+                                                    {
+                                                        "text": "Fan 4",
+                                                        "rpmText": EcSocket.state.fan4Rpm + " rpm",
+                                                        "show": EcSocket.state.fanCount >= 4
+                                                    }
+                                                ]
 
-                                                Item {
-                                                    Layout.fillWidth: true
-                                                }
+                                                ColumnLayout {
+                                                    id: fanRow
+                                                    spacing: Theme.spacingL
+                                                    visible: show
 
-                                                StyledText {
-                                                    text: fanSection.fan1Rpm + " rpm"
-                                                    font.pixelSize: Theme.fontSizeLarge
-                                                    font.weight: Font.Medium
-                                                    color: Theme.surfaceText
-                                                }
-                                            }
+                                                    required property int index
+                                                    required property string text
+                                                    required property string rpmText
+                                                    required property bool show
 
-                                            Rectangle {
-                                                visible: fanSection.fanCount >= 2
-                                                Layout.alignment: Qt.AlignCenter
-                                                implicitWidth: parent.width
-                                                implicitHeight: 1
-                                                color: Theme.outline
-                                                opacity: 0.3
-                                            }
+                                                    Rectangle {
+                                                        Layout.alignment: Qt.AlignCenter
+                                                        implicitWidth: parent.width
+                                                        implicitHeight: 1.1
+                                                        color: Theme.outline
+                                                        opacity: 0.3
+                                                    }
 
-                                            RowLayout {
-                                                visible: fanSection.fanCount >= 2
+                                                    RowLayout {
+                                                        Layout.fillWidth: true
 
-                                                StyledText {
-                                                    text: "Fan 2"
-                                                    font.pixelSize: Theme.fontSizeLarge
-                                                    font.weight: Font.Medium
-                                                    color: Theme.surfaceText
-                                                }
+                                                        StyledText {
+                                                            text: fanRow.text
+                                                            font.pixelSize: Theme.fontSizeLarge
+                                                            font.weight: Font.Medium
+                                                            color: Theme.surfaceText
+                                                        }
 
-                                                Item {
-                                                    Layout.fillWidth: true
-                                                }
-
-                                                StyledText {
-                                                    text: fanSection.fan2Rpm + " rpm"
-                                                    font.pixelSize: Theme.fontSizeLarge
-                                                    font.weight: Font.Medium
-                                                    color: Theme.surfaceText
-                                                }
-                                            }
-
-                                            Rectangle {
-                                                visible: fanSection.fanCount >= 3
-                                                Layout.alignment: Qt.AlignCenter
-                                                implicitWidth: parent.width
-                                                implicitHeight: 1
-                                                color: Theme.outline
-                                                opacity: 0.3
-                                            }
-
-                                            RowLayout {
-                                                visible: fanSection.fanCount >= 3
-
-                                                StyledText {
-                                                    text: "Fan 3"
-                                                    font.pixelSize: Theme.fontSizeLarge
-                                                    font.weight: Font.Medium
-                                                    color: Theme.surfaceText
-                                                }
-
-                                                Item {
-                                                    Layout.fillWidth: true
-                                                }
-
-                                                StyledText {
-                                                    text: fanSection.fan3Rpm + " rpm"
-                                                    font.pixelSize: Theme.fontSizeLarge
-                                                    font.weight: Font.Medium
-                                                    color: Theme.surfaceText
-                                                }
-                                            }
-
-                                            Rectangle {
-                                                visible: fanSection.fanCount >= 4
-                                                Layout.alignment: Qt.AlignCenter
-                                                implicitWidth: parent.width
-                                                implicitHeight: 1
-                                                color: Theme.outline
-                                                opacity: 0.3
-                                            }
-
-                                            RowLayout {
-                                                visible: fanSection.fanCount >= 4
-
-                                                StyledText {
-                                                    text: "Fan 4"
-                                                    font.pixelSize: Theme.fontSizeLarge
-                                                    font.weight: Font.Medium
-                                                    color: Theme.surfaceText
-                                                }
-
-                                                Item {
-                                                    Layout.fillWidth: true
-                                                }
-
-                                                StyledText {
-                                                    text: fanSection.fan4Rpm + " rpm"
-                                                    font.pixelSize: Theme.fontSizeLarge
-                                                    font.weight: Font.Medium
-                                                    color: Theme.surfaceText
+                                                        StyledText {
+                                                            Layout.fillWidth: true
+                                                            horizontalAlignment: Text.AlignRight
+                                                            text: fanRow.rpmText
+                                                            font.pixelSize: Theme.fontSizeLarge
+                                                            font.weight: Font.Medium
+                                                            color: Theme.surfaceText
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
