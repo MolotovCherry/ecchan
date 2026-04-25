@@ -115,7 +115,6 @@ PluginComponent {
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: Theme.spacingXS
                     spacing: Theme.spacingXS
 
                     // Branding
@@ -139,12 +138,32 @@ PluginComponent {
                         }
 
                         Item {
-                            Layout.fillWidth: true
+                            implicitWidth: 1
+                        }
+
+                        Rectangle {
+                            Layout.alignment: Qt.AlignHCenter
+                            implicitWidth: 1
+                            implicitHeight: 20
+                            color: Theme.outline
+                            opacity: 0.3
+                        }
+
+                        Item {
+                            implicitWidth: 1
+                        }
+
+                        StyledText {
+                            text: "Status"
+
+                            font.pixelSize: Theme.fontSizeLarge
+                            font.weight: Font.Bold
+                            color: Theme.surfaceText
                         }
 
                         DankButton {
-                            Layout.preferredWidth: 30
-                            Layout.preferredHeight: 30
+                            Layout.preferredWidth: 20
+                            Layout.preferredHeight: 20
                             hovered: false
                             pressed: false
                             backgroundColor: "transparent"
@@ -161,6 +180,15 @@ PluginComponent {
                                 size: Theme.iconSize - 6
                             }
                         }
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
+                        DankDropdown {
+                            currentValue: "Default"
+                            onValueChanged: value => {}
+                        }
                     }
 
                     // Top navigation buttons
@@ -168,6 +196,10 @@ PluginComponent {
                     RowLayout {
                         Layout.fillWidth: true
                         Layout.preferredHeight: Math.round(Theme.fontSizeMedium * 3.7)
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
 
                         Repeater {
                             id: btns
@@ -192,13 +224,15 @@ PluginComponent {
                                 {
                                     text: "Battery",
                                     icon: "battery_android_full"
+                                },
+                                {
+                                    text: "Profiles",
+                                    icon: "layers"
                                 }
                             ]
 
                             Row {
                                 id: row
-
-                                Layout.fillWidth: true
 
                                 required property int index
                                 required property string text
@@ -249,6 +283,10 @@ PluginComponent {
                                     }
                                 }
                             }
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
                         }
                     }
 
