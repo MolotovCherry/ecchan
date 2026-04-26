@@ -520,8 +520,6 @@ Item {
                                     } else if (deletedIndex < root.currentIdx) {
                                         let nextIdx = Math.max(0, root.currentIdx - 1);
                                         root.valueChanged(nextIdx, root.options[nextIdx]);
-                                    } else {
-                                        root.valueChanged(0, root.options[0]);
                                     }
 
                                     return;
