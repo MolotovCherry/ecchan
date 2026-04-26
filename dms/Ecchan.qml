@@ -182,9 +182,12 @@ PluginComponent {
                             Layout.fillWidth: true
                         }
 
-                        DankDropdown {
+                        DankEditableDropdown {
                             currentValue: "Default"
                             onValueChanged: value => {}
+                            options: ["Default", "Test"]
+
+                            addNewTextEntry: "Add Profile"
                         }
                     }
 
@@ -221,10 +224,6 @@ PluginComponent {
                                 {
                                     text: "Battery",
                                     icon: "battery_android_full"
-                                },
-                                {
-                                    text: "Profiles",
-                                    icon: "layers"
                                 }
                             ]
 
