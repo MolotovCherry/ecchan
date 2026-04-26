@@ -29,7 +29,8 @@ Item {
 
     property string text: ""
     property string description: ""
-    property string currentValue: ""
+    property string currentValue: currentIdx >= 0 && currentIdx < options.length ? options[currentIdx] : ""
+    property int currentIdx: -1
     property var options: []
     property var optionIcons: []
     property bool enableFuzzySearch: false
@@ -58,7 +59,7 @@ Item {
     property string emptyText: ""
     property bool usePopupTransparency: !checkParentDisablesTransparency()
 
-    signal valueChanged(string value)
+    signal valueChanged(int idx, string value)
 
     function closeDropdownMenu() {
         dropdownMenu.close();
@@ -137,7 +138,7 @@ Item {
 
                 dropdownMenu.open();
 
-                let currentIndex = root.options.indexOf(root.currentValue);
+                let currentIndex = root.currentIdx;
                 listView.positionViewAtIndex(currentIndex, ListView.Beginning);
 
                 const pos = dropdown.mapToItem(Overlay.overlay, 0, 0);
@@ -147,8 +148,9 @@ Item {
                 const goUp = root.openUpwards || pos.y + dropdown.height + popupH + 4 > overlayH;
                 dropdownMenu.x = root.alignPopupRight ? pos.x + dropdown.width - popupW : pos.x - (root.popupWidthOffset / 2);
                 dropdownMenu.y = goUp ? pos.y - popupH - 4 : pos.y + dropdown.height + 4;
-                if (root.enableFuzzySearch)
+                if (root.enableFuzzySearch) {
                     searchField.forceActiveFocus();
+                }
             }
         }
 
@@ -251,8 +253,8 @@ Item {
             if (val === root.addNewTextEntry) {
                 root.isEditing = true;
             } else {
-                root.currentValue = val;
-                root.valueChanged(val);
+                root.currentIdx = selectedIndex;
+                root.valueChanged(selectedIndex, val);
             }
 
             close();
@@ -420,7 +422,7 @@ Item {
                         required property int index
                         property bool isAddNew: index === root.options.length
                         property bool isSelected: dropdownMenu.selectedIndex === index
-                        property bool isCurrentValue: root.currentValue === modelData
+                        property bool isCurrentValue: root.currentIdx === index
                         property string iconName: isAddNew ? "add" : (root.optionIconMap[modelData] ?? "")
 
                         width: ListView.view.width
@@ -437,8 +439,8 @@ Item {
                             onAccepted: {
                                 if (text.trim() !== "") {
                                     root.options = [...root.options, text];
-                                    root.currentValue = text;
-                                    root.valueChanged(text);
+                                    root.currentIdx = Math.max(0, delegateRoot.index - 1);
+                                    root.valueChanged(root.currentIdx, text);
                                 }
                                 root.isEditing = false;
                                 text = "";
@@ -508,16 +510,18 @@ Item {
                                         newOpts = ["Default"];
                                     }
 
-                                    root.options = newOpts;
-
-                                    if (delegateRoot.isCurrentValue) {
+                                    if (deletedIndex === root.currentIdx) {
                                         let nextIdx = Math.max(0, deletedIndex - 1);
+                                        root.currentIdx = nextIdx;
 
-                                        let newItem = root.options[nextIdx];
-                                        root.currentValue = newItem;
-
-                                        root.valueChanged(newItem);
+                                        let newItem = newOpts[nextIdx];
+                                        root.valueChanged(nextIdx, newItem);
+                                    } else if (deletedIndex < root.currentIdx) {
+                                        let nextIdx = Math.max(0, root.currentIdx - 1);
+                                        root.currentIdx = nextIdx;
                                     }
+
+                                    root.options = newOpts;
 
                                     return;
                                 }
@@ -526,8 +530,8 @@ Item {
                                     root.isEditing = true;
                                     Qt.callLater(inlineEdit.forceActiveFocus);
                                 } else {
-                                    root.currentValue = delegateRoot.modelData;
-                                    root.valueChanged(delegateRoot.modelData);
+                                    root.currentIdx = delegateRoot.index;
+                                    root.valueChanged(root.currentIdx, delegateRoot.modelData);
                                     root.closeDropdownMenu();
                                 }
                             }
