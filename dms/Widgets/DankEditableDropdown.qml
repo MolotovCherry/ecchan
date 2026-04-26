@@ -510,7 +510,9 @@ Item {
                                         newOpts = ["Default"];
                                     }
 
-                                    if (deletedIndex === root.currentIdx) {
+                                    if (deletedIndex === root.currentIdx && (root.currentIdx < root.options.length - 1)) {
+                                        root.valueChanged(root.currentIdx, root.currentValue);
+                                    } else if (deletedIndex === root.currentIdx) {
                                         let nextIdx = Math.max(0, deletedIndex - 1);
                                         root.currentIdx = nextIdx;
 
