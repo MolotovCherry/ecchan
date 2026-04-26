@@ -245,17 +245,13 @@ Item {
         }
 
         function selectCurrent() {
-            if (selectedIndex < 0 || selectedIndex >= filteredOptions.length) {
+            if (selectedIndex < 0 || selectedIndex >= filteredOptions.length || selectedIndex === root.options.length) {
                 return;
             }
 
             const val = filteredOptions[selectedIndex];
-            if (val === root.addNewTextEntry) {
-                root.isEditing = true;
-            } else {
-                root.currentIdx = selectedIndex;
-                root.valueChanged(selectedIndex, val);
-            }
+            root.currentIdx = selectedIndex;
+            root.valueChanged(selectedIndex, val);
 
             close();
         }
@@ -277,10 +273,11 @@ Item {
         width: root.popupWidth === -1 ? undefined : (root.popupWidth > 0 ? root.popupWidth : (dropdown.width + root.popupWidthOffset))
         height: {
             let h = root.enableFuzzySearch ? 54 : 0;
-            if (root.options.length === 0 && root.emptyText !== "")
+            if (root.options.length === 0 && root.emptyText !== "") {
                 h += 32;
-            else
+            } else {
                 h += Math.min(filteredOptions.length, 10) * 36;
+            }
             return Math.min(root.maxPopupHeight, h + 16);
         }
         padding: 0
@@ -401,7 +398,6 @@ Item {
                     width: parent.width
                     height: parent.height - (root.enableFuzzySearch ? searchContainer.height + Theme.spacingXS : 0) - (root.options.length === 0 && root.emptyText !== "" ? 32 : 0)
                     clip: true
-                    visible: root.options.length > 0
                     model: ScriptModel {
                         values: dropdownMenu.filteredOptions
                     }
@@ -507,7 +503,10 @@ Item {
                                     newOpts.splice(deletedIndex, 1);
 
                                     if (newOpts.length === 0) {
-                                        newOpts = ["Default"];
+                                        root.currentIdx = -1;
+                                        root.valueChanged(-1, "");
+                                        root.options = [];
+                                        return;
                                     }
 
                                     const deletedSelf = deletedIndex === root.currentIdx;
