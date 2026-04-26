@@ -693,7 +693,9 @@ Singleton {
         _call({
             "method": "SetShiftMode",
             "raw": mode,
-            "data": mode,
+            "payload": {
+                "mode": mode
+            },
             "cb": cb,
             "cbErr": cbErr
         });
