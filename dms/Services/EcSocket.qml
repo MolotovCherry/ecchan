@@ -195,6 +195,40 @@ Singleton {
         }
     }
 
+    function getSanitizedState() {
+        // qmlformat off
+        const onlyKeep = [
+            "shiftMode",
+            "batteryChargeMode",
+            "superBattery",
+            "fanMode",
+            "webcam",
+            "webcamBlock",
+            "coolerBoost",
+            "fnKey",
+            "winKey",
+            "micMuteLed",
+            "muteLed",
+            "cpuFanCurveWmi2",
+            "cpuTempCurveWmi2",
+            "cpuHysteresisCurveWmi2",
+            "gpuFanCurveWmi2",
+            "gpuTempCurveWmi2",
+            "gpuHysteresisCurveWmi2",
+            "methods"
+        ];
+        // qmlformat on
+
+        const out = {};
+        for (let i = 0; i < onlyKeep.length; i++) {
+            const k = onlyKeep[i];
+            if (k in state) {
+                out[k] = state[k];
+            }
+        }
+        return out;
+    }
+
     // args:
     // data: { socketFile: "/path/to/file.sock" }
     function init(socketFile) {

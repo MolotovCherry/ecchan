@@ -17,7 +17,7 @@ PluginComponent {
     layerNamespacePlugin: "ecchan"
 
     onPluginDataChanged: {
-        const socket = root.pluginData.socket;
+        const socket = pluginData.socket;
         if (typeof (socket) === "string") {
             EcSocket.init(socket);
         }
@@ -97,6 +97,63 @@ PluginComponent {
         }
         // qmlformat on
     }
+
+    property var profilesModel: []
+    property int selectedProfile: 0
+    property var profiles: []
+
+    onPluginServiceChanged: {
+        if (!pluginService) {
+            return;
+        }
+
+        profiles = _loadPluginData("profiles", [
+            {
+                "name": "Default",
+                "state": EcSocket.getSanitizedState()
+            }
+        ]);
+
+        selectedProfile = _loadPluginData("selectedProfile", 0);
+
+        if (pluginData.startup) {
+            EcSocket.applyState(profiles[selectedProfile].state);
+        }
+    }
+
+    onProfilesChanged: {
+        profilesModel = profiles.map(item => item.name);
+
+        if (root.pluginService) {
+            _savePluginData("profiles", profiles);
+        }
+    }
+
+    onSelectedProfileChanged: {
+        if (root.pluginService) {
+            _savePluginData("selectedProfile", selectedProfile);
+        }
+    }
+
+    // Settings fns
+
+    function _loadPluginData(key, defaultValue) {
+        return pluginService.loadPluginData("ecchan", key, defaultValue);
+    }
+
+    function _savePluginData(key, value) {
+        pluginService.savePluginData("ecchan", key, value);
+    }
+
+    function _getGlobalVar(key, defaultValue) {
+        return pluginService.setGlobalVar("ecchan", key, defaultValue);
+    }
+
+    function _setGlobalVar(key, value) {
+        pluginService.setGlobalVar("ecchan", key, value);
+    }
+
+    // --
 
     popoutContent: Component {
         PopoutComponent {
@@ -183,11 +240,40 @@ PluginComponent {
                         }
 
                         DankEditableDropdown {
-                            currentValue: "Default"
-                            onValueChanged: value => {}
-                            options: ["Default", "Test"]
 
+                            currentIdx: root.selectedProfile
+                            options: root.profilesModel
                             addNewTextEntry: "Add Profile"
+
+                            onValueDeleted: (idx, name) => {
+                                // explicit reassign so signals fire
+                                let updatedProfiles = [...root.profiles];
+                                updatedProfiles.splice(idx, 1);
+                                root.profiles = updatedProfiles;
+                            }
+
+                            onValueChanged: (idx, name) => {
+                                if (idx == -1) {
+                                    valueAdded(0, "Default");
+                                    return;
+                                }
+
+                                const state = root.profiles[idx].state;
+                                root.selectedProfile = idx;
+                                EcSocket.applyState(state);
+                            }
+
+                            onValueAdded: (idx, name) => {
+                                // explicit reassign so signals fire
+                                root.profiles = [...root.profiles,
+                                    {
+                                        "name": name,
+                                        "state": EcSocket.getSanitizedState()
+                                    }
+                                ];
+
+                                root.selectedProfile = idx;
+                            }
                         }
                     }
 
