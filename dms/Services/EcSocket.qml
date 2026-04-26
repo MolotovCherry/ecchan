@@ -13,6 +13,9 @@ Singleton {
 
     property bool connected: false
 
+    signal initFinished
+    signal applyFinished
+
     // the state of our api at any given point in time
     // can also be used for saving/loading prefs.
     //
@@ -452,6 +455,10 @@ Singleton {
                 }
             }
         }
+
+        ping(() => {
+            applyFinished();
+        });
     }
 
     function _initState() {
@@ -528,6 +535,11 @@ Singleton {
                     }
                 }
             }
+
+            // dummy ping to schedule event after all the others
+            ping(() => {
+                initFinished();
+            });
         });
     }
 
