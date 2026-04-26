@@ -10,6 +10,7 @@ import qs.Services
 
 import "./Services"
 import "./Widgets"
+import "./utils.js" as Utils
 
 PluginComponent {
     id: root
@@ -101,11 +102,32 @@ PluginComponent {
     property var profilesModel: []
     property int selectedProfile: 0
     property var profiles: []
+    property bool _startup: pluginData.startup
+
+    Connections {
+        target: EcSocket
+        function onInitFinished() {
+            if (!root.pluginData.startup) {
+                root._startup = false;
+                return;
+            }
+
+            if (root._startup) {
+                EcSocket.applyState(root.profiles[root.selectedProfile].state);
+            }
+        }
+
+        function onApplyFinished() {
+            root._startup = false;
+        }
+    }
 
     onPluginServiceChanged: {
         if (!pluginService) {
             return;
         }
+
+        selectedProfile = _loadPluginData("selectedProfile", 0);
 
         profiles = _loadPluginData("profiles", [
             {
@@ -113,12 +135,6 @@ PluginComponent {
                 "state": EcSocket.getSanitizedState()
             }
         ]);
-
-        selectedProfile = _loadPluginData("selectedProfile", 0);
-
-        if (pluginData.startup) {
-            EcSocket.applyState(profiles[selectedProfile].state);
-        }
     }
 
     onProfilesChanged: {
@@ -132,6 +148,25 @@ PluginComponent {
     onSelectedProfileChanged: {
         if (root.pluginService) {
             _savePluginData("selectedProfile", selectedProfile);
+        }
+    }
+
+    Connections {
+        target: EcSocket
+        function onStateChanged() {
+            // prevent overwriting profiles until after we finished loading and doing startup
+            if (root._startup) {
+                return;
+            }
+
+            const oldState = root.profiles[root.selectedProfile].state;
+            const newState = EcSocket.getSanitizedState();
+
+            const equal = Utils.deepEqual(oldState, newState);
+
+            if (!equal) {
+                root.profiles[root.selectedProfile].state = newState;
+            }
         }
     }
 
