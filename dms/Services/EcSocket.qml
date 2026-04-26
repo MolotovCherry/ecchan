@@ -443,13 +443,11 @@ Singleton {
         }
 
         // https://stackoverflow.com/a/51458052/9423933
-        if (Array.isArray(newState.methodList) && (newState.methods != null && newState.methods.constructor.name === "Object")) {
-            for (const m of newState.methodList) {
-                if (Array.isArray(m.ops) && typeof (m.method) === "string") {
-                    for (const op of m.ops) {
-                        if (typeof (op) === "string" && op.startsWith("Write")) {
-                            methodWrite(m.method, op, newState.methods[m.method]);
-                        }
+        if (newState.methods != null && newState.methods.constructor.name === "Object") {
+            for (const m of state.methodList) {
+                for (const op of m.ops) {
+                    if (typeof (op) === "string" && op.startsWith("Write")) {
+                        methodWrite(m.method, op, newState.methods[m.method]);
                     }
                 }
             }
