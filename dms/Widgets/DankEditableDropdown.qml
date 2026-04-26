@@ -510,11 +510,20 @@ Item {
                                         newOpts = ["Default"];
                                     }
 
-                                    if (deletedIndex === root.currentIdx && (root.currentIdx < root.options.length - 1)) {
-                                        root.valueChanged(root.currentIdx, root.currentValue);
-                                    } else if (deletedIndex === root.currentIdx) {
-                                        let nextIdx = Math.max(0, deletedIndex - 1);
-                                        root.currentIdx = nextIdx;
+                                    const deletedSelf = deletedIndex === root.currentIdx;
+                                    if (deletedSelf) {
+                                        const lastIdx = root.options.length - 1;
+
+                                        let nextIdx;
+                                        if (root.currentIdx === lastIdx) {
+                                            nextIdx = Math.max(0, deletedIndex - 1);
+                                            root.currentIdx = nextIdx;
+                                        } else if (root.currentIdx < lastIdx) {
+                                            nextIdx = root.currentIdx;
+                                        } else {
+                                            nextIdx = 0;
+                                            root.currentIdx = nextIdx;
+                                        }
 
                                         let newItem = newOpts[nextIdx];
                                         root.valueChanged(nextIdx, newItem);
