@@ -60,6 +60,8 @@ Item {
     property bool usePopupTransparency: !checkParentDisablesTransparency()
 
     signal valueChanged(int idx, string value)
+    signal valueDeleted(int idx, string value)
+    signal valueAdded(int idx, string value)
 
     function closeDropdownMenu() {
         dropdownMenu.close();
@@ -250,7 +252,6 @@ Item {
             }
 
             const val = filteredOptions[selectedIndex];
-            root.currentIdx = selectedIndex;
             root.valueChanged(selectedIndex, val);
 
             close();
@@ -434,9 +435,7 @@ Item {
                             placeholderText: root.addNewTextEditPlaceholder
                             onAccepted: {
                                 if (text.trim() !== "") {
-                                    root.options = [...root.options, text];
-                                    root.currentIdx = Math.max(0, delegateRoot.index - 1);
-                                    root.valueChanged(root.currentIdx, text);
+                                    root.valueAdded(delegateRoot.index, text);
                                 }
                                 root.isEditing = false;
                                 text = "";
@@ -498,40 +497,32 @@ Item {
                                 let isDeleteClicked = mouseX >= deletePos.x && mouseX <= (deletePos.x + deleteBtn.width) && mouseY >= deletePos.y && mouseY <= (deletePos.y + deleteBtn.height);
 
                                 if (isDeleteClicked && !delegateRoot.isAddNew) {
-                                    let newOpts = [...root.options];
-                                    let deletedIndex = delegateRoot.index;
-                                    newOpts.splice(deletedIndex, 1);
+                                    const deletedIndex = delegateRoot.index;
+                                    const lastIdx = root.options.length - 1;
 
-                                    if (newOpts.length === 0) {
-                                        root.currentIdx = -1;
+                                    root.valueDeleted(deletedIndex, root.options[deletedIndex]);
+
+                                    // there's only 1 item, so we deleted the last one
+                                    if (lastIdx <= 0) {
                                         root.valueChanged(-1, "");
-                                        root.options = [];
                                         return;
                                     }
 
                                     const deletedSelf = deletedIndex === root.currentIdx;
                                     if (deletedSelf) {
-                                        const lastIdx = root.options.length - 1;
-
-                                        let nextIdx;
                                         if (root.currentIdx === lastIdx) {
-                                            nextIdx = Math.max(0, deletedIndex - 1);
-                                            root.currentIdx = nextIdx;
+                                            const nextIdx = deletedIndex - 1;
+                                            root.valueChanged(nextIdx, root.options[nextIdx] ?? "");
                                         } else if (root.currentIdx < lastIdx) {
-                                            nextIdx = root.currentIdx;
-                                        } else {
-                                            nextIdx = 0;
-                                            root.currentIdx = nextIdx;
+                                            const nextIdx = root.currentIdx;
+                                            root.valueChanged(nextIdx, root.options[nextIdx]);
                                         }
-
-                                        let newItem = newOpts[nextIdx];
-                                        root.valueChanged(nextIdx, newItem);
                                     } else if (deletedIndex < root.currentIdx) {
                                         let nextIdx = Math.max(0, root.currentIdx - 1);
-                                        root.currentIdx = nextIdx;
+                                        root.valueChanged(nextIdx, root.options[nextIdx]);
+                                    } else {
+                                        root.valueChanged(0, root.options[0]);
                                     }
-
-                                    root.options = newOpts;
 
                                     return;
                                 }
@@ -540,8 +531,7 @@ Item {
                                     root.isEditing = true;
                                     Qt.callLater(inlineEdit.forceActiveFocus);
                                 } else {
-                                    root.currentIdx = delegateRoot.index;
-                                    root.valueChanged(root.currentIdx, delegateRoot.modelData);
+                                    root.valueChanged(delegateRoot.index, delegateRoot.modelData);
                                     root.closeDropdownMenu();
                                 }
                             }
