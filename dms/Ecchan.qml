@@ -18,7 +18,7 @@ PluginComponent {
 
     onPluginDataChanged: {
         const socket = pluginData.socket;
-        if (typeof (socket) === "string") {
+        if (typeof (socket) === "string" && !EcSocket.connected) {
             EcSocket.init(socket);
         }
     }
