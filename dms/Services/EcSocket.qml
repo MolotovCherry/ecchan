@@ -13,7 +13,9 @@ Singleton {
 
     property bool connected: false
 
+    signal initStarted
     signal initFinished
+    signal applyStarted
     signal applyFinished
 
     // the state of our api at any given point in time
@@ -382,6 +384,8 @@ Singleton {
     }
 
     function applyState(newState) {
+        applyStarted();
+
         if (state.shiftModeSupported && (typeof (newState.shiftMode) === "string")) {
             setShiftMode(newState.shiftMode);
         }
@@ -465,6 +469,8 @@ Singleton {
     }
 
     function _initState() {
+        initStarted();
+
         fanCount();
         fanMax();
         hasDGpu();

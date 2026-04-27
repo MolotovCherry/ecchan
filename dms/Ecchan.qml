@@ -101,23 +101,40 @@ PluginComponent {
     property var profilesModel: []
     property int selectedProfile: 0
     property var profiles: []
+    property bool _blockProfileUpdate: true
     property bool _startup: pluginData.startup
 
     Connections {
         target: EcSocket
+
+        function onInitStarted() {
+            root._blockProfileUpdate = true;
+        }
+
         function onInitFinished() {
-            if (!root.pluginData.startup) {
-                root._startup = false;
-                return;
-            }
+            root._blockProfileUpdate = false;
 
             if (root._startup) {
                 EcSocket.applyState(root.profiles[root.selectedProfile].state);
+                root._startup = false;
             }
         }
 
+        function onApplyStarted() {
+            root._blockProfileUpdate = true;
+        }
+
         function onApplyFinished() {
-            root._startup = false;
+            root._blockProfileUpdate = false;
+            root.profiles[root.selectedProfile].state = EcSocket.getSanitizedState();
+            root.profilesChanged();
+        }
+
+        function onStateChanged() {
+            if (!root._blockProfileUpdate) {
+                root.profiles[root.selectedProfile].state = EcSocket.getSanitizedState();
+                root.profilesChanged();
+            }
         }
     }
 
@@ -127,7 +144,7 @@ PluginComponent {
         }
 
         selectedProfile = _loadPluginData("selectedProfile", 0);
-        _savePluginData("selectedProfile", selectedProfile);
+        selectedProfileChanged();
 
         profiles = _loadPluginData("profiles", [
             {
@@ -135,7 +152,7 @@ PluginComponent {
                 "state": EcSocket.getSanitizedState()
             }
         ]);
-        _savePluginData("profiles", profiles);
+        profilesChanged();
     }
 
     onProfilesChanged: {
@@ -262,10 +279,8 @@ PluginComponent {
                             addNewTextEntry: "Add Profile"
 
                             onValueDeleted: (idx, name) => {
-                                // explicit reassign so signals fire
-                                let updatedProfiles = [...root.profiles];
-                                updatedProfiles.splice(idx, 1);
-                                root.profiles = updatedProfiles;
+                                root.profiles.splice(idx, 1);
+                                root.profilesChanged();
                             }
 
                             onValueChanged: (idx, name, isSame) => {
