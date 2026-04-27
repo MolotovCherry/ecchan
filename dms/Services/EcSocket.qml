@@ -450,7 +450,10 @@ Singleton {
             for (const m of state.methodList) {
                 for (const op of m.ops) {
                     if (typeof (op) === "string" && op.startsWith("Write")) {
-                        methodWrite(m.method, op, newState.methods[m.method]);
+                        const method = newState.methods[m.method];
+                        if (method != null) {
+                            methodWrite(m.method, op, newState.methods[m.method]);
+                        }
                     }
                 }
             }
