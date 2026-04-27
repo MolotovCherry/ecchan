@@ -10,6 +10,7 @@ import qs.Services
 
 import "./Services"
 import "./Widgets"
+import "./Common"
 
 PluginComponent {
     id: root
@@ -103,6 +104,7 @@ PluginComponent {
     property var profiles: []
     property bool _blockProfileUpdate: true
     property bool _startup: true
+    property SocketCbManager _cbQueue: SocketCbManager {}
 
     Connections {
         target: EcSocket
@@ -721,7 +723,8 @@ PluginComponent {
                                         repeat: true
                                         triggeredOnStart: true
                                         onTriggered: {
-                                            EcSocket.ecDumpPretty(data => {
+                                            const id = EcSocket.ecDumpPretty();
+                                            root._cbQueue.registerCb(id, data => {
                                                 styledMemText.text = data;
                                             });
                                         }
