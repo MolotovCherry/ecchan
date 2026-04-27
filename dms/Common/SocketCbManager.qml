@@ -1,4 +1,5 @@
 import QtQuick
+import qs.Services
 
 import "../Services"
 
@@ -23,6 +24,7 @@ Item {
                         cbErr(payload);
                     } catch (e) {
                         console.error("cbErr failed", e);
+                        ToastService.showError("cbErr failed", e);
                     }
                 }
             } else {
@@ -31,6 +33,7 @@ Item {
                         cb(payload);
                     } catch (e) {
                         console.error("cb failed", e);
+                        ToastService.showError("cb failed", e);
                     }
                 }
             }
