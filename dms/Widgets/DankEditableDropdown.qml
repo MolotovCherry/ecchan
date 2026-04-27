@@ -59,7 +59,7 @@ Item {
     property string emptyText: ""
     property bool usePopupTransparency: !checkParentDisablesTransparency()
 
-    signal valueChanged(int idx, string value)
+    signal valueChanged(int idx, string value, bool isSameItem)
     signal valueDeleted(int idx, string value)
     signal valueAdded(int idx, string value)
 
@@ -252,7 +252,7 @@ Item {
             }
 
             const val = filteredOptions[selectedIndex];
-            root.valueChanged(selectedIndex, val);
+            root.valueChanged(selectedIndex, val, true);
 
             close();
         }
@@ -504,7 +504,7 @@ Item {
 
                                     // there's only 1 item, so we deleted the last one
                                     if (lastIdx <= 0) {
-                                        root.valueChanged(-1, "");
+                                        root.valueChanged(-1, "", false);
                                         return;
                                     }
 
@@ -512,14 +512,14 @@ Item {
                                     if (deletedSelf) {
                                         if (root.currentIdx === lastIdx) {
                                             const nextIdx = deletedIndex - 1;
-                                            root.valueChanged(nextIdx, root.options[nextIdx] ?? "");
+                                            root.valueChanged(nextIdx, root.options[nextIdx] ?? "", false);
                                         } else if (root.currentIdx < lastIdx) {
                                             const nextIdx = root.currentIdx;
-                                            root.valueChanged(nextIdx, root.options[nextIdx]);
+                                            root.valueChanged(nextIdx, root.options[nextIdx], false);
                                         }
                                     } else if (deletedIndex < root.currentIdx) {
                                         let nextIdx = Math.max(0, root.currentIdx - 1);
-                                        root.valueChanged(nextIdx, root.options[nextIdx]);
+                                        root.valueChanged(nextIdx, root.options[nextIdx], true);
                                     }
 
                                     return;
@@ -529,7 +529,7 @@ Item {
                                     root.isEditing = true;
                                     Qt.callLater(inlineEdit.forceActiveFocus);
                                 } else {
-                                    root.valueChanged(delegateRoot.index, delegateRoot.modelData);
+                                    root.valueChanged(delegateRoot.index, delegateRoot.modelData, false);
                                     root.closeDropdownMenu();
                                 }
                             }

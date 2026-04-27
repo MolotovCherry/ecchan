@@ -10,7 +10,6 @@ import qs.Services
 
 import "./Services"
 import "./Widgets"
-import "./utils.js" as Utils
 
 PluginComponent {
     id: root
@@ -128,6 +127,7 @@ PluginComponent {
         }
 
         selectedProfile = _loadPluginData("selectedProfile", 0);
+        _savePluginData("selectedProfile", selectedProfile);
 
         profiles = _loadPluginData("profiles", [
             {
@@ -135,6 +135,7 @@ PluginComponent {
                 "state": EcSocket.getSanitizedState()
             }
         ]);
+        _savePluginData("profiles", profiles);
     }
 
     onProfilesChanged: {
@@ -148,25 +149,6 @@ PluginComponent {
     onSelectedProfileChanged: {
         if (root.pluginService) {
             _savePluginData("selectedProfile", selectedProfile);
-        }
-    }
-
-    Connections {
-        target: EcSocket
-        function onStateChanged() {
-            // prevent overwriting profiles until after we finished loading and doing startup
-            if (root._startup) {
-                return;
-            }
-
-            const oldState = root.profiles[root.selectedProfile].state;
-            const newState = EcSocket.getSanitizedState();
-
-            const equal = Utils.deepEqual(oldState, newState);
-
-            if (!equal) {
-                root.profiles[root.selectedProfile].state = newState;
-            }
         }
     }
 
@@ -275,7 +257,6 @@ PluginComponent {
                         }
 
                         DankEditableDropdown {
-
                             currentIdx: root.selectedProfile
                             options: root.profilesModel
                             addNewTextEntry: "Add Profile"
@@ -287,14 +268,19 @@ PluginComponent {
                                 root.profiles = updatedProfiles;
                             }
 
-                            onValueChanged: (idx, name) => {
+                            onValueChanged: (idx, name, isSame) => {
                                 if (idx == -1) {
                                     valueAdded(0, "Default");
                                     return;
                                 }
 
-                                const state = root.profiles[idx].state;
                                 root.selectedProfile = idx;
+
+                                if (isSame) {
+                                    return;
+                                }
+
+                                const state = root.profiles[idx].state;
                                 EcSocket.applyState(state);
                             }
 
