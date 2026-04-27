@@ -216,6 +216,13 @@ PluginComponent {
                             name: "memory"
                             size: Theme.iconSizeLarge - 6
                             color: Theme.primary
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    popout.currentTab = 99;
+                                }
+                            }
                         }
 
                         StyledText {
@@ -668,6 +675,53 @@ PluginComponent {
                                                     }
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // EcMem page
+                        ColumnLayout {
+                            id: page99
+
+                            visible: popout.currentTab === 99
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            onVisibleChanged: {
+                                if (visible) {
+                                    memTimer.start();
+                                } else {
+                                    memTimer.stop();
+                                }
+                            }
+
+                            StyledRect {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+
+                                radius: Theme.cornerRadius
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+
+                                StyledText {
+                                    id: styledMemText
+                                    Layout.fillHeight: true
+                                    Layout.fillWidth: true
+                                    isMonospace: true
+                                    font.pixelSize: 13
+
+                                    anchors.centerIn: parent
+
+                                    Timer {
+                                        id: memTimer
+                                        interval: 1000
+                                        repeat: true
+                                        triggeredOnStart: true
+                                        onTriggered: {
+                                            EcSocket.ecDumpPretty(data => {
+                                                styledMemText.text = data;
+                                            });
                                         }
                                     }
                                 }
