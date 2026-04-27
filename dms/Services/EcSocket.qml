@@ -609,9 +609,9 @@ Singleton {
             root._cbErr = callData.cbErr || null;
 
             let json;
-            if (typeof (callData.method) === "string" && callData.payload === undefined) {
+            if (typeof (callData.method) === "string" && callData.payload == null) {
                 json = JSON.stringify(callData.method);
-            } else if (typeof (callData.method) === "string" && callData.payload !== undefined) {
+            } else if (typeof (callData.method) === "string" && callData.payload != null) {
                 json = JSON.stringify({
                     [callData.method]: callData.payload
                 });
