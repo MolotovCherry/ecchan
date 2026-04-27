@@ -102,7 +102,7 @@ PluginComponent {
     property int selectedProfile: 0
     property var profiles: []
     property bool _blockProfileUpdate: true
-    property bool _startup: pluginData.startup
+    property bool _startup: true
 
     Connections {
         target: EcSocket
