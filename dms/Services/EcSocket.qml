@@ -43,6 +43,8 @@ Singleton {
 
         onConnectionStateChanged: {
             if (connected) {
+                console.info("Ecchan connected to socket", root._socketFile);
+
                 root.connected = true;
                 pingTimer.start();
 
@@ -50,6 +52,7 @@ Singleton {
             }
 
             if (!connected) {
+                console.warn("Ecchan disconnected from socket");
                 root.connected = false;
                 _reset();
             }
