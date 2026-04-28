@@ -302,10 +302,16 @@ Singleton {
         //
         // However, we set it twice because state needs to be updated
         if (state.fnWinSwapSupported && (data.fnKey != null)) {
-            setFnKey(data.fnKey);
-        }
-        if (state.fnWinSwapSupported && (data.winKey != null)) {
-            setWinKey(data.winKey);
+            _sockHandler.call("setFnKey", data.fnKey).cb(() => {
+                switch (data.fnKey) {
+                case "Left":
+                    state.winKey = "Right";
+                    break;
+                case "Right":
+                    state.winKey = "Left";
+                    break;
+                }
+            });
         }
 
         if (state.micMuteLedSupported && (data.micMuteLed != null)) {
