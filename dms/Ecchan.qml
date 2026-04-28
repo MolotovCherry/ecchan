@@ -104,9 +104,20 @@ PluginComponent {
     property var profiles: []
     property bool _blockProfileUpdate: true
     property SocketHandler _sockHandler: SocketHandler {}
+    property int _retry: 0
 
     Connections {
         target: EcSocket
+
+        function onConnectedChanged() {
+            if (root.pluginData && !EcSocket.connected && root._retry === 0) {
+                console.warn("Ecchan unexpectedly disconnected; retrying..");
+                EcSocket.reconnect();
+                root._retry += 1;
+            } else if (EcSocket.connected) {
+                root._retry = 0;
+            }
+        }
 
         function onInitStarted() {
             root._blockProfileUpdate = true;

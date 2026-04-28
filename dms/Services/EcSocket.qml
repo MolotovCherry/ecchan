@@ -118,8 +118,7 @@ Singleton {
         }
     }
 
-    // args:
-    // data: { socketFile: "/path/to/file.sock" }
+    // args: "/path/to/file.sock"
     function init(socketFile) {
         _reset();
 
