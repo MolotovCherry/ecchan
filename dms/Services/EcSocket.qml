@@ -261,8 +261,7 @@ Singleton {
                 watchdogTimer.start();
             }
 
-            const pId = root.ping();
-            _cbManager.registerCb(pId, () => watchdogTimer.restart());
+            _cbManager.call("ping").cb(() => watchdogTimer.restart());
         }
     }
 
@@ -453,8 +452,7 @@ Singleton {
             }
         }
 
-        const pId = ping();
-        _cbManager.registerCb(pId, () => {
+        _cbManager.call("ping").cb(() => {
             applyFinished();
         });
     }
@@ -465,8 +463,7 @@ Singleton {
         fanCount();
         fanMax();
         hasDGpu();
-        const wmiId = wmiVer();
-        _cbManager.registerCb(wmiId, ver => {
+        _cbManager.call("wmiVer").cb(ver => {
             if (ver === 2) {
                 cpuFanCurveWmi2();
                 cpuTempCurveWmi2();
@@ -528,8 +525,7 @@ Singleton {
         gpuRtTemp();
         gpuRtFanSpeed();
 
-        const mId = methodList();
-        _cbManager.registerCb(mId, list => {
+        _cbManager.call("methodList").cb(list => {
             for (const m of list) {
                 for (const op of m.ops) {
                     if (op.startsWith("Read")) {
@@ -539,8 +535,7 @@ Singleton {
             }
 
             // dummy ping to schedule event after all the others
-            const pId = ping();
-            _cbManager.registerCb(pId, () => {
+            _cbManager.call("ping").cb(() => {
                 initFinished();
             });
         });
@@ -578,7 +573,7 @@ Singleton {
         // qmlformat on
 
         if (isSet) {
-            _cbManager.registerCb(id, data => {
+            _cbManager.id(id).cb(data => {
                 if (stateKey === "methods") {
                     root.state[stateKey][callData.raw.method] = callData.raw.data;
                 } else {
@@ -588,7 +583,7 @@ Singleton {
                 root.stateChanged();
             });
         } else {
-            _cbManager.registerCb(id, data => {
+            _cbManager.id(id).cb(data => {
                 if (stateKey === "methods") {
                     root.state[stateKey][callData.raw.method] = data;
                 } else {

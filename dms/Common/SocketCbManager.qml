@@ -53,19 +53,27 @@ Item {
         return _callQueue[id];
     }
 
-    function register(id, cb, cbErr) {
-        const data = _getId(id);
-        data.cb.push(cb);
-        data.cbErr.push(cbErr);
+    function _createChainer(id) {
+        const chainer = {
+            cb: callback => {
+                _getId(id).cb.push(callback);
+                return chainer;
+            },
+            cbErr: callbackErr => {
+                _getId(id).cbErr.push(callbackErr);
+                return chainer;
+            }
+        };
+
+        return chainer;
     }
 
-    function registerCb(id, cb) {
-        const data = _getId(id);
-        data.cb.push(cb);
+    function call(methodName, ...args) {
+        const id = EcSocket[methodName](...args);
+        return _createChainer(id);
     }
 
-    function registerCbErr(id, cbErr) {
-        const data = _getId(id);
-        data.cbErr.push(cbErr);
+    function id(id) {
+        return _createChainer(id);
     }
 }

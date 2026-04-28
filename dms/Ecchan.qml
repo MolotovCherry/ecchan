@@ -723,8 +723,7 @@ PluginComponent {
                                         repeat: true
                                         triggeredOnStart: true
                                         onTriggered: {
-                                            const id = EcSocket.ecDumpPretty();
-                                            root._cbQueue.registerCb(id, data => {
+                                            root._cbQueue.call("ecDumpPretty").cb(data => {
                                                 styledMemText.text = data;
                                             });
                                         }
