@@ -103,7 +103,6 @@ PluginComponent {
     property int selectedProfile: 0
     property var profiles: []
     property bool _blockProfileUpdate: true
-    property bool _startup: true
     property SocketHandler _sockHandler: SocketHandler {}
 
     Connections {
@@ -116,11 +115,8 @@ PluginComponent {
         function onInitFinished() {
             root._blockProfileUpdate = false;
 
-            if (root._startup) {
-                const state = EcSocket.state.deserialize(root.profiles[root.selectedProfile].state);
-                EcSocket.applyState(state);
-                root._startup = false;
-            }
+            const state = EcSocket.state.deserialize(root.profiles[root.selectedProfile].state);
+            EcSocket.applyState(state);
         }
 
         function onApplyStarted() {

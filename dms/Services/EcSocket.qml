@@ -479,6 +479,8 @@ Singleton {
                 } else {
                     root.state[stateKey] = callData.raw;
                 }
+
+                stateChanged();
             });
         } else {
             _sockHandler.id(id).cb(data => {
@@ -487,6 +489,8 @@ Singleton {
                 } else {
                     root.state[stateKey] = data;
                 }
+
+                stateChanged();
             });
         }
 
