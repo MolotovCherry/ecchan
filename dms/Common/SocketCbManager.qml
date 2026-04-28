@@ -42,6 +42,10 @@ Item {
         }
     }
 
+    function reset() {
+        _callQueue = {};
+    }
+
     function _getId(id) {
         if (_callQueue[id] == null) {
             _callQueue[id] = {

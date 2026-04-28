@@ -184,6 +184,12 @@ Singleton {
         _socket?.destroy();
         _socket = null;
 
+        _counter = 0;
+        _currentCounterId = 0;
+        _callBlocked = false;
+        _callQueue = [];
+        _cbManager.reset();
+
         if (connected) {
             connected = false;
         }
