@@ -117,7 +117,8 @@ PluginComponent {
             root._blockProfileUpdate = false;
 
             if (root._startup) {
-                EcSocket.applyState(root.profiles[root.selectedProfile].state);
+                const state = EcSocket.state.deserialize(root.profiles[root.selectedProfile].state);
+                EcSocket.applyState(state);
                 root._startup = false;
             }
         }
@@ -128,13 +129,13 @@ PluginComponent {
 
         function onApplyFinished() {
             root._blockProfileUpdate = false;
-            root.profiles[root.selectedProfile].state = EcSocket.getSanitizedState();
+            root.profiles[root.selectedProfile].state = EcSocket.state.serialize();
             root.profilesChanged();
         }
 
         function onStateChanged() {
             if (!root._blockProfileUpdate) {
-                root.profiles[root.selectedProfile].state = EcSocket.getSanitizedState();
+                root.profiles[root.selectedProfile].state = EcSocket.state.serialize();
                 root.profilesChanged();
             }
         }
@@ -151,7 +152,7 @@ PluginComponent {
         profiles = _loadPluginData("profiles", [
             {
                 "name": "Default",
-                "state": EcSocket.getSanitizedState()
+                "state": EcSocket.state.serialize()
             }
         ]);
         profilesChanged();
@@ -304,7 +305,7 @@ PluginComponent {
                                     return;
                                 }
 
-                                const state = root.profiles[idx].state;
+                                const state = EcSocket.state.deserialize(root.profiles[idx].state);
                                 EcSocket.applyState(state);
                             }
 
@@ -313,7 +314,7 @@ PluginComponent {
                                 root.profiles = [...root.profiles,
                                     {
                                         "name": name,
-                                        "state": EcSocket.getSanitizedState()
+                                        "state": EcSocket.state.serialize()
                                     }
                                 ];
 
@@ -715,18 +716,14 @@ PluginComponent {
 
                                     anchors.centerIn: parent
 
-                                    text: "|      | _0 _1 _2 _3 _4 _5 _6 _7 _8 _9 _A _B _C _D _E _F\n|------+------------------------------------------------\n| 0x0_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x1_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x2_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x3_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x4_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x5_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x6_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x7_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x8_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x9_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xA_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xB_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xC_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xD_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xE_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xF_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n"
+                                    text: EcSocket.state.ecDumpPretty
 
                                     Timer {
                                         id: memTimer
                                         interval: 1000
                                         repeat: true
                                         triggeredOnStart: true
-                                        onTriggered: {
-                                            root._sockHandler.call("ecDumpPretty").cb(data => {
-                                                styledMemText.text = data;
-                                            });
-                                        }
+                                        onTriggered: EcSocket.ecDumpPretty()
                                     }
                                 }
                             }

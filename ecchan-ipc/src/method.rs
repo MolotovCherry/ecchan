@@ -85,7 +85,7 @@ pub enum Method<'a> {
     SetFnKey {
         state: KeyDirection,
     },
-    SetWinkey {
+    SetWinKey {
         state: KeyDirection,
     },
 

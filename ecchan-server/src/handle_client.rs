@@ -347,7 +347,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
             RetVal::Unit
         }
 
-        Method::SetWinkey { state } => {
+        Method::SetWinKey { state } => {
             ec.set_win_key(state).context(EcSnafu)?;
             RetVal::Unit
         }

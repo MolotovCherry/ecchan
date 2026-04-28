@@ -32,87 +32,9 @@ Singleton {
     //
     // Only keys which can be set are written when imported,
     // so someone can't for example change "hasDGPU" to true
-    //
-    // qmlformat off
-    property var state: {
-        "fanCount": 1,                       // int
-        "fanMax": null,                      // null | int
-        "hasDGpu": false,                    // bool
-        "wmiVer": 1,                         // int
-
-        "shiftModes": [],                    // array[string]
-        "shiftMode": null,                   // null | string
-        "shiftModeSupported": false,         // bool
-
-        "batteryChargeMode": null,           // null | string | int
-        "batteryChargeModeSupported": false, // bool
-        "superBattery": false,               // bool
-        "superBatterySupported": false,      // bool
-
-        "fan1Rpm": 0,                        // int
-        "fan2Rpm": 0,                        // int
-        "fan3Rpm": 0,                        // int
-        "fan4Rpm": 0,                        // int
-        "fan1Supported": true,               // bool
-        "fan2Supported": true,               // bool
-        "fan3Supported": true,               // bool
-        "fan4Supported": true,               // bool
-
-        "fanModes": [],                      // array[string]
-        "fanMode": null,                     // null | string
-        "fanModeSupported": false,           // bool
-
-        "webcam": false,                     // bool
-        "webcamBlock": false,                // bool
-        "webcamSupported": false,            // bool
-        "webcamBlockSupported": false,       // bool
-
-        "coolerBoost": false,                // bool
-        "coolerBoostSupported": false,       // bool
-
-        "fnKey": "Right",                    // string
-        "winKey": "Left",                    // string
-        "fnWinSwapSupported": false,         // bool
-
-        "micMuteLed": false,                 // bool
-        "muteLed": false,                    // bool
-        "micMuteLedSupported": false,        // bool
-        "muteLedSupported": false,           // bool
-
-        "cpuRtFanSpeed": 0,                  // int
-        "cpuRtTemp": 0,                      // int
-        "gpuRtFanSpeed": 0,                  // int
-        "gpuRtTemp": 0,                      // int
-
-        "cpuFanCurveWmi2":  [0, 0, 0, 0, 0, 0, 0],    // array[int]
-        "cpuTempCurveWmi2": [0, 0, 0, 0, 0, 0, 0],    // array[int]
-        "cpuHysteresisCurveWmi2": [0, 0, 0, 0, 0, 0], // array[int]
-        "gpuFanCurveWmi2":  [0, 0, 0, 0, 0, 0, 0],    // array[int]
-        "gpuTempCurveWmi2": [0, 0, 0, 0, 0, 0, 0],    // array[int]
-        "gpuHysteresisCurveWmi2": [0, 0, 0, 0, 0, 0], // array[int]
-
-        // array[
-        //   {
-        //     "name": string,
-        //     "method": string,
-        //     "ops": array[
-        //       "ReadBit" | "WriteBit"
-        //       "Read" | "Write
-        //       "ReadRange" | "WriteRange"
-        //     ]
-        //   }
-        // ]
-        "methodList": [],
-        // (object is keyed by method key above)
-        // {
-        //   [method]: bool | int | array[int]
-        // }
-        "methods": {}
-    }
-    // qmlformat on
+    property State state: State {}
 
     property string _socketFile
-
     property DankSocket _socket
 
     property Component _socketComponent: DankSocket {
@@ -194,40 +116,6 @@ Singleton {
         if (connected) {
             connected = false;
         }
-    }
-
-    function getSanitizedState() {
-        // qmlformat off
-        const onlyKeep = [
-            "shiftMode",
-            "batteryChargeMode",
-            "superBattery",
-            "fanMode",
-            "webcam",
-            "webcamBlock",
-            "coolerBoost",
-            "fnKey",
-            "winKey",
-            "micMuteLed",
-            "muteLed",
-            "cpuFanCurveWmi2",
-            "cpuTempCurveWmi2",
-            "cpuHysteresisCurveWmi2",
-            "gpuFanCurveWmi2",
-            "gpuTempCurveWmi2",
-            "gpuHysteresisCurveWmi2",
-            "methods"
-        ];
-        // qmlformat on
-
-        const out = {};
-        for (let i = 0; i < onlyKeep.length; i++) {
-            const k = onlyKeep[i];
-            if (k in state) {
-                out[k] = state[k];
-            }
-        }
-        return out;
     }
 
     // args:
@@ -379,80 +267,85 @@ Singleton {
         }
     }
 
-    function applyState(newState) {
+    // use state.deserialize(jsonString) to get the object, then applyState here
+    function applyState(data) {
         applyStarted();
 
-        if (state.shiftModeSupported && (typeof (newState.shiftMode) === "string")) {
-            setShiftMode(newState.shiftMode);
+        if (state.shiftModeSupported && (data.shiftMode != null)) {
+            setShiftMode(data.shiftMode);
         }
 
-        if (state.batteryChargeModeSupported && ((typeof (newState.batteryChargeMode) === "string") || (typeof (newState.batteryChargeMode) === "number"))) {
-            setBatteryChargeMode(newState.batteryChargeMode);
+        if (state.batteryChargeModeSupported && (data.batteryChargeMode != null)) {
+            setBatteryChargeMode(data.batteryChargeMode);
         }
-        if (state.superBatterySupported && (typeof (newState.superBattery) === "boolean")) {
-            setSuperBattery(newState.superBattery);
-        }
-
-        if (state.fanModeSupported && (typeof (newState.fanMode) === "string")) {
-            setFanMode(newState.fanMode);
+        if (state.superBatterySupported && (data.superBattery != null)) {
+            setSuperBattery(data.superBattery);
         }
 
-        if (state.webcamSupported && (typeof (newState.webcam) === "boolean")) {
-            setWebcam(newState.webcam);
-        }
-        if (state.webcamBlockSupported && (typeof (newState.webcamBlock) === "boolean")) {
-            setWebcamBlock(newState.webcamBlock);
+        if (state.fanModeSupported && (data.fanMode != null)) {
+            setFanMode(data.fanMode);
         }
 
-        if (state.coolerBoostSupported && (typeof (newState.coolerBoost) === "boolean")) {
-            setCoolerBoost(newState.coolerBoost);
+        if (state.webcamSupported && (data.webcam != null)) {
+            setWebcam(data.webcam);
+        }
+        if (state.webcamBlockSupported && (data.webcamBlock != null)) {
+            setWebcamBlock(data.webcamBlock);
+        }
+
+        if (state.coolerBoostSupported && (data.coolerBoost != null)) {
+            setCoolerBoost(data.coolerBoost);
         }
 
         // we only need to set one of these because it swaps the
         // win key at the same time; so setting Win key is redundant
-        if (state.fnWinSwapSupported && (typeof (newState.fnKey) === "string")) {
-            setFnKey(newState.fnKey);
+        //
+        // However, we set it twice because state needs to be updated
+        if (state.fnWinSwapSupported && (data.fnKey != null)) {
+            setFnKey(data.fnKey);
+        }
+        if (state.fnWinSwapSupported && (data.winKey != null)) {
+            setWinKey(data.winKey);
         }
 
-        if (state.micMuteLedSupported && (typeof (newState.micMuteLed) === "boolean")) {
-            setMicMuteLed(newState.micMuteLed);
+        if (state.micMuteLedSupported && (data.micMuteLed != null)) {
+            setMicMuteLed(data.micMuteLed);
         }
-        if (state.muteLedSupported && (typeof (newState.muteLed) === "boolean")) {
-            setMuteLed(newState.muteLed);
+        if (state.muteLedSupported && (data.muteLed != null)) {
+            setMuteLed(data.muteLed);
         }
 
         if (state.wmiVer === 2) {
-            if (Array.isArray(newState.cpuFanCurveWmi2)) {
-                setCpuFanCurveWmi2(newState.cpuFanCurveWmi2);
+            if (data.cpuFanCurveWmi2 != null) {
+                setCpuFanCurveWmi2(data.cpuFanCurveWmi2);
             }
-            if (Array.isArray(newState.cpuTempCurveWmi2)) {
-                setCpuTempCurveWmi2(newState.cpuTempCurveWmi2);
+            if (data.cpuTempCurveWmi2 != null) {
+                setCpuTempCurveWmi2(data.cpuTempCurveWmi2);
             }
-            if (Array.isArray(newState.cpuHysteresisCurveWmi2)) {
-                setCpuHysteresisCurveWmi2(newState.cpuHysteresisCurveWmi2);
+            if (data.cpuHysteresisCurveWmi2 != null) {
+                setCpuHysteresisCurveWmi2(data.cpuHysteresisCurveWmi2);
             }
 
             if (state.hasDGpu) {
-                if (Array.isArray(newState.gpuFanCurveWmi2)) {
-                    setGpuFanCurveWmi2(newState.gpuFanCurveWmi2);
+                if (data.gpuFanCurveWmi2 != null) {
+                    setGpuFanCurveWmi2(data.gpuFanCurveWmi2);
                 }
-                if (Array.isArray(newState.gpuTempCurveWmi2)) {
-                    setGpuTempCurveWmi2(newState.gpuTempCurveWmi2);
+                if (data.gpuTempCurveWmi2 != null) {
+                    setGpuTempCurveWmi2(data.gpuTempCurveWmi2);
                 }
-                if (Array.isArray(newState.gpuHysteresisCurveWmi2)) {
-                    setGpuHysteresisCurveWmi2(newState.gpuHysteresisCurveWmi2);
+                if (data.gpuHysteresisCurveWmi2 != null) {
+                    setGpuHysteresisCurveWmi2(data.gpuHysteresisCurveWmi2);
                 }
             }
         }
 
-        // https://stackoverflow.com/a/51458052/9423933
-        if (newState.methods != null && newState.methods.constructor.name === "Object") {
+        if (data.methods != null) {
             for (const m of state.methodList) {
                 for (const op of m.ops) {
-                    if (typeof (op) === "string" && op.startsWith("Write")) {
-                        const method = newState.methods[m.method];
-                        if (method != null) {
-                            methodWrite(m.method, op, newState.methods[m.method]);
+                    if (op.startsWith("Write")) {
+                        const mdata = data.methods[m.method];
+                        if (mdata != null) {
+                            methodWrite(m.method, op, mdata);
                         }
                     }
                 }
@@ -586,8 +479,6 @@ Singleton {
                 } else {
                     root.state[stateKey] = callData.raw;
                 }
-
-                root.stateChanged();
             });
         } else {
             _sockHandler.id(id).cb(data => {
@@ -596,8 +487,6 @@ Singleton {
                 } else {
                     root.state[stateKey] = data;
                 }
-
-                root.stateChanged();
             });
         }
 
