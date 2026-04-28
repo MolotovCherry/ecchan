@@ -104,7 +104,7 @@ PluginComponent {
     property var profiles: []
     property bool _blockProfileUpdate: true
     property bool _startup: true
-    property SocketCbManager _cbQueue: SocketCbManager {}
+    property SocketHandler _sockHandler: SocketHandler {}
 
     Connections {
         target: EcSocket
@@ -723,7 +723,7 @@ PluginComponent {
                                         repeat: true
                                         triggeredOnStart: true
                                         onTriggered: {
-                                            root._cbQueue.call("ecDumpPretty").cb(data => {
+                                            root._sockHandler.call("ecDumpPretty").cb(data => {
                                                 styledMemText.text = data;
                                             });
                                         }

@@ -25,7 +25,7 @@ Singleton {
     property var _currentCounterId: 0
     property var _callBlocked: false
     property var _callQueue: []
-    property SocketCbManager _cbManager: SocketCbManager {}
+    property SocketHandler _sockHandler: SocketHandler {}
 
     // the state of our api at any given point in time
     // can also be used for saving/loading prefs.
@@ -167,9 +167,10 @@ Singleton {
                     root.dataReady(id, reply.Err, true);
                 }
 
-                const cb = root._callQueue.shift();
-                if (cb != null) {
-                    root._currentCounterId = cb();
+                const data = root._callQueue.shift();
+                if (data != null) {
+                    root._currentCounterId = data.id;
+                    _socket?.send(data.call);
                 } else {
                     root._callBlocked = false;
                 }
@@ -188,7 +189,7 @@ Singleton {
         _currentCounterId = 0;
         _callBlocked = false;
         _callQueue = [];
-        _cbManager.reset();
+        _sockHandler.reset();
 
         if (connected) {
             connected = false;
@@ -267,7 +268,7 @@ Singleton {
                 watchdogTimer.start();
             }
 
-            _cbManager.call("ping").cb(() => watchdogTimer.restart());
+            _sockHandler.call("ping").cb(() => watchdogTimer.restart());
         }
     }
 
@@ -458,7 +459,7 @@ Singleton {
             }
         }
 
-        _cbManager.call("ping").cb(() => {
+        _sockHandler.call("ping").cb(() => {
             applyFinished();
         });
     }
@@ -469,7 +470,7 @@ Singleton {
         fanCount();
         fanMax();
         hasDGpu();
-        _cbManager.call("wmiVer").cb(ver => {
+        _sockHandler.call("wmiVer").cb(ver => {
             if (ver === 2) {
                 cpuFanCurveWmi2();
                 cpuTempCurveWmi2();
@@ -531,7 +532,7 @@ Singleton {
         gpuRtTemp();
         gpuRtFanSpeed();
 
-        _cbManager.call("methodList").cb(list => {
+        _sockHandler.call("methodList").cb(list => {
             for (const m of list) {
                 for (const op of m.ops) {
                     if (op.startsWith("Read")) {
@@ -541,7 +542,7 @@ Singleton {
             }
 
             // dummy ping to schedule event after all the others
-            _cbManager.call("ping").cb(() => {
+            _sockHandler.call("ping").cb(() => {
                 initFinished();
             });
         });
@@ -579,7 +580,7 @@ Singleton {
         // qmlformat on
 
         if (isSet) {
-            _cbManager.id(id).cb(data => {
+            _sockHandler.id(id).cb(data => {
                 if (stateKey === "methods") {
                     root.state[stateKey][callData.raw.method] = callData.raw.data;
                 } else {
@@ -589,7 +590,7 @@ Singleton {
                 root.stateChanged();
             });
         } else {
-            _cbManager.id(id).cb(data => {
+            _sockHandler.id(id).cb(data => {
                 if (stateKey === "methods") {
                     root.state[stateKey][callData.raw.method] = data;
                 } else {
@@ -600,26 +601,30 @@ Singleton {
             });
         }
 
-        const call = () => {
-            let json;
-            if (typeof (callData.method) === "string" && callData.payload == null) {
-                json = JSON.stringify(callData.method);
-            } else if (typeof (callData.method) === "string" && callData.payload != null) {
-                json = JSON.stringify({
-                    [callData.method]: callData.payload
-                });
-            }
+        let json;
+        if (typeof (callData.method) === "string" && callData.payload == null) {
+            json = JSON.stringify(callData.method);
+        } else if (typeof (callData.method) === "string" && callData.payload != null) {
+            json = JSON.stringify({
+                [callData.method]: callData.payload
+            });
+        }
 
-            // calls will be lost if not connected; this is acceptable
-            _socket?.send(json);
-            return id;
-        };
-
-        _callQueue.push(call);
-
+        // init first call
         if (!_callBlocked) {
             _callBlocked = true;
-            _currentCounterId = _callQueue.shift()();
+            _currentCounterId = id;
+            // calls will be lost if not connected; this is acceptable
+            _socket?.send(json);
+        } else {
+            // not first call, so queue it up
+
+            const call = {
+                "id": id,
+                "call": json
+            };
+
+            _callQueue.push(call);
         }
 
         return id;
