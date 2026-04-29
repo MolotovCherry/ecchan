@@ -484,6 +484,7 @@ Singleton {
             _sockHandler.id(id).cb(data => {
                 if (stateKey === "methods") {
                     root.state[stateKey][callData.raw.method] = callData.raw.data;
+                    state.methodsChanged();
                 } else {
                     root.state[stateKey] = callData.raw;
                 }
@@ -492,6 +493,7 @@ Singleton {
             _sockHandler.id(id).cb(data => {
                 if (stateKey === "methods") {
                     root.state[stateKey][callData.raw.method] = data;
+                    state.methodsChanged();
                 } else {
                     root.state[stateKey] = data;
                 }
