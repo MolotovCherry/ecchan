@@ -304,16 +304,7 @@ Singleton {
         //
         // However, we set it twice because state needs to be updated
         if (state.fnWinSwapSupported && (data.fnKey != null)) {
-            _sockHandler.call("setFnKey", data.fnKey).cb(() => {
-                switch (data.fnKey) {
-                case "Left":
-                    state.winKey = "Right";
-                    break;
-                case "Right":
-                    state.winKey = "Left";
-                    break;
-                }
-            });
+            setFnKey(data.fnKey);
         }
 
         if (state.micMuteLedSupported && (data.micMuteLed != null)) {
@@ -482,11 +473,27 @@ Singleton {
 
         if (isSet) {
             _sockHandler.id(id).cb(data => {
-                if (stateKey === "methods") {
-                    root.state[stateKey][callData.raw.method] = callData.raw.data;
-                    state.methodsChanged();
-                } else {
-                    root.state[stateKey] = callData.raw;
+                switch (stateKey) {
+                    // qmlformat off
+                    case "methods":
+                        root.state[stateKey][callData.raw.method] = callData.raw.data;
+                        state.methodsChanged();
+                        break;
+
+                    case "fnKey":
+                        root.state.winKey = callData.raw === "Right" ? "Left" : "Right";
+                        root.state[stateKey] = callData.raw;
+                        break;
+
+                    case "winKey":
+                        root.state.fnKey = callData.raw === "Left" ? "Right" : "Left";
+                        root.state[stateKey] = callData.raw;
+                        break;
+
+                    default:
+                        root.state[stateKey] = callData.raw;
+                        break;
+                    // qmlformat on
                 }
             });
         } else {
