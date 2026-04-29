@@ -11,6 +11,7 @@ import qs.Services
 import "./Services"
 import "./Widgets"
 import "./Common"
+import "./utils.js" as Utils
 
 PluginComponent {
     id: root
@@ -111,7 +112,7 @@ PluginComponent {
 
         function onConnectedChanged() {
             if (root.pluginData && !EcSocket.connected && root._retry === 0) {
-                console.warn("Ecchan unexpectedly disconnected; retrying..");
+                console.warn("Ecchan unexpectedly disconnected; retrying connection");
                 EcSocket.reconnect();
                 root._retry += 1;
             } else if (EcSocket.connected) {
@@ -140,10 +141,18 @@ PluginComponent {
             root.profilesChanged();
         }
 
-        function onStateChanged() {
+        function onDataReady() {
+            // state is changed on every onDataReady firing; but that doesn't mean crucial properties changed!
             if (!root._blockProfileUpdate) {
-                root.profiles[root.selectedProfile].state = EcSocket.state.serialize();
-                root.profilesChanged();
+                const state = EcSocket.state.serialize();
+                const state2 = root.profiles[root.selectedProfile].state;
+
+                // avoid useless writes to disk
+                const equal = Utils.deepEqual(state, state2);
+                if (!equal) {
+                    root.profiles[root.selectedProfile].state = state;
+                    root.profilesChanged();
+                }
             }
         }
     }
