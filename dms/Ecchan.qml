@@ -24,6 +24,7 @@ PluginComponent {
         }
     }
 
+    property var profileTimer: profileWriteTimer
     Component.onCompleted: {
         SocketHandler.addGlobal("profileSaver", (id, method, payload, isErr) => {
             if (isErr) {
@@ -38,7 +39,7 @@ PluginComponent {
 
             // avoid useless writes to disk ; acts as a debouncer
             if (shouldSave) {
-                profileWriteTimer.restart();
+                root.profileTimer.restart();
             }
         });
     }
