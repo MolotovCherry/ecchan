@@ -1,2 +1,3 @@
 singleton SocketHandler 1.0 SocketHandler.qml
 State 1.0 State.qml
+Socket 1.0 Socket.qml

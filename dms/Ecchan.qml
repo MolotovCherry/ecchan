@@ -127,18 +127,6 @@ PluginComponent {
     Connections {
         target: EcSocket
 
-        property int retry: 0
-
-        function onConnectedChanged() {
-            if (root.pluginData && !EcSocket.connected && retry === 0) {
-                console.warn("Ecchan unexpectedly disconnected; retrying connection");
-                EcSocket.reconnect();
-                retry += 1;
-            } else if (EcSocket.connected) {
-                retry = 0;
-            }
-        }
-
         function onInitStarted() {
         }
 

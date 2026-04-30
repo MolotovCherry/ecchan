@@ -28,7 +28,7 @@ Singleton {
                     try {
                         cbErr(payload);
                     } catch (e) {
-                        console.error("cbErr failed", e);
+                        console.error("Ecchan: cbErr failed", e);
                         ToastService.showError("cbErr failed", e);
                     }
                 }
@@ -37,7 +37,7 @@ Singleton {
                     try {
                         cb(payload);
                     } catch (e) {
-                        console.error("cb failed", e);
+                        console.error("Ecchan: cb failed", e);
                         ToastService.showError("cb failed", e);
                     }
                 }

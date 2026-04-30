@@ -5,10 +5,10 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-import qs.Common
 import qs.Services
 
 import "../Common"
+import "../Common" as Common
 
 Singleton {
     id: root
@@ -38,28 +38,35 @@ Singleton {
     property State state: State {}
 
     property string _socketFile
-    property DankSocket _socket
+    property Common.Socket _socket
+    property int _reconnect: 0
 
-    property Component _socketComponent: DankSocket {
+    property Component _socketComponent: Common.Socket {
         id: socket
         connected: true
 
-        onConnectionStateChanged: {
+        onConnectedChanged: {
             if (connected) {
-                console.info("Ecchan connected to socket", root._socketFile);
+                console.info("Ecchan: connected to socket", root._socketFile);
 
-                root.connected = true;
                 pingTimer.start();
 
                 Qt.callLater(root._initState);
-            }
-
-            if (!connected) {
-                console.warn("Ecchan disconnected from socket");
+                root._reconnect = 0;
+                root.connected = true;
+            } else {
+                console.warn("Ecchan: disconnected from socket");
                 root.connected = false;
                 _reset();
+
+                if (root._reconnect == 0) {
+                    root._reconnect += 1;
+                    root.reconnect();
+                }
             }
         }
+
+        onError: error => console.error(`Ecchan: socket error: ${error}`)
 
         parser: SplitParser {
             onRead: line => {
@@ -71,14 +78,14 @@ Singleton {
                     const reply = JSON.parse(line);
 
                     if (reply.hasOwnProperty("Err")) {
-                        console.error("Call returned error:", reply.Err);
+                        console.error("Ecchan: Call returned error:", reply.Err);
                         ToastService.showError("Ecchan ipc call failed", reply.Err);
 
                         root.dataReady(id, method, reply.Err, true);
 
                         return;
                     } else if (!reply.hasOwnProperty("Ok")) {
-                        console.error("Failed to parse reply:", line);
+                        console.error("Ecchan: Failed to parse reply:", line);
                         ToastService.showError("Ecchan failed to parse server reply", line);
 
                         root.dataReady(id, method, line, true);
@@ -90,8 +97,8 @@ Singleton {
 
                     root.dataReady(id, method, data, false);
                 } catch (e) {
-                    console.error("Failed to parse reply:", line, e);
-                    ToastService.showError("Ecchan failed to parse server reply", `${e}\n\n${line}`);
+                    console.error("Ecchan: Failed to parse reply:", line, e);
+                    ToastService.showError("Ecchan: failed to parse server reply", `${e}\n\n${line}`);
 
                     root.dataReady(id, method, reply.Err, true);
                 }
@@ -141,6 +148,7 @@ Singleton {
 
     function reconnect() {
         if (_socketFile != null) {
+            console.info("Ecchan: reconnecting to socket");
             init(_socketFile);
         }
     }
@@ -235,7 +243,7 @@ Singleton {
                         case "Custom":
                             return cvalue;
                         default:
-                            console.error("Invalid Custom key", ckey, cvalue);
+                            console.error("Ecchan: Invalid Custom key", ckey, cvalue);
                             break;
                     }
                 }
@@ -269,7 +277,7 @@ Singleton {
                     case "Range":
                         return mvalue;
                     default:
-                        console.error("Invalid MethodData key", mkey, mvalue);
+                        console.error("Ecchan: Invalid MethodData key", mkey, mvalue);
                         break;
                 }
 
