@@ -784,7 +784,7 @@ PluginComponent {
                                             "methodKey": null
                                         },
                                         {
-                                            "name": "Swap Fn/Win",
+                                            "name": "Swap Win/Fn",
                                             "icon": null,
                                             "description": "Swap the Fn / Windows key positions",
                                             "supported": EcSocket.state.fnWinSwapSupported,
