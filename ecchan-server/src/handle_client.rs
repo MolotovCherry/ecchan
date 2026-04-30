@@ -12,15 +12,12 @@ use crate::signal::ShutdownSignal;
 
 #[derive(Debug, Snafu)]
 pub enum ClientError {
-    Io {
-        source: io::Error,
-    },
-    Ec {
-        source: EcError,
-    },
-    Serde {
-        source: serde_json::Error,
-    },
+    #[snafu(display("{source}"))]
+    Io { source: io::Error },
+    #[snafu(display("{source}"))]
+    Ec { source: EcError },
+    #[snafu(display("{source}"))]
+    Serde { source: serde_json::Error },
     #[snafu(whatever, display("{message}"))]
     Whatever {
         message: String,
