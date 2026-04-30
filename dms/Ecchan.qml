@@ -1103,6 +1103,8 @@ PluginComponent {
                                         ColumnLayout {
                                             id: page3Column
 
+                                            visible: supported
+
                                             Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
 
                                             required property string name
@@ -1141,13 +1143,10 @@ PluginComponent {
                                                 }
                                             }
 
-                                            // name
                                             RowLayout {
                                                 id: superBatteryRow
                                                 visible: id === "Super Battery" && EcSocket.state.superBatterySupported
                                                 spacing: 0
-
-                                                Layout.fillWidth: true
 
                                                 StyledText {
                                                     Layout.leftMargin: Theme.spacingM
@@ -1156,7 +1155,6 @@ PluginComponent {
                                                     font.weight: Font.Bold
                                                     color: Theme.surfaceText
 
-                                                    horizontalAlignment: Text.AlignCenter
                                                     wrapMode: Text.WordWrap
                                                 }
 
