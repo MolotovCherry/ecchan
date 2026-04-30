@@ -716,116 +716,121 @@ PluginComponent {
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
 
                                 GridLayout {
-                                    id: page2Grid
-                                    columns: 3
+                                    columns: 4
 
                                     anchors.top: parent.top
                                     anchors.left: parent.left
                                     anchors.right: parent.right
                                     anchors.margins: Theme.spacingM
 
-                                    rowSpacing: Theme.spacingM
-                                    columnSpacing: Theme.spacingM
+                                    rowSpacing: 0
+                                    columnSpacing: 0
+
+                                    property var methodList: EcSocket.state.methodList.map(item => {
+                                        // qmlformat off
+                                        const ops = [
+                                            { suffix: "Range", type: "range", op: "WriteRange" },
+                                            { suffix: "",      type: "byte", op: "Write" },
+                                            { suffix: "Bit",   type: "bit", op: "WriteBit" }
+                                        ];
+                                        // qmlformat on
+
+                                        const found = ops.find(c => item.ops.includes("Read" + c.suffix) && item.ops.includes("Write" + c.suffix));
+
+                                        // no support
+                                        if (!found) {
+                                            return;
+                                        }
+
+                                        const state = EcSocket.state.methods[item.method];
+                                        if (state == null) {
+                                            return;
+                                        }
+
+                                        return {
+                                            "name": item.name,
+                                            "icon": null,
+                                            "description": null,
+                                            "supported": true,
+                                            "value": null,
+                                            "set": value => EcSocket.methodWrite(item.method, found.op, value),
+                                            "type": "method",
+                                            "variation": found.type,
+                                            "methodKey": item.method
+                                        };
+                                    }).filter(item => item != null)
+
+                                    property var modelBase: [
+                                        {
+                                            "name": "Webcam",
+                                            "icon": "camera_video",
+                                            "description": "Enable the integrated webcam (as if by a keyboard button)",
+                                            "supported": EcSocket.state.webcamSupported,
+                                            "value": EcSocket.state.webcam,
+                                            "set": state => EcSocket.setWebcam(state),
+                                            "type": "toggle",
+                                            "variation": null,
+                                            "methodKey": null
+                                        },
+                                        {
+                                            "name": "Webcam Block",
+                                            "icon": "camera_video",
+                                            "description": "Block the integrated webcam (can't be enabled by a keyboard button)",
+                                            "supported": EcSocket.state.webcamBlockSupported,
+                                            "value": EcSocket.state.webcamBlock,
+                                            "set": state => EcSocket.setWebcamBlock(state),
+                                            "type": "toggle",
+                                            "variation": null,
+                                            "methodKey": null
+                                        },
+                                        {
+                                            "name": "Swap Fn/Win",
+                                            "icon": null,
+                                            "description": "Swap the Fn / Windows key positions",
+                                            "supported": EcSocket.state.fnWinSwapSupported,
+                                            "value": EcSocket.state.fnKey,
+                                            "set": state => EcSocket.setFnKey(state),
+                                            "type": "swapKey",
+                                            "variation": null,
+                                            "methodKey": null
+                                        },
+                                        {
+                                            "name": "Mic Mute Light",
+                                            "icon": "backlight_high",
+                                            "description": "Toggle the mic mute keyboard indicator light",
+                                            "supported": EcSocket.state.micMuteLedSupported,
+                                            "value": EcSocket.state.micMuteLed,
+                                            "set": state => EcSocket.setMicMuteLed(state),
+                                            "type": "toggle",
+                                            "variation": null,
+                                            "methodKey": null
+                                        },
+                                        {
+                                            "name": "Mute Light",
+                                            "icon": "backlight_high",
+                                            "description": "Toggle the audio mute keyboard indicator light",
+                                            "supported": EcSocket.state.muteLedSupported,
+                                            "value": EcSocket.state.muteLed,
+                                            "set": state => EcSocket.setMuteLed(state),
+                                            "type": "toggle",
+                                            "variation": null,
+                                            "methodKey": null
+                                        },
+                                        // qmlformat off
+                                        ...methodList
+                                        // qmlformat on
+                                    ]
+
+                                    property var filteredModel: modelBase.filter(item => item.supported)
 
                                     Repeater {
-                                        property var methodList: EcSocket.state.methodList.map(item => {
-                                            // qmlformat off
-                                            const ops = [
-                                                { suffix: "Range", type: "range", op: "WriteRange" },
-                                                { suffix: "",      type: "byte", op: "Write" },
-                                                { suffix: "Bit",   type: "bit", op: "WriteBit" }
-                                            ];
-                                            // qmlformat on
+                                        model: parent.filteredModel
 
-                                            const found = ops.find(c => item.ops.includes("Read" + c.suffix) && item.ops.includes("Write" + c.suffix));
-
-                                            // no support
-                                            if (!found) {
-                                                return;
-                                            }
-
-                                            const state = EcSocket.state.methods[item.method];
-                                            if (state == null) {
-                                                return;
-                                            }
-
-                                            return {
-                                                "name": item.name,
-                                                "description": null,
-                                                "supported": true,
-                                                "value": null,
-                                                "set": value => EcSocket.methodWrite(item.method, found.op, value),
-                                                "type": "method",
-                                                "variation": found.type,
-                                                "methodKey": item.method
-                                            };
-                                        }).filter(item => item != null)
-
-                                        model: [
-                                            {
-                                                "name": "Webcam",
-                                                "description": "Enable the integrated webcam (as if by a keyboard button)",
-                                                "supported": EcSocket.state.webcamSupported,
-                                                "value": EcSocket.state.webcam,
-                                                "set": state => EcSocket.setWebcam(state),
-                                                "type": "toggle",
-                                                "variation": null,
-                                                "methodKey": null
-                                            },
-                                            {
-                                                "name": "Webcam Block",
-                                                "description": "Block the integrated webcam (can't be enabled by a keyboard button)",
-                                                "supported": EcSocket.state.webcamBlockSupported,
-                                                "value": EcSocket.state.webcamBlock,
-                                                "set": state => EcSocket.setWebcamBlock(state),
-                                                "type": "toggle",
-                                                "variation": null,
-                                                "methodKey": null
-                                            },
-                                            {
-                                                "name": "Swap Fn/Win Keys",
-                                                "description": "Swap the Fn and Windows key positions",
-                                                "supported": EcSocket.state.fnWinSwapSupported,
-                                                "value": EcSocket.state.fnKey,
-                                                "set": state => EcSocket.setFnKey(state),
-                                                "type": "swapKey",
-                                                "variation": null,
-                                                "methodKey": null
-                                            },
-                                            {
-                                                "name": "Mic Mute LED",
-                                                "description": "Toggle the mic mute indicator light",
-                                                "supported": EcSocket.state.micMuteLedSupported,
-                                                "value": EcSocket.state.micMuteLed,
-                                                "set": state => EcSocket.setMicMuteLed(state),
-                                                "type": "toggle",
-                                                "variation": null,
-                                                "methodKey": null
-                                            },
-                                            {
-                                                "name": "Mute LED",
-                                                "description": "Toggle the audio mute indicator light",
-                                                "supported": EcSocket.state.muteLedSupported,
-                                                "value": EcSocket.state.muteLed,
-                                                "set": state => EcSocket.setMuteLed(state),
-                                                "type": "toggle",
-                                                "variation": null,
-                                                "methodKey": null
-                                            },
-                                            // qmlformat off
-                                            ...methodList
-                                            // qmlformat on
-                                        ]
-
-                                        StyledRect {
-                                            id: generalCard
-                                            visible: supported
-
-                                            implicitWidth: 195
-                                            implicitHeight: 80
-
-                                            radius: Theme.cornerRadius
-                                            color: Theme.withAlpha(Theme.surfaceContainerHighest, Theme.popupTransparency)
+                                        ColumnLayout {
+                                            id: page2Column
+                                            Layout.preferredWidth: actionBtn.width
+                                            Layout.preferredHeight: page2Column.implicitHeight + Theme.spacingL
+                                            Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
 
                                             required property string name
                                             required property var description
@@ -836,125 +841,37 @@ PluginComponent {
                                             required property string variation
                                             required property int index
                                             required property string methodKey
+                                            required property var icon
 
-                                            ColumnLayout {
-                                                anchors.fill: parent
-                                                anchors.margins: Theme.spacingM
-                                                spacing: Theme.spacingXS
+                                            spacing: 0
 
-                                                // name / info description tooltip
+                                            // toggles
+                                            ToggleActionButton {
+                                                id: actionBtn
+                                                visible: type === "toggle"
+
+                                                iconName: icon
+                                                checked: value
+                                                iconSize: Theme.iconSizeLarge
+                                                buttonHeight: 70
+                                                buttonWidth: 130
+
+                                                onClicked: set(!value)
+                                            }
+
+                                            // swap key
+                                            StyledRect {
+                                                visible: type === "swapKey"
+
+                                                radius: Theme.cornerRadius
+                                                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+
+                                                Layout.preferredHeight: 70
+                                                Layout.preferredWidth: 130
+
                                                 RowLayout {
-                                                    Layout.alignment: Qt.AlignTop | Qt.AlignLeft
 
-                                                    DankIcon {
-                                                        id: cardInfoIcon
-                                                        visible: generalCard.description != null
-                                                        name: "info"
-                                                        size: Theme.iconSize - 4
-                                                        color: Theme.primary
-
-                                                        Tooltip {
-                                                            id: cardTooltip
-                                                        }
-
-                                                        HoverHandler {
-                                                            id: iconHover
-                                                            blocking: true
-
-                                                            onHoveredChanged: {
-                                                                if (generalCard.description.length === 0) {
-                                                                    return;
-                                                                }
-
-                                                                const cb = side => {
-                                                                    let x = 0;
-                                                                    let y = 0;
-
-                                                                    switch (side) {
-                                                                        // qmlformat off
-                                                                        case "left":
-                                                                            y = -cardInfoIcon.height - 10;
-                                                                            x = cardInfoIcon.width + 5;
-                                                                            break;
-                                                                        case "right":
-                                                                            y = -cardInfoIcon.height - 10;
-                                                                            x = -cardInfoIcon.width - 5;
-                                                                            break;
-                                                                        // qmlformat on
-                                                                    }
-
-                                                                    return {
-                                                                        "x": x,
-                                                                        "y": y
-                                                                    };
-                                                                };
-
-                                                                if (hovered) {
-                                                                    cardTooltip.show(generalCard.description, cardInfoIcon, cb);
-                                                                } else {
-                                                                    cardTooltip.hide();
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-
-                                                    StyledText {
-
-                                                        text: generalCard.name
-                                                        font.pixelSize: Theme.fontSizeSmall
-                                                        font.weight: Font.Medium
-                                                        color: Theme.surfaceText
-                                                    }
-                                                }
-
-                                                // toggle
-                                                RowLayout {
-                                                    visible: type === "toggle"
-
-                                                    Layout.fillWidth: true
-                                                    Layout.fillHeight: true
-
-                                                    Item {
-                                                        Layout.fillWidth: true
-                                                    }
-
-                                                    StyledText {
-                                                        text: if (value) {
-                                                            return "Enabled";
-                                                        } else {
-                                                            return "Disabled";
-                                                        }
-                                                    }
-
-                                                    Item {
-                                                        Layout.fillWidth: true
-                                                    }
-
-                                                    Item {
-                                                        Layout.fillWidth: true
-                                                        Layout.fillHeight: true
-
-                                                        DankToggle {
-                                                            anchors.centerIn: parent
-                                                            checked: value
-
-                                                            onToggled: state => {
-                                                                set(state);
-                                                            }
-                                                        }
-                                                    }
-
-                                                    Item {
-                                                        Layout.fillWidth: true
-                                                    }
-                                                }
-
-                                                // switch fn key
-                                                RowLayout {
-                                                    visible: type === "swapKey"
-
-                                                    Layout.fillWidth: true
-                                                    Layout.fillHeight: true
+                                                    anchors.centerIn: parent
 
                                                     spacing: Theme.spacingXS
 
@@ -1004,67 +921,89 @@ PluginComponent {
                                                         Layout.fillWidth: true
                                                     }
                                                 }
+                                            }
 
-                                                // custom methods
-                                                RowLayout {
-                                                    visible: type === "method"
+                                            // custom methods
+                                            // toggles
+                                            ToggleActionButton {
+                                                visible: type === "method" && variation === "bit"
 
-                                                    Layout.fillWidth: true
-                                                    Layout.fillHeight: true
+                                                iconName: "switch_access"
+                                                checked: EcSocket.state.methods[methodKey]
+                                                iconSize: Theme.iconSizeLarge
+                                                buttonHeight: 70
+                                                buttonWidth: 130
 
-                                                    spacing: Theme.spacingXS
+                                                onClicked: set(!checked)
+                                            }
 
-                                                    Item {
-                                                        Layout.fillWidth: true
+                                            // name / description
+                                            RowLayout {
+                                                id: rowLayout
+                                                Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
+                                                spacing: Theme.spacingXS
+                                                Layout.fillWidth: true
+
+                                                DankIcon {
+                                                    id: cardInfoIcon
+                                                    visible: description != null && description.length > 0
+                                                    name: "info"
+                                                    size: Theme.iconSize - 4
+                                                    color: Theme.primary
+
+                                                    Layout.alignment: Qt.AlignTop | Qt.AlignRight
+
+                                                    Tooltip {
+                                                        id: cardTooltip
                                                     }
 
-                                                    // bit variation toggle
-                                                    RowLayout {
-                                                        visible: variation === "bit"
-
-                                                        Layout.fillWidth: true
-                                                        Layout.fillHeight: true
-
-                                                        Item {
-                                                            Layout.fillWidth: true
-                                                        }
-
-                                                        StyledText {
-                                                            text: if (EcSocket.state.methods[methodKey]) {
-                                                                return "Enabled";
-                                                            } else {
-                                                                return "Disabled";
-                                                            }
-                                                        }
-
-                                                        Item {
-                                                            Layout.fillWidth: true
-                                                        }
-
-                                                        Item {
-                                                            Layout.fillWidth: true
-                                                            Layout.fillHeight: true
-
-                                                            DankToggle {
-                                                                anchors.centerIn: parent
-                                                                checked: EcSocket.state.methods[methodKey]
-
-                                                                onToggled: state => {
-                                                                    set(state);
+                                                    HoverHandler {
+                                                        onHoveredChanged: {
+                                                            const cb = side => {
+                                                                let x = 0;
+                                                                let y = 0;
+                                                                switch (side) {
+                                                                case "right":
+                                                                    y = cardInfoIcon.height + 10;
+                                                                    x = -cardInfoIcon.width;
+                                                                    break;
+                                                                case "left":
+                                                                    y = cardInfoIcon.height + 10;
+                                                                    x = cardInfoIcon.width;
+                                                                    break;
+                                                                case "top":
+                                                                    y = cardInfoIcon.height * 2;
+                                                                    break;
+                                                                case "bottom":
+                                                                    break;
                                                                 }
+
+                                                                return {
+                                                                    "x": x,
+                                                                    "y": y
+                                                                };
+                                                            };
+
+                                                            if (hovered) {
+                                                                cardTooltip.show(description, cardInfoIcon, cb);
+                                                            } else {
+                                                                cardTooltip.hide();
                                                             }
                                                         }
-
-                                                        Item {
-                                                            Layout.fillWidth: true
-                                                        }
                                                     }
+                                                }
 
-                                                    // TODO: 2 other widgets for other types, but the api currently doesn't use them, soooo
+                                                StyledText {
+                                                    id: text
+                                                    Layout.maximumWidth: actionBtn.width - (cardInfoIcon.visible ? cardInfoIcon.width + rowLayout.spacing : 0)
 
-                                                    Item {
-                                                        Layout.fillWidth: true
-                                                    }
+                                                    text: name
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+
+                                                    horizontalAlignment: Text.AlignLeft
+                                                    wrapMode: Text.WordWrap
                                                 }
                                             }
                                         }
