@@ -929,7 +929,7 @@ PluginComponent {
                                                 visible: type === "method" && variation === "bit"
 
                                                 iconName: "switch_access"
-                                                checked: EcSocket.state.methods[methodKey]
+                                                checked: EcSocket.state.methods[methodKey] ?? false
                                                 iconSize: Theme.iconSizeLarge
                                                 buttonHeight: 70
                                                 buttonWidth: 130
