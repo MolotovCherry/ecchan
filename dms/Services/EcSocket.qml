@@ -29,7 +29,6 @@ Singleton {
     }
     property var _callBlocked: false
     property var _callQueue: []
-    property SocketHandler _sockHandler: SocketHandler {}
 
     // the state of our api at any given point in time
     // can also be used for saving/loading prefs.
@@ -123,7 +122,7 @@ Singleton {
         };
         _callBlocked = false;
         _callQueue = [];
-        _sockHandler.reset();
+        SocketHandler.reset();
 
         if (connected) {
             connected = false;
@@ -167,7 +166,7 @@ Singleton {
                 watchdogTimer.start();
             }
 
-            _sockHandler.call("ping").cb(() => watchdogTimer.restart());
+            SocketHandler.call("ping").cb(() => watchdogTimer.restart());
         }
     }
 
@@ -360,7 +359,7 @@ Singleton {
             }
         }
 
-        _sockHandler.call("ping").cb(() => {
+        SocketHandler.call("ping").cb(() => {
             applyFinished();
         });
     }
@@ -371,7 +370,7 @@ Singleton {
         fanCount();
         fanMax();
         hasDGpu();
-        _sockHandler.call("wmiVer").cb(ver => {
+        SocketHandler.call("wmiVer").cb(ver => {
             if (ver === 2) {
                 cpuFanCurveWmi2();
                 cpuTempCurveWmi2();
@@ -433,7 +432,7 @@ Singleton {
         gpuRtTemp();
         gpuRtFanSpeed();
 
-        _sockHandler.call("methodList").cb(list => {
+        SocketHandler.call("methodList").cb(list => {
             for (const m of list) {
                 for (const op of m.ops) {
                     if (op.startsWith("Read")) {
@@ -443,7 +442,7 @@ Singleton {
             }
 
             // dummy ping to schedule event after all the others
-            _sockHandler.call("ping").cb(() => {
+            SocketHandler.call("ping").cb(() => {
                 initFinished();
             });
         });
@@ -481,7 +480,7 @@ Singleton {
         // qmlformat on
 
         if (isSet) {
-            _sockHandler.id(id).cb(data => {
+            SocketHandler.id(id).cb(data => {
                 switch (stateKey) {
                     // qmlformat off
                     case "methods":
@@ -506,7 +505,7 @@ Singleton {
                 }
             });
         } else {
-            _sockHandler.id(id).cb(data => {
+            SocketHandler.id(id).cb(data => {
                 if (stateKey === "methods") {
                     root.state[stateKey][callData.raw.method] = data;
                     state.methodsChanged();

@@ -24,6 +24,25 @@ PluginComponent {
         }
     }
 
+    Component.onCompleted: {
+        SocketHandler.addGlobal("profileSaver", (id, method, payload, isErr) => {
+            if (isErr) {
+                return;
+            }
+
+            // state is changed on every onDataReady firing; but that doesn't mean crucial properties changed!
+
+            const updateFor = ["shiftMode", "batteryChargeMode", "superBattery", "fanMode", "webcam", "webcamBlock", "coolerBoost", "fnKey", "winKey", "micMuteLed", "muteLed", "cpuFanCurveWmi2", "cpuTempCurveWmi2", "cpuHysteresisCurveWmi2", "gpuFanCurveWmi2", "gpuTempCurveWmi2", "gpuHysteresisCurveWmi2", "methods"];
+
+            const shouldSave = updateFor.includes(method) || method.startsWith("set");
+
+            // avoid useless writes to disk ; acts as a debouncer
+            if (shouldSave) {
+                profileWriteTimer.restart();
+            }
+        });
+    }
+
     Component.onDestruction: {
         EcSocket.shutdown();
     }
@@ -102,61 +121,36 @@ PluginComponent {
     property var profilesModel: []
     property int selectedProfile: 0
     property var profiles: []
-    property bool _blockProfileUpdate: true
-    property SocketHandler _sockHandler: SocketHandler {}
-    property int _retry: 0
 
     Connections {
         target: EcSocket
 
+        property int retry: 0
+
         function onConnectedChanged() {
-            if (root.pluginData && !EcSocket.connected && root._retry === 0) {
+            if (root.pluginData && !EcSocket.connected && retry === 0) {
                 console.warn("Ecchan unexpectedly disconnected; retrying connection");
                 EcSocket.reconnect();
-                root._retry += 1;
+                retry += 1;
             } else if (EcSocket.connected) {
-                root._retry = 0;
+                retry = 0;
             }
         }
 
         function onInitStarted() {
-            root._blockProfileUpdate = true;
         }
 
         function onInitFinished() {
-            root._blockProfileUpdate = false;
-
             const state = EcSocket.state.deserialize(root.profiles[root.selectedProfile].state);
             EcSocket.applyState(state);
         }
 
         function onApplyStarted() {
-            root._blockProfileUpdate = true;
         }
 
         function onApplyFinished() {
-            root._blockProfileUpdate = false;
             root.profiles[root.selectedProfile].state = EcSocket.state.serialize();
             root.profilesChanged();
-        }
-
-        function onDataReady(id, method, payload, isErr) {
-            if (isErr) {
-                return;
-            }
-
-            // state is changed on every onDataReady firing; but that doesn't mean crucial properties changed!
-            if (!root._blockProfileUpdate) {
-                const updaters = ["shiftMode", "batteryChargeMode", "superBattery", "fanMode", "webcam", "webcamBlock", "coolerBoost", "fnKey", "winKey", "micMuteLed", "muteLed", "cpuFanCurveWmi2", "cpuTempCurveWmi2", "cpuHysteresisCurveWmi2", "gpuFanCurveWmi2", "gpuTempCurveWmi2", "gpuHysteresisCurveWmi2", "methods"];
-
-                const important = updaters.includes(method) || method.startsWith("set");
-
-                // avoid useless writes to disk ; delayed cause onDataReady events would be a race condition
-                // also acts as a debouncer
-                if (important) {
-                    profileWriteTimer.restart();
-                }
-            }
         }
     }
 

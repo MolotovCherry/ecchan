@@ -1,12 +1,17 @@
+pragma Singleton
+
+import Quickshell
 import QtQuick
+
 import qs.Services
 
 import "../Services"
 
-Item {
+Singleton {
     id: root
 
     property var _callQueue: ({})
+    property var _globalCb: []
 
     Connections {
         target: EcSocket
@@ -38,12 +43,31 @@ Item {
                 }
             }
 
+            for (const global of root._globalCb) {
+                global.cb(id, method, payload, isErr);
+            }
+
             delete root._callQueue[id];
         }
     }
 
+    // ensure name is unique!
+    // cb accepts (int id, string method, var payload, bool isErr)
+    function addGlobal(name, cb) {
+        _globalCb.push({
+            "name": name,
+            "cb": cb
+        });
+    }
+
+    // remove all added globals by name;make sure your name was unique
+    function removeGlobal(name) {
+        _globalCb = _globalCb.filter(item => item.name !== name);
+    }
+
     function reset() {
         _callQueue = {};
+        // do not clear globalCb; it's not a processing queue
     }
 
     function _getId(id) {
