@@ -46,6 +46,7 @@ PluginComponent {
 
     Component.onDestruction: {
         EcSocket.shutdown();
+        SocketHandler.removeGlobal("profileSaver");
     }
 
     horizontalBarPill: Component {
@@ -1053,6 +1054,7 @@ PluginComponent {
                                         model: [
                                             {
                                                 "name": "Turbo",
+                                                "id": "Turbo",
                                                 "icon": "rocket_launch",
                                                 "supported": EcSocket.state.shiftModes.includes("Turbo"),
                                                 "setMode": () => {
@@ -1065,6 +1067,7 @@ PluginComponent {
                                             },
                                             {
                                                 "name": "Extreme Performance",
+                                                "id": "Extreme Performance",
                                                 "icon": "speed",
                                                 "supported": EcSocket.state.shiftModes.includes("Extreme Performance"),
                                                 "setMode": () => {
@@ -1077,6 +1080,7 @@ PluginComponent {
                                             },
                                             {
                                                 "name": "Balanced",
+                                                "id": "Balanced",
                                                 "icon": "balance",
                                                 "supported": EcSocket.state.shiftModes.includes("Balanced"),
                                                 "setMode": () => {
@@ -1088,62 +1092,81 @@ PluginComponent {
                                                 }
                                             },
                                             {
-                                                "name": "Super Battery",
-                                                "icon": "battery_charging_full",
+                                                "name": "Eco",
+                                                "id": "Super Battery",
+                                                "icon": "psychiatry",
                                                 "supported": EcSocket.state.shiftModes.includes("Super Battery"),
-                                                "setMode": () => {
-                                                    EcSocket.setShiftMode("Super Battery");
-
-                                                    if (EcSocket.state.superBatterySupported && !EcSocket.state.superBattery) {
-                                                        EcSocket.setSuperBattery(true);
-                                                    }
-                                                }
+                                                "setMode": () => EcSocket.setShiftMode("Super Battery")
                                             },
                                         ]
 
                                         ColumnLayout {
                                             id: page3Column
-                                            Layout.preferredWidth: actionBtn.width
-                                            Layout.preferredHeight: page2Column.implicitHeight + Theme.spacingL
+
                                             Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
 
                                             required property string name
+                                            required property string id
                                             required property string icon
                                             required property bool supported
                                             required property var setMode
 
-                                            spacing: Theme.spacingS
+                                            spacing: Theme.spacingXS
 
                                             // toggles
                                             ToggleActionButton {
-                                                id: actionBtn3
-
                                                 iconName: icon
-                                                checked: EcSocket.state.shiftMode === name
+                                                checked: EcSocket.state.shiftMode === id
                                                 iconSize: Theme.iconSizeLarge + 16
-                                                buttonHeight: 100
+                                                buttonHeight: 110
                                                 buttonWidth: 140
+                                                iconFilled: id === "Turbo" ? true : false
 
                                                 onClicked: setMode()
+
+                                                StyledText {
+                                                    Layout.maximumWidth: parent.width
+
+                                                    anchors.bottom: parent.bottom
+                                                    anchors.horizontalCenter: parent.horizontalCenter
+                                                    anchors.bottomMargin: Theme.spacingS
+
+                                                    text: name
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    font.weight: Font.Bold
+                                                    color: parent.checked ? Theme.primaryText : Theme.surfaceText
+
+                                                    horizontalAlignment: Text.AlignCenter
+                                                    wrapMode: Text.WordWrap
+                                                }
                                             }
 
                                             // name
                                             RowLayout {
-                                                id: row3Layout
-                                                Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
-                                                spacing: Theme.spacingXS
+                                                id: superBatteryRow
+                                                visible: id === "Super Battery" && EcSocket.state.superBatterySupported
+                                                spacing: 0
+
                                                 Layout.fillWidth: true
 
                                                 StyledText {
-                                                    Layout.maximumWidth: actionBtn3.width
-
-                                                    text: name
+                                                    Layout.leftMargin: Theme.spacingM
+                                                    text: "Super Battery"
                                                     font.pixelSize: Theme.fontSizeSmall
-                                                    font.weight: Font.Medium
+                                                    font.weight: Font.Bold
                                                     color: Theme.surfaceText
 
                                                     horizontalAlignment: Text.AlignCenter
                                                     wrapMode: Text.WordWrap
+                                                }
+
+                                                DankToggle {
+                                                    id: toggleItem
+                                                    description: "Eco"
+                                                    checked: EcSocket.state.superBattery
+                                                    onClicked: EcSocket.setSuperBattery(!checked)
+                                                    Layout.leftMargin: -5
+                                                    scale: 0.6
                                                 }
                                             }
                                         }
