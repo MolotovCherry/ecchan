@@ -11,7 +11,7 @@ Item {
     Connections {
         target: EcSocket
 
-        function onDataReady(id, payload, isErr) {
+        function onDataReady(id, method, payload, isErr) {
             const queue = root._callQueue[id];
 
             if (queue == null) {

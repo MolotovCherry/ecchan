@@ -11,7 +11,6 @@ import qs.Services
 import "./Services"
 import "./Widgets"
 import "./Common"
-import "./utils.js" as Utils
 
 PluginComponent {
     id: root
@@ -141,19 +140,35 @@ PluginComponent {
             root.profilesChanged();
         }
 
-        function onDataReady() {
+        function onDataReady(id, method, payload, isErr) {
+            if (isErr) {
+                return;
+            }
+
             // state is changed on every onDataReady firing; but that doesn't mean crucial properties changed!
             if (!root._blockProfileUpdate) {
-                const state = EcSocket.state.serialize();
-                const state2 = root.profiles[root.selectedProfile].state;
+                const updaters = ["shiftMode", "batteryChargeMode", "superBattery", "fanMode", "webcam", "webcamBlock", "coolerBoost", "fnKey", "winKey", "micMuteLed", "muteLed", "cpuFanCurveWmi2", "cpuTempCurveWmi2", "cpuHysteresisCurveWmi2", "gpuFanCurveWmi2", "gpuTempCurveWmi2", "gpuHysteresisCurveWmi2", "methods"];
 
-                // avoid useless writes to disk
-                const equal = Utils.deepEqual(state, state2);
-                if (!equal) {
-                    root.profiles[root.selectedProfile].state = state;
-                    root.profilesChanged();
+                const important = updaters.includes(method) || method.startsWith("set");
+
+                // avoid useless writes to disk ; delayed cause onDataReady events would be a race condition
+                // also acts as a debouncer
+                if (important) {
+                    profileWriteTimer.restart();
                 }
             }
+        }
+    }
+
+    Timer {
+        id: profileWriteTimer
+        interval: 500
+        repeat: false
+        triggeredOnStart: false
+        onTriggered: {
+            const state = EcSocket.state.serialize();
+            root.profiles[root.selectedProfile].state = state;
+            root.profilesChanged();
         }
     }
 

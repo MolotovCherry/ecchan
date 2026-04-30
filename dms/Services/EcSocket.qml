@@ -19,10 +19,14 @@ Singleton {
     signal initFinished
     signal applyStarted
     signal applyFinished
-    signal dataReady(int id, var payload, bool isErr)
+    signal dataReady(int id, string method, var payload, bool isErr)
 
     property int _counter: 0
-    property var _currentCounterId: 0
+    property var _currentCall: {
+        "id": 0,
+        "method": "",
+        "call": null
+    }
     property var _callBlocked: false
     property var _callQueue: []
     property SocketHandler _sockHandler: SocketHandler {}
@@ -60,7 +64,8 @@ Singleton {
 
         parser: SplitParser {
             onRead: line => {
-                const id = root._currentCounterId;
+                const id = root._currentCall.id;
+                const method = root._currentCall.method;
 
                 try {
                     // { "Ok": { .. } } / { "Err": "" }
@@ -70,31 +75,31 @@ Singleton {
                         console.error("Call returned error:", reply.Err);
                         ToastService.showError("Ecchan ipc call failed", reply.Err);
 
-                        root.dataReady(id, reply.Err, true);
+                        root.dataReady(id, method, reply.Err, true);
 
                         return;
                     } else if (!reply.hasOwnProperty("Ok")) {
                         console.error("Failed to parse reply:", line);
                         ToastService.showError("Ecchan failed to parse server reply", line);
 
-                        root.dataReady(id, line, true);
+                        root.dataReady(id, method, line, true);
 
                         return;
                     }
 
                     const data = root._handleReply(reply.Ok);
 
-                    root.dataReady(id, data, false);
+                    root.dataReady(id, method, data, false);
                 } catch (e) {
                     console.error("Failed to parse reply:", line, e);
                     ToastService.showError("Ecchan failed to parse server reply", `${e}\n\n${line}`);
 
-                    root.dataReady(id, reply.Err, true);
+                    root.dataReady(id, method, reply.Err, true);
                 }
 
                 const data = root._callQueue.shift();
                 if (data != null) {
-                    root._currentCounterId = data.id;
+                    root._currentCall = data;
                     _socket?.send(data.call);
                 } else {
                     root._callBlocked = false;
@@ -111,7 +116,11 @@ Singleton {
         _socket = null;
 
         _counter = 0;
-        _currentCounterId = 0;
+        _currentCall = {
+            "id": 0,
+            "method": "",
+            "call": null
+        };
         _callBlocked = false;
         _callQueue = [];
         _sockHandler.reset();
@@ -519,7 +528,11 @@ Singleton {
         // init first call
         if (!_callBlocked) {
             _callBlocked = true;
-            _currentCounterId = id;
+            _currentCall = {
+                "id": id,
+                "method": stateKey,
+                "call": null
+            };
             // calls will be lost if not connected; this is acceptable
             _socket?.send(json);
         } else {
@@ -527,6 +540,7 @@ Singleton {
 
             const call = {
                 "id": id,
+                "method": stateKey,
                 "call": json
             };
 
