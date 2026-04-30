@@ -375,8 +375,8 @@ PluginComponent {
                                     icon: "speed"
                                 },
                                 {
-                                    text: "Curves",
-                                    icon: "diagonal_line"
+                                    text: "Fans",
+                                    icon: "mode_fan"
                                 },
                                 {
                                     text: "Battery",
@@ -1012,6 +1012,136 @@ PluginComponent {
                                                     color: Theme.surfaceText
 
                                                     horizontalAlignment: Text.AlignLeft
+                                                    wrapMode: Text.WordWrap
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Performance
+                        ColumnLayout {
+                            id: page3
+
+                            visible: popout.currentTab === 2
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            StyledRect {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+
+                                radius: Theme.cornerRadius
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+
+                                GridLayout {
+                                    columns: 4
+
+                                    anchors.top: parent.top
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.margins: Theme.spacingM
+                                    anchors.centerIn: parent
+
+                                    rowSpacing: Theme.spacingM
+                                    columnSpacing: Theme.spacingM
+
+                                    Repeater {
+                                        model: [
+                                            {
+                                                "name": "Turbo",
+                                                "icon": "rocket_launch",
+                                                "supported": EcSocket.state.shiftModes.includes("Turbo"),
+                                                "setMode": () => {
+                                                    EcSocket.setShiftMode("Turbo");
+
+                                                    if (EcSocket.state.superBatterySupported && EcSocket.state.superBattery) {
+                                                        EcSocket.setSuperBattery(false);
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "Extreme Performance",
+                                                "icon": "speed",
+                                                "supported": EcSocket.state.shiftModes.includes("Extreme Performance"),
+                                                "setMode": () => {
+                                                    EcSocket.setShiftMode("Extreme Performance");
+
+                                                    if (EcSocket.state.superBatterySupported && EcSocket.state.superBattery) {
+                                                        EcSocket.setSuperBattery(false);
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "Balanced",
+                                                "icon": "balance",
+                                                "supported": EcSocket.state.shiftModes.includes("Balanced"),
+                                                "setMode": () => {
+                                                    EcSocket.setShiftMode("Balanced");
+
+                                                    if (EcSocket.state.superBatterySupported && EcSocket.state.superBattery) {
+                                                        EcSocket.setSuperBattery(false);
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "name": "Super Battery",
+                                                "icon": "battery_charging_full",
+                                                "supported": EcSocket.state.shiftModes.includes("Super Battery"),
+                                                "setMode": () => {
+                                                    EcSocket.setShiftMode("Super Battery");
+
+                                                    if (EcSocket.state.superBatterySupported && !EcSocket.state.superBattery) {
+                                                        EcSocket.setSuperBattery(true);
+                                                    }
+                                                }
+                                            },
+                                        ]
+
+                                        ColumnLayout {
+                                            id: page3Column
+                                            Layout.preferredWidth: actionBtn.width
+                                            Layout.preferredHeight: page2Column.implicitHeight + Theme.spacingL
+                                            Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
+
+                                            required property string name
+                                            required property string icon
+                                            required property bool supported
+                                            required property var setMode
+
+                                            spacing: Theme.spacingS
+
+                                            // toggles
+                                            ToggleActionButton {
+                                                id: actionBtn3
+
+                                                iconName: icon
+                                                checked: EcSocket.state.shiftMode === name
+                                                iconSize: Theme.iconSizeLarge + 16
+                                                buttonHeight: 100
+                                                buttonWidth: 140
+
+                                                onClicked: setMode()
+                                            }
+
+                                            // name
+                                            RowLayout {
+                                                id: row3Layout
+                                                Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
+                                                spacing: Theme.spacingXS
+                                                Layout.fillWidth: true
+
+                                                StyledText {
+                                                    Layout.maximumWidth: actionBtn3.width
+
+                                                    text: name
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    font.weight: Font.Medium
+                                                    color: Theme.surfaceText
+
+                                                    horizontalAlignment: Text.AlignCenter
                                                     wrapMode: Text.WordWrap
                                                 }
                                             }
