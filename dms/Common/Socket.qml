@@ -6,9 +6,15 @@ Item {
 
     property alias path: socket.path
     property alias parser: socket.parser
-    property alias connected: socket.connected
+    property bool connected: false
 
-    signal error(var error)
+    property int _reconnectAttempt: 0
+
+    signal connectionStateChanged
+
+    onConnectedChanged: {
+        socket.connected = connected;
+    }
 
     Socket {
         id: socket
@@ -16,8 +22,19 @@ Item {
         // disconnect cause there was an error
         // qmllint disable signal-handler-parameters
         onError: error => {
-            connected = false;
-            root.error(error);
+            Qt.callLater(() => connected = false);
+        }
+
+        onConnectionStateChanged: {
+            root.connectionStateChanged();
+            if (connected) {
+                root._reconnectAttempt = 0;
+                return;
+            } else if (root._reconnectAttempt === 0) {
+                // try one more time to reconnect
+                Qt.callLater(() => connected = true);
+                root._reconnectAttempt += 1;
+            }
         }
     }
 

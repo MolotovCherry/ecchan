@@ -39,34 +39,25 @@ Singleton {
 
     property string _socketFile
     property Common.Socket _socket
-    property int _reconnect: 0
 
     property Component _socketComponent: Common.Socket {
         id: socket
         connected: true
 
-        onConnectedChanged: {
+        onConnectionStateChanged: {
             if (connected) {
                 console.info("Ecchan: connected to socket", root._socketFile);
 
                 pingTimer.start();
 
                 Qt.callLater(root._initState);
-                root._reconnect = 0;
                 root.connected = true;
             } else {
                 console.warn("Ecchan: disconnected from socket");
                 root.connected = false;
                 _reset();
-
-                if (root._reconnect == 0) {
-                    root._reconnect += 1;
-                    root.reconnect();
-                }
             }
         }
-
-        onError: error => console.error(`Ecchan: socket error: ${error}`)
 
         parser: SplitParser {
             onRead: line => {
