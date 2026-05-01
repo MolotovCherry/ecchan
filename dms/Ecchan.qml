@@ -31,6 +31,11 @@ PluginComponent {
                 return;
             }
 
+            if (root._blockUpdate) {
+                root.profileTimer.stop();
+                return;
+            }
+
             // state is changed on every onDataReady firing; but that doesn't mean crucial properties changed!
 
             const updateFor = ["shiftMode", "batteryChargeMode", "superBattery", "fanMode", "webcam", "webcamBlock", "coolerBoost", "fnKey", "winKey", "micMuteLed", "muteLed", "cpuFanCurveWmi2", "cpuTempCurveWmi2", "cpuHysteresisCurveWmi2", "gpuFanCurveWmi2", "gpuTempCurveWmi2", "gpuHysteresisCurveWmi2", "methods"];
@@ -123,11 +128,13 @@ PluginComponent {
     property var profilesModel: []
     property int selectedProfile: 0
     property var profiles: []
+    property bool _blockUpdate: false
 
     Connections {
         target: EcSocket
 
         function onInitStarted() {
+            root._blockUpdate = true;
         }
 
         function onInitFinished() {
@@ -139,6 +146,7 @@ PluginComponent {
         }
 
         function onApplyFinished() {
+            root._blockUpdate = false;
             root.profiles[root.selectedProfile].state = EcSocket.state.serialize();
             root.profilesChanged();
         }

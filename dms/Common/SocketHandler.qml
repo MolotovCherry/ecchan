@@ -21,6 +21,10 @@ Singleton {
 
             if (queue == null) {
                 return;
+            } else {
+                for (const global of root._globalCb) {
+                    global.cb(id, method, payload, isErr);
+                }
             }
 
             if (isErr) {

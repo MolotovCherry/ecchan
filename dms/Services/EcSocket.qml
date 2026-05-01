@@ -492,7 +492,9 @@ Singleton {
                 switch (stateKey) {
                     // qmlformat off
                     case "methods":
-                        root.state[stateKey][callData.raw.method] = callData.raw.data;
+                        const obj = Object.assign({}, root.state.methods || {});
+                        obj[callData.raw.method] = callData.raw.data;
+                        root.state[stateKey] = obj;
                         state.methodsChanged();
                         break;
 
@@ -515,7 +517,10 @@ Singleton {
         } else {
             SocketHandler.id(id).cb(data => {
                 if (stateKey === "methods") {
-                    root.state[stateKey][callData.raw.method] = data;
+                    const obj = Object.assign({}, root.state.methods || {});
+                    obj[callData.raw.method] = data;
+                    root.state[stateKey] = obj;
+
                     state.methodsChanged();
                 } else {
                     root.state[stateKey] = data;
