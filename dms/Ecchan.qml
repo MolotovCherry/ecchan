@@ -1156,6 +1156,7 @@ PluginComponent {
 
                                                 DankToggle {
                                                     id: toggleItem
+                                                    enabled: EcSocket.state.shiftMode === id
                                                     description: "Eco"
                                                     checked: EcSocket.state.superBattery
                                                     onClicked: EcSocket.setSuperBattery(!checked)
