@@ -7,3 +7,8 @@ members = [
     "ecchan-client-qml",
     "ecchan-server"
 ]
+
+# we need QVariantValue support for QMapPair_QString_QVariant, not yet on 0.8.1
+[patch.crates-io]
+cxx-qt = { git = "https://github.com/KDAB/cxx-qt", rev = "061eaad0b794f683f9050dedf90ce01327f646ba" }
+cxx-qt-lib = { git = "https://github.com/KDAB/cxx-qt", rev = "061eaad0b794f683f9050dedf90ce01327f646ba" }

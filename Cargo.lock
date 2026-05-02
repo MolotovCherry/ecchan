@@ -262,13 +262,12 @@ dependencies = [
 [[package]]
 name = "cxx-qt"
 version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fdf26e5ee4375a85799d0fe436662e5a8ef099bd0964b84bce8812c35c7daea"
+source = "git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba#061eaad0b794f683f9050dedf90ce01327f646ba"
 dependencies = [
  "cxx",
- "cxx-qt-build",
+ "cxx-qt-build 0.8.1 (git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba)",
  "cxx-qt-macro",
- "qt-build-utils",
+ "qt-build-utils 0.8.1 (git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba)",
  "static_assertions",
  "thiserror 1.0.69",
 ]
@@ -282,9 +281,25 @@ dependencies = [
  "cc",
  "codespan-reporting 0.11.1",
  "cxx-gen",
- "cxx-qt-gen",
+ "cxx-qt-gen 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2",
- "qt-build-utils",
+ "qt-build-utils 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "cxx-qt-build"
+version = "0.8.1"
+source = "git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba#061eaad0b794f683f9050dedf90ce01327f646ba"
+dependencies = [
+ "cc",
+ "codespan-reporting 0.11.1",
+ "cxx-gen",
+ "cxx-qt-gen 0.8.1 (git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba)",
+ "proc-macro2",
+ "qt-build-utils 0.8.1 (git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba)",
  "quote",
  "serde",
  "serde_json",
@@ -306,24 +321,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "cxx-qt-gen"
+version = "0.8.1"
+source = "git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba#061eaad0b794f683f9050dedf90ce01327f646ba"
+dependencies = [
+ "clang-format",
+ "convert_case",
+ "cxx-gen",
+ "indoc",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "cxx-qt-lib"
 version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7b3de184cff59ad29d657021f933380e584d9b70265247f6a96098bef964211"
+source = "git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba#061eaad0b794f683f9050dedf90ce01327f646ba"
 dependencies = [
  "cxx",
  "cxx-qt",
- "cxx-qt-build",
- "qt-build-utils",
+ "cxx-qt-build 0.8.1 (git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba)",
+ "qt-build-utils 0.8.1 (git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba)",
 ]
 
 [[package]]
 name = "cxx-qt-macro"
 version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "230b0d8b20d3d02a85885742be4fabc0382fead4e382dd8c9c9ff1827f221e8c"
+source = "git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba#061eaad0b794f683f9050dedf90ce01327f646ba"
 dependencies = [
- "cxx-qt-gen",
+ "cxx-qt-gen 0.8.1 (git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba)",
  "proc-macro2",
  "quote",
  "syn",
@@ -411,7 +438,7 @@ version = "0.1.0"
 dependencies = [
  "cxx",
  "cxx-qt",
- "cxx-qt-build",
+ "cxx-qt-build 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cxx-qt-lib",
  "ecchan-ipc",
  "rustix",
@@ -816,6 +843,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "qt-build-utils"
+version = "0.8.1"
+source = "git+https://github.com/KDAB/cxx-qt?rev=061eaad0b794f683f9050dedf90ce01327f646ba#061eaad0b794f683f9050dedf90ce01327f646ba"
+dependencies = [
+ "anyhow",
+ "cc",
+ "semver",
+ "serde",
+ "thiserror 1.0.69",
+ "which",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1175,6 +1215,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20064672db26d7cdc89c7798c48a0fdfac8213434a1186e5ef29fd560ae223d6"
 dependencies = [
  "wit-bindgen",
+]
+
+[[package]]
+name = "which"
+version = "8.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81995fafaaaf6ae47a7d0cc83c67caf92aeb7e5331650ae6ff856f7c0c60c459"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

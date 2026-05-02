@@ -14,7 +14,10 @@ use std::{
 };
 
 use cxx_qt::{CxxQtType, Threading};
-use cxx_qt_lib::{QList, QString, QVariant, QVariantValue};
+use cxx_qt_lib::{
+    QByteArray, QList, QMap, QMapPair as _, QMapPair_QString_QVariant, QString, QStringList,
+    QVariant, QVariantValue,
+};
 use ecchan_ipc::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, Method,
     MethodData, ShiftMode, SuperBattery, Webcam, WmiVer,
@@ -36,6 +39,7 @@ pub mod qobject {
         include!("cxx-qt-lib/qlist.h");
         type QList_QString = cxx_qt_lib::QList<QString>;
         type QList_u8 = cxx_qt_lib::QList<u8>;
+        type QList_QVariant = cxx_qt_lib::QList<QVariant>;
 
         include!("cxx-qt-lib/qbytearray.h");
         type QByteArray = cxx_qt_lib::QByteArray;
@@ -110,8 +114,11 @@ pub mod qobject {
         #[qproperty(QList_u8, gpu_temp_curve_wmi2, READ = gpu_temp_curve_wmi2, WRITE = set_gpu_temp_curve_wmi2, NOTIFY)]
         #[qproperty(QList_u8, gpu_hysteresis_curve_wmi2, READ = gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY)]
         // methods
-
+        #[qproperty(QList_QVariant, method_list, READ = method_list, NOTIFY)]
+        //#[qproperty(QQmlPropertyMap, methods, READ = methods, WRITE = set_methods, NOTIFY)]
         // dump
+        #[qproperty(QByteArray, ec_dump, READ = ec_dump, NOTIFY)]
+        #[qproperty(QString, ec_dump_pretty, READ, NOTIFY)]
         #[namespace = "ecchan_client"]
         type EcchanClient = super::EcchanClientRust;
 
@@ -166,6 +173,12 @@ pub mod qobject {
         fn set_gpu_temp_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
         fn gpu_hysteresis_curve_wmi2(&self) -> QList_u8;
         fn set_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
+
+        fn method_list(&self) -> QList_QVariant;
+        //fn methods(&self) -> QMap_QString_QVariant;
+        //fn set_methods(self: Pin<&mut Self>, methods: QMap_QString_QVariant);
+
+        fn ec_dump(&self) -> QByteArray;
 
         // #[qinvokable]
         // #[cxx_name = "incrementNumber"]
@@ -955,5 +968,45 @@ impl qobject::EcchanClient {
             self.as_mut().rust_mut().gpu_hysteresis_curve_wmi2 = curve;
             self.gpu_hysteresis_curve_wmi2_changed();
         }
+    }
+
+    pub fn method_list(&self) -> QList<QVariant> {
+        let mut list = QList::default();
+
+        for m in &self.method_list {
+            let mut map = QMapPair_QString_QVariant::default();
+
+            let name = QString::construct(&(&*m.name).into());
+            let method = QString::construct(&(&*m.method).into());
+
+            map.insert("name".into(), name);
+            map.insert("method".into(), method);
+
+            let mut ops = QStringList::default();
+            for op in &m.ops {
+                let qs = QString::from(op.to_string());
+                ops.append(qs);
+            }
+
+            let ops = QStringList::construct(&ops);
+            map.insert("ops".into(), ops);
+
+            let variant = <QMap<QMapPair_QString_QVariant> as QVariantValue>::construct(&map);
+            list.append(variant);
+        }
+
+        list
+    }
+
+    pub fn methods(&self) -> QMap<QMapPair_QString_QVariant> {
+        todo!()
+    }
+
+    pub fn set_methods(self: Pin<&mut Self>, methods: QMap<QMapPair_QString_QVariant>) {
+        todo!()
+    }
+
+    pub fn ec_dump(&self) -> QByteArray {
+        QByteArray::from(&self.ec_dump.0)
     }
 }
