@@ -1,7 +1,7 @@
 mod ec_drv;
 mod ec_sys;
 
-use std::ops::RangeInclusive;
+use std::{borrow::Cow, ops::RangeInclusive};
 
 use nix::{errno::Errno, libc::geteuid};
 use serde::{Deserialize, Serialize};
@@ -1486,8 +1486,8 @@ impl Ec {
                 let ops = me.ty.iter().map(IntoDiscriminant::discriminant).collect();
 
                 let method = Method {
-                    name: me.name,
-                    method: me.method,
+                    name: Cow::Borrowed(me.name),
+                    method: Cow::Borrowed(me.method),
                     ops,
                 };
 
@@ -1639,8 +1639,8 @@ impl Ec {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Method<'a> {
-    pub name: &'a str,
-    pub method: &'a str,
+    pub name: Cow<'a, str>,
+    pub method: Cow<'a, str>,
     pub ops: Vec<MethodOp>,
 }
 

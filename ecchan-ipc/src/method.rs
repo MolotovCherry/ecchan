@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use ec::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, KeyDirection, Led, MethodData,
     MethodOp, ShiftMode, SuperBattery, Webcam,
@@ -6,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 /// A ipc call. Make a value of this and json serialize it to call.
 /// Returns an equivalent return type in Ret (see original fn for type)
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Method<'a> {
     // Utils
     Ping,
@@ -144,11 +146,11 @@ pub enum Method<'a> {
     // Methods
     MethodList,
     MethodRead {
-        method: &'a str,
+        method: Cow<'a, str>,
         op: MethodOp,
     },
     MethodWrite {
-        method: &'a str,
+        method: Cow<'a, str>,
         op: MethodOp,
         data: MethodData,
     },

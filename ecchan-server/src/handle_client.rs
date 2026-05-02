@@ -480,7 +480,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
         }
 
         Method::MethodRead { method, op } => {
-            let data = ec.method_read(method, op).context(EcSnafu)?;
+            let data = ec.method_read(&method, op).context(EcSnafu)?;
             RetVal::MethodData(data)
         }
 

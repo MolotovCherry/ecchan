@@ -4,5 +4,6 @@ members = [
     "ec",
     "ecchan-dbus",
     "ecchan-ipc",
+    "ecchan-client-qml",
     "ecchan-server"
 ]

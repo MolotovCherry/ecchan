@@ -49,6 +49,12 @@ enum _Ret<'a> {
 #[serde(transparent)]
 pub struct Bin(#[serde(with = "BigArray")] pub [u8; 256]);
 
+impl Default for Bin {
+    fn default() -> Self {
+        Self([0; _])
+    }
+}
+
 /// A ipc call return value
 #[derive(Debug, Serialize, Deserialize, IntoStaticStr, Display)]
 pub enum RetVal<'a> {
