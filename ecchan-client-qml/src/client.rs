@@ -41,7 +41,7 @@ impl Client {
         Ok(this)
     }
 
-    pub fn call<'a>(&'a mut self, method: &Method) -> Result<RetVal<'a>, ClientError> {
+    pub fn call(&mut self, method: &Method) -> Result<RetVal<'static>, ClientError> {
         self.buf.clear();
 
         let mut data = serde_json::to_string(method).context(JsonSnafu)?;

@@ -1,2 +1,2 @@
 mod client;
-mod ec_socket;
+mod qml;

@@ -438,6 +438,15 @@ impl SuperBattery {
     }
 }
 
+impl From<bool> for SuperBattery {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::On,
+            false => Self::Off,
+        }
+    }
+}
+
 /// Use BatteryChargeMode functions to make a custom threshold and to read it
 ///
 /// While this impls a safe Default, it is hardcoded to 100;
@@ -583,6 +592,15 @@ impl Webcam {
     }
 }
 
+impl From<bool> for Webcam {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::On,
+            false => Self::Off,
+        }
+    }
+}
+
 //
 // Cooler Boost
 //
@@ -596,6 +614,15 @@ pub enum CoolerBoost {
 impl CoolerBoost {
     pub fn enabled(&self) -> bool {
         matches!(self, Self::On)
+    }
+}
+
+impl From<bool> for CoolerBoost {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::On,
+            false => Self::Off,
+        }
     }
 }
 
@@ -624,6 +651,15 @@ pub enum Led {
 impl Led {
     pub fn enabled(&self) -> bool {
         matches!(self, Self::On)
+    }
+}
+
+impl From<bool> for Led {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::On,
+            false => Self::Off,
+        }
     }
 }
 

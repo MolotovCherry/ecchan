@@ -406,7 +406,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ecchan-client-qml"
+name = "ecchan-client"
 version = "0.1.0"
 dependencies = [
  "cxx",
