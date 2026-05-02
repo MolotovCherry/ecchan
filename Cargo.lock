@@ -415,7 +415,6 @@ dependencies = [
  "cxx-qt-lib",
  "ecchan-ipc",
  "rustix",
- "sayuri",
  "serde",
  "serde_json",
  "snafu",
