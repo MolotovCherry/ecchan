@@ -25,7 +25,10 @@ use ecchan_ipc::{
     ret::{Bin, RetVal},
 };
 
-use crate::client::{Client, ClientError};
+use crate::{
+    client::{Client, ClientError},
+    q_critical, q_warning,
+};
 
 #[cxx_qt::bridge]
 pub mod qobject {
@@ -47,125 +50,81 @@ pub mod qobject {
 
     impl cxx_qt::Threading for EcchanClient {}
 
+    #[auto_cxx_name]
     extern "RustQt" {
         #[qobject]
         #[qml_element]
         #[qproperty(bool, connected, READ, WRITE = set_connected, NOTIFY)]
         #[qproperty(QString, path, READ, WRITE, NOTIFY)]
         // utils
-        #[qproperty(u8, fan_count, READ = fan_count, NOTIFY, cxx_name = "fanCount")]
-        #[qproperty(u8, fan_max, READ, NOTIFY, cxx_name = "fanMax")]
-        #[qproperty(bool, has_dgpu, READ, NOTIFY, cxx_name = "hasDGpu")]
-        #[qproperty(u8, wmi_ver, READ = wmi_ver, NOTIFY, cxx_name = "wmiVer")]
+        #[qproperty(u8, fan_count, READ = fan_count, NOTIFY)]
+        #[qproperty(u8, fan_max, READ, NOTIFY)]
+        #[qproperty(bool, has_dgpu, READ, NOTIFY)]
+        #[qproperty(u8, wmi_ver, READ = wmi_ver, NOTIFY)]
         // fw
-        #[qproperty(QString, fw_version, READ, NOTIFY, cxx_name = "fwVersion")]
-        #[qproperty(QString, fw_date, READ, NOTIFY, cxx_name = "fwDate")]
-        #[qproperty(QString, fw_time, READ, NOTIFY, cxx_name = "fwTime")]
+        #[qproperty(QString, fw_version, READ, NOTIFY)]
+        #[qproperty(QString, fw_date, READ, NOTIFY)]
+        #[qproperty(QString, fw_time, READ, NOTIFY)]
         // shift mode
-        #[qproperty(QList_QString, shift_modes, READ = shift_modes, NOTIFY, cxx_name = "shiftModes")]
-        #[qproperty(QString, shift_mode, READ = shift_mode, WRITE = set_shift_mode, NOTIFY, cxx_name = "shiftMode")]
-        #[qproperty(
-            bool,
-            shift_mode_supported,
-            READ,
-            NOTIFY,
-            cxx_name = "shiftModeSupported"
-        )]
+        #[qproperty(QList_QString, shift_modes, READ = shift_modes, NOTIFY)]
+        #[qproperty(QString, shift_mode, READ = shift_mode, WRITE = set_shift_mode, NOTIFY)]
+        #[qproperty(bool, shift_mode_supported, READ, NOTIFY)]
         // battery charge mode
-        #[qproperty(QVariant, battery_charge_mode, READ = battery_charge_mode, WRITE = set_battery_charge_mode, NOTIFY, cxx_name = "batteryChargeMode")]
-        #[qproperty(
-            bool,
-            battery_charge_mode_supported,
-            READ,
-            NOTIFY,
-            cxx_name = "batteryChargeModeSupported"
-        )]
+        #[qproperty(QVariant, battery_charge_mode, READ = battery_charge_mode, WRITE = set_battery_charge_mode, NOTIFY)]
+        #[qproperty(bool, battery_charge_mode_supported, READ, NOTIFY)]
         // super battery
-        #[qproperty(bool, super_battery, READ = super_battery, WRITE = set_super_battery, NOTIFY, cxx_name = "superBattery")]
-        #[qproperty(
-            bool,
-            super_battery_supported,
-            READ,
-            NOTIFY,
-            cxx_name = "superBatterySupported"
-        )]
+        #[qproperty(bool, super_battery, READ = super_battery, WRITE = set_super_battery, NOTIFY)]
+        #[qproperty(bool, super_battery_supported, READ, NOTIFY)]
         // fan rpm
-        #[qproperty(u16, fan1_rpm, READ, NOTIFY, cxx_name = "fan1Rpm")]
-        #[qproperty(u16, fan2_rpm, READ, NOTIFY, cxx_name = "fan2Rpm")]
-        #[qproperty(u16, fan3_rpm, READ, NOTIFY, cxx_name = "fan3Rpm")]
-        #[qproperty(u16, fan4_rpm, READ, NOTIFY, cxx_name = "fan4Rpm")]
-        #[qproperty(bool, fan1_supported, READ, NOTIFY, cxx_name = "fan1Supported")]
-        #[qproperty(bool, fan2_supported, READ, NOTIFY, cxx_name = "fan2Supported")]
-        #[qproperty(bool, fan3_supported, READ, NOTIFY, cxx_name = "fan3Supported")]
-        #[qproperty(bool, fan4_supported, READ, NOTIFY, cxx_name = "fan4Supported")]
+        #[qproperty(u16, fan1_rpm, READ, NOTIFY)]
+        #[qproperty(u16, fan2_rpm, READ, NOTIFY)]
+        #[qproperty(u16, fan3_rpm, READ, NOTIFY)]
+        #[qproperty(u16, fan4_rpm, READ, NOTIFY)]
+        #[qproperty(bool, fan1_supported, READ, NOTIFY)]
+        #[qproperty(bool, fan2_supported, READ, NOTIFY)]
+        #[qproperty(bool, fan3_supported, READ, NOTIFY)]
+        #[qproperty(bool, fan4_supported, READ, NOTIFY)]
         // fan modes
-        #[qproperty(QList_QString, fan_modes, READ = fan_modes, NOTIFY, cxx_name = "fanModes")]
-        #[qproperty(QString, fan_mode, READ = fan_mode, WRITE = set_fan_mode, NOTIFY, cxx_name = "fanMode")]
-        #[qproperty(bool, fan_mode_supported, READ, NOTIFY, cxx_name = "fanModeSupported")]
+        #[qproperty(QList_QString, fan_modes, READ = fan_modes, NOTIFY)]
+        #[qproperty(QString, fan_mode, READ = fan_mode, WRITE = set_fan_mode, NOTIFY)]
+        #[qproperty(bool, fan_mode_supported, READ, NOTIFY)]
         // webcam
         #[qproperty(bool, webcam, READ = webcam, WRITE = set_webcam, NOTIFY)]
-        #[qproperty(bool, webcam_block, READ = webcam_block, WRITE = set_webcam_block, NOTIFY, cxx_name = "webcamBlock")]
-        #[qproperty(bool, webcam_supported, READ, NOTIFY, cxx_name = "webcamSupported")]
-        #[qproperty(
-            bool,
-            webcam_block_supported,
-            READ,
-            NOTIFY,
-            cxx_name = "webcamBlockSupported"
-        )]
+        #[qproperty(bool, webcam_block, READ = webcam_block, WRITE = set_webcam_block, NOTIFY)]
+        #[qproperty(bool, webcam_supported, READ, NOTIFY)]
+        #[qproperty(bool, webcam_block_supported, READ, NOTIFY)]
         // cooler boost
-        #[qproperty(bool, cooler_boost, READ = cooler_boost, WRITE = set_cooler_boost, NOTIFY, cxx_name = "coolerBoost")]
-        #[qproperty(
-            bool,
-            cooler_boost_supported,
-            READ,
-            NOTIFY,
-            cxx_name = "coolerBoostSupported"
-        )]
+        #[qproperty(bool, cooler_boost, READ = cooler_boost, WRITE = set_cooler_boost, NOTIFY)]
+        #[qproperty(bool, cooler_boost_supported, READ, NOTIFY)]
         // fn/win key swap
-        #[qproperty(QString, fn_key, READ = fn_key, WRITE = set_fn_key, NOTIFY, cxx_name = "fnKey")]
-        #[qproperty(QString, win_key, READ = win_key, WRITE = set_win_key, NOTIFY, cxx_name = "winKey")]
-        #[qproperty(
-            bool,
-            fn_win_swap_supported,
-            READ,
-            NOTIFY,
-            cxx_name = "fnWinSwapSupported"
-        )]
+        #[qproperty(QString, fn_key, READ = fn_key, WRITE = set_fn_key, NOTIFY)]
+        #[qproperty(QString, win_key, READ = win_key, WRITE = set_win_key, NOTIFY)]
+        #[qproperty(bool, fn_win_swap_supported, READ, NOTIFY)]
         // mute leds
-        #[qproperty(bool, mic_mute_led, READ = mic_mute_led, WRITE = set_mic_mute_led, NOTIFY, cxx_name = "micMuteLed")]
-        #[qproperty(bool, mute_led, READ = mute_led, WRITE = set_mute_led, NOTIFY, cxx_name = "muteLed")]
-        #[qproperty(
-            bool,
-            mic_mute_led_supported,
-            READ,
-            NOTIFY,
-            cxx_name = "micMuteLedSupported"
-        )]
-        #[qproperty(bool, mute_led_supported, READ, NOTIFY, cxx_name = "muteLedSupported")]
+        #[qproperty(bool, mic_mute_led, READ = mic_mute_led, WRITE = set_mic_mute_led, NOTIFY)]
+        #[qproperty(bool, mute_led, READ = mute_led, WRITE = set_mute_led, NOTIFY)]
+        #[qproperty(bool, mic_mute_led_supported, READ, NOTIFY)]
+        #[qproperty(bool, mute_led_supported, READ, NOTIFY)]
         // rt sensors
-        #[qproperty(u8, cpu_rt_fan_speed, READ, NOTIFY, cxx_name = "cpuRtFanSpeed")]
-        #[qproperty(u8, cpu_rt_temp, READ, NOTIFY, cxx_name = "cpuRtTemp")]
-        #[qproperty(u8, gpu_rt_fan_speed, READ, NOTIFY, cxx_name = "gpuRtFanSpeed")]
-        #[qproperty(u8, gpu_rt_temp, READ, NOTIFY, cxx_name = "gpuRtTemp")]
+        #[qproperty(u8, cpu_rt_fan_speed, READ, NOTIFY)]
+        #[qproperty(u8, cpu_rt_temp, READ, NOTIFY)]
+        #[qproperty(u8, gpu_rt_fan_speed, READ, NOTIFY)]
+        #[qproperty(u8, gpu_rt_temp, READ, NOTIFY)]
         // curves
-        #[qproperty(QList_u8, cpu_fan_curve_wmi2, READ = cpu_fan_curve_wmi2, WRITE = set_cpu_fan_curve_wmi2, NOTIFY, cxx_name = "cpuFanCurveWmi2")]
-        #[qproperty(QList_u8, cpu_temp_curve_wmi2, READ = cpu_temp_curve_wmi2, WRITE = set_cpu_temp_curve_wmi2, NOTIFY, cxx_name = "cpuTempCurveWmi2")]
-        #[qproperty(QList_u8, cpu_hysteresis_curve_wmi2, READ = cpu_hysteresis_curve_wmi2, WRITE = set_cpu_hysteresis_curve_wmi2, NOTIFY, cxx_name = "cpuHysteresisCurveWmi2")]
-        #[qproperty(QList_u8, gpu_fan_curve_wmi2, READ = gpu_fan_curve_wmi2, WRITE = set_gpu_fan_curve_wmi2, NOTIFY, cxx_name = "gpuFanCurveWmi2")]
-        #[qproperty(QList_u8, gpu_temp_curve_wmi2, READ = gpu_temp_curve_wmi2, WRITE = set_gpu_temp_curve_wmi2, NOTIFY, cxx_name = "gpuTempCurveWmi2")]
-        #[qproperty(QList_u8, gpu_hysteresis_curve_wmi2, READ = gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY, cxx_name = "gpuHysteresisCurveWmi2")]
+        #[qproperty(QList_u8, cpu_fan_curve_wmi2, READ = cpu_fan_curve_wmi2, WRITE = set_cpu_fan_curve_wmi2, NOTIFY)]
+        #[qproperty(QList_u8, cpu_temp_curve_wmi2, READ = cpu_temp_curve_wmi2, WRITE = set_cpu_temp_curve_wmi2, NOTIFY)]
+        #[qproperty(QList_u8, cpu_hysteresis_curve_wmi2, READ = cpu_hysteresis_curve_wmi2, WRITE = set_cpu_hysteresis_curve_wmi2, NOTIFY)]
+        #[qproperty(QList_u8, gpu_fan_curve_wmi2, READ = gpu_fan_curve_wmi2, WRITE = set_gpu_fan_curve_wmi2, NOTIFY)]
+        #[qproperty(QList_u8, gpu_temp_curve_wmi2, READ = gpu_temp_curve_wmi2, WRITE = set_gpu_temp_curve_wmi2, NOTIFY)]
+        #[qproperty(QList_u8, gpu_hysteresis_curve_wmi2, READ = gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY)]
         // methods
-        #[qproperty(QList_QVariant, method_list, READ = method_list, NOTIFY, cxx_name = "methodList")]
+        #[qproperty(QList_QVariant, method_list, READ = method_list, NOTIFY)]
         //#[qproperty(QQmlPropertyMap, methods, READ = methods, WRITE = set_methods, NOTIFY)]
         // dump
-        #[qproperty(QByteArray, ec_dump, READ = ec_dump, NOTIFY, cxx_name = "ecDump")]
-        #[qproperty(QString, ec_dump_pretty, READ, NOTIFY, cxx_name = "ecDumpPretty")]
+        #[qproperty(QByteArray, ec_dump, READ = ec_dump, NOTIFY)]
+        #[qproperty(QString, ec_dump_pretty, READ, NOTIFY)]
         #[namespace = "ecchan_client"]
         type EcchanClient = super::EcchanClientRust;
-
-        #[qsignal]
-        fn error(self: Pin<&mut Self>, message: QString);
 
         fn set_connected(self: Pin<&mut Self>, connected: bool);
         fn fan_count(&self) -> u8;
@@ -397,14 +356,11 @@ impl qobject::EcchanClient {
         if !self.connected || self.client.is_none() {
             if !matches!(method, MethodCall::Ping) {
                 let caller = Location::caller();
-                self.error(
-                    format!(
-                        "<{}:{}:{}>::call: not connected; cannot call {method:?}",
-                        caller.file(),
-                        caller.line(),
-                        caller.column()
-                    )
-                    .into(),
+                q_warning!(
+                    "<{}:{}:{}>::call: not connected; cannot call {method:?}",
+                    caller.file(),
+                    caller.line(),
+                    caller.column()
                 );
             }
 
@@ -430,14 +386,11 @@ impl qobject::EcchanClient {
                 }
 
                 let caller = Location::caller();
-                self.error(
-                    format!(
-                        "<{}:{}:{}>::call: {e}",
-                        caller.file(),
-                        caller.line(),
-                        caller.column()
-                    )
-                    .into(),
+                q_critical!(
+                    "<{}:{}:{}>::call: {e}",
+                    caller.file(),
+                    caller.line(),
+                    caller.column()
                 );
 
                 Err(e)
@@ -448,7 +401,6 @@ impl qobject::EcchanClient {
     pub fn set_connected(mut self: Pin<&mut Self>, connected: bool) {
         if connected && self.as_ref().rust().client.is_none() {
             if self.as_ref().rust().path.is_empty() {
-                self.error("connected: path property must be set".into());
                 return;
             }
 
@@ -456,7 +408,7 @@ impl qobject::EcchanClient {
             let client = match Client::new(&path) {
                 Ok(c) => c,
                 Err(e) => {
-                    self.error(e.to_string().into());
+                    q_warning!("{e}");
                     return;
                 }
             };
@@ -551,7 +503,7 @@ impl qobject::EcchanClient {
         let mode = match ShiftMode::from_str(&mode.to_string()) {
             Ok(m) => m,
             Err(e) => {
-                self.error(format!("shift_mode: {e}").into());
+                q_warning!("shift_mode: {e}");
                 return;
             }
         };
@@ -582,7 +534,7 @@ impl qobject::EcchanClient {
             let mode = match BatteryChargeMode::from_str(&mode.to_string()) {
                 Ok(m) => m,
                 Err(e) => {
-                    self.error(format!("battery_charge_mode: {e}").into());
+                    q_warning!("battery_charge_mode: {e}");
                     return;
                 }
             };
@@ -594,10 +546,7 @@ impl qobject::EcchanClient {
             (mode, res)
         } else if let Some(mode) = mode.value::<u8>() {
             let Some(mode) = BatteryChargeMode::from_end(mode) else {
-                self.error(
-                    format!("battery_charge_mode: {mode} out of range; only accept 10..=100")
-                        .into(),
-                );
+                q_warning!("battery_charge_mode: {mode} out of range; only accept 10..=100");
                 return;
             };
 
@@ -607,7 +556,7 @@ impl qobject::EcchanClient {
 
             (mode, res)
         } else {
-            self.error("battery_charge_mode: only string and number are supported".into());
+            q_warning!("battery_charge_mode: only string and number are supported");
             return;
         };
 
@@ -650,7 +599,7 @@ impl qobject::EcchanClient {
         let mode = match FanMode::from_str(&mode.to_string()) {
             Ok(m) => m,
             Err(e) => {
-                self.error(format!("fan_mode: {e}").into());
+                q_warning!("fan_mode: {e}");
                 return;
             }
         };
@@ -720,7 +669,7 @@ impl qobject::EcchanClient {
         let state = match KeyDirection::from_str(&dir.to_string()) {
             Ok(k) => k,
             Err(e) => {
-                self.error(format!("fn_key: {e}").into());
+                q_warning!("fn_key: {e}");
                 return;
             }
         };
@@ -737,7 +686,7 @@ impl qobject::EcchanClient {
         let state = match KeyDirection::from_str(&dir.to_string()) {
             Ok(k) => k,
             Err(e) => {
-                self.error(format!("win_key: {e}").into());
+                q_warning!("win_key: {e}");
                 return;
             }
         };
@@ -794,9 +743,7 @@ impl qobject::EcchanClient {
     fn set_cpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
         let len = curve.len();
         if len != 7 {
-            self.error(
-                format!("cpu_fan_curve_wmi2: need array of len 7, instead got len {len}").into(),
-            );
+            q_warning!("cpu_fan_curve_wmi2: need array of len 7, instead got len {len}");
             return;
         }
 
@@ -832,9 +779,7 @@ impl qobject::EcchanClient {
     fn set_cpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
         let len = curve.len();
         if len != 7 {
-            self.error(
-                format!("cpu_temp_curve_wmi2: need array of len 7, instead got len {len}").into(),
-            );
+            q_warning!("cpu_temp_curve_wmi2: need array of len 7, instead got len {len}");
             return;
         }
 
@@ -870,10 +815,7 @@ impl qobject::EcchanClient {
     fn set_cpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
         let len = curve.len();
         if len != 6 {
-            self.error(
-                format!("cpu_hysteresis_curve_wmi2: need array of len 6, instead got len {len}")
-                    .into(),
-            );
+            q_warning!("cpu_hysteresis_curve_wmi2: need array of len 6, instead got len {len}");
             return;
         }
 
@@ -910,9 +852,7 @@ impl qobject::EcchanClient {
     fn set_gpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
         let len = curve.len();
         if len != 7 {
-            self.error(
-                format!("gpu_fan_curve_wmi2: need array of len 7, instead got len {len}").into(),
-            );
+            q_warning!("gpu_fan_curve_wmi2: need array of len 7, instead got len {len}");
             return;
         }
 
@@ -948,9 +888,7 @@ impl qobject::EcchanClient {
     fn set_gpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
         let len = curve.len();
         if len != 7 {
-            self.error(
-                format!("gpu_temp_curve_wmi2: need array of len 7, instead got len {len}").into(),
-            );
+            q_warning!("gpu_temp_curve_wmi2: need array of len 7, instead got len {len}");
             return;
         }
 
@@ -986,10 +924,7 @@ impl qobject::EcchanClient {
     fn set_gpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
         let len = curve.len();
         if len != 6 {
-            self.error(
-                format!("gpu_hysteresis_curve_wmi2: need array of len 6, instead got len {len}")
-                    .into(),
-            );
+            q_warning!("gpu_hysteresis_curve_wmi2: need array of len 6, instead got len {len}");
             return;
         }
 
