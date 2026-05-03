@@ -64,13 +64,31 @@ pub mod qobject {
         // shift mode
         #[qproperty(QList_QString, shift_modes, READ = shift_modes, NOTIFY, cxx_name = "shiftModes")]
         #[qproperty(QString, shift_mode, READ = shift_mode, WRITE = set_shift_mode, NOTIFY, cxx_name = "shiftMode")]
-        #[qproperty(bool, shift_mode_supported, READ, NOTIFY, cxx_name = "shiftModeSupported")]
+        #[qproperty(
+            bool,
+            shift_mode_supported,
+            READ,
+            NOTIFY,
+            cxx_name = "shiftModeSupported"
+        )]
         // battery charge mode
         #[qproperty(QVariant, battery_charge_mode, READ = battery_charge_mode, WRITE = set_battery_charge_mode, NOTIFY, cxx_name = "batteryChargeMode")]
-        #[qproperty(bool, battery_charge_mode_supported, READ, NOTIFY, cxx_name = "batteryChargeModeSupported")]
+        #[qproperty(
+            bool,
+            battery_charge_mode_supported,
+            READ,
+            NOTIFY,
+            cxx_name = "batteryChargeModeSupported"
+        )]
         // super battery
         #[qproperty(bool, super_battery, READ = super_battery, WRITE = set_super_battery, NOTIFY, cxx_name = "superBattery")]
-        #[qproperty(bool, super_battery_supported, READ, NOTIFY, cxx_name = "superBatterySupported")]
+        #[qproperty(
+            bool,
+            super_battery_supported,
+            READ,
+            NOTIFY,
+            cxx_name = "superBatterySupported"
+        )]
         // fan rpm
         #[qproperty(u16, fan1_rpm, READ, NOTIFY, cxx_name = "fan1Rpm")]
         #[qproperty(u16, fan2_rpm, READ, NOTIFY, cxx_name = "fan2Rpm")]
@@ -88,18 +106,42 @@ pub mod qobject {
         #[qproperty(bool, webcam, READ = webcam, WRITE = set_webcam, NOTIFY)]
         #[qproperty(bool, webcam_block, READ = webcam_block, WRITE = set_webcam_block, NOTIFY, cxx_name = "webcamBlock")]
         #[qproperty(bool, webcam_supported, READ, NOTIFY, cxx_name = "webcamSupported")]
-        #[qproperty(bool, webcam_block_supported, READ, NOTIFY, cxx_name = "webcamBlockSupported")]
+        #[qproperty(
+            bool,
+            webcam_block_supported,
+            READ,
+            NOTIFY,
+            cxx_name = "webcamBlockSupported"
+        )]
         // cooler boost
         #[qproperty(bool, cooler_boost, READ = cooler_boost, WRITE = set_cooler_boost, NOTIFY, cxx_name = "coolerBoost")]
-        #[qproperty(bool, cooler_boost_supported, READ, NOTIFY, cxx_name = "coolerBoostSupported")]
+        #[qproperty(
+            bool,
+            cooler_boost_supported,
+            READ,
+            NOTIFY,
+            cxx_name = "coolerBoostSupported"
+        )]
         // fn/win key swap
         #[qproperty(QString, fn_key, READ = fn_key, WRITE = set_fn_key, NOTIFY, cxx_name = "fnKey")]
         #[qproperty(QString, win_key, READ = win_key, WRITE = set_win_key, NOTIFY, cxx_name = "winKey")]
-        #[qproperty(bool, fn_win_swap_supported, READ, NOTIFY, cxx_name = "fnWinSwapSupported")]
+        #[qproperty(
+            bool,
+            fn_win_swap_supported,
+            READ,
+            NOTIFY,
+            cxx_name = "fnWinSwapSupported"
+        )]
         // mute leds
         #[qproperty(bool, mic_mute_led, READ = mic_mute_led, WRITE = set_mic_mute_led, NOTIFY, cxx_name = "micMuteLed")]
         #[qproperty(bool, mute_led, READ = mute_led, WRITE = set_mute_led, NOTIFY, cxx_name = "muteLed")]
-        #[qproperty(bool, mic_mute_led_supported, READ, NOTIFY, cxx_name = "micMuteLedSupported")]
+        #[qproperty(
+            bool,
+            mic_mute_led_supported,
+            READ,
+            NOTIFY,
+            cxx_name = "micMuteLedSupported"
+        )]
         #[qproperty(bool, mute_led_supported, READ, NOTIFY, cxx_name = "muteLedSupported")]
         // rt sensors
         #[qproperty(u8, cpu_rt_fan_speed, READ, NOTIFY, cxx_name = "cpuRtFanSpeed")]
