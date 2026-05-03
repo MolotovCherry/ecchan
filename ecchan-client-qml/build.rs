@@ -3,15 +3,16 @@ use std::{env, path::PathBuf};
 use cxx_qt_build::{CxxQtBuilder, PluginType, QmlModule};
 
 fn main() {
-    CxxQtBuilder::new_qml_module(
-        QmlModule::new("com.cherry.ecchan").plugin_type(PluginType::Dynamic),
-    )
-    .files(["src/qml.rs"])
-    .build();
+    let manifest_dir: PathBuf = env::var("CARGO_MANIFEST_DIR").unwrap().into();
+
+    CxxQtBuilder::new_qml_module(QmlModule::new("ecchan_client").plugin_type(PluginType::Dynamic))
+        .files(["src/qml.rs", "src/qtlogging.rs"])
+        .cpp_file("src/cpp/qtlogging.cpp")
+        .include_dir(manifest_dir.join("includes/"))
+        .build();
 
     // https://github.com/KDAB/cxx-qt/issues/1433
-    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let version_script = PathBuf::from(manifest_dir).join("qt-plugin.version");
+    let version_script = manifest_dir.join("qt-plugin.version");
     println!(
         "cargo::rustc-link-arg-cdylib=-Wl,--version-script={}",
         version_script.display()
