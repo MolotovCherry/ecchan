@@ -1,7 +1,5 @@
 use std::{
-    collections::HashMap,
     io,
-    panic::Location,
     pin::Pin,
     str::FromStr,
     sync::{
@@ -13,6 +11,7 @@ use std::{
     time::Duration,
 };
 
+use cxx::SharedPtr;
 use cxx_qt::{CxxQtType, Threading};
 use cxx_qt_lib::{
     QByteArray, QList, QMap, QMapPair as _, QMapPair_QString_QVariant, QString, QStringList,
@@ -20,7 +19,7 @@ use cxx_qt_lib::{
 };
 use ecchan_ipc::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, Method,
-    MethodData, ShiftMode, SuperBattery, Webcam, WmiVer,
+    ShiftMode, SuperBattery, Webcam, WmiVer,
     method::Method as MethodCall,
     ret::{Bin, RetVal},
 };
@@ -28,6 +27,7 @@ use ecchan_ipc::{
 use crate::{
     client::{Client, ClientError},
     q_critical, q_warning,
+    qqml_property_map::{self, QQmlPropertyMap},
 };
 
 #[cxx_qt::bridge]
@@ -46,6 +46,11 @@ pub mod qobject {
 
         include!("cxx-qt-lib/qbytearray.h");
         type QByteArray = cxx_qt_lib::QByteArray;
+    }
+
+    unsafe extern "C++" {
+        include!("ecchan-client/qqml_property_map.h");
+        type QQmlPropertyMap = crate::qqml_property_map::QQmlPropertyMap;
     }
 
     impl cxx_qt::Threading for EcchanClient {}
@@ -119,7 +124,7 @@ pub mod qobject {
         #[qproperty(QList_u8, gpu_hysteresis_curve_wmi2, READ = gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY)]
         // methods
         #[qproperty(QList_QVariant, method_list, READ = method_list, NOTIFY)]
-        //#[qproperty(QQmlPropertyMap, methods, READ = methods, WRITE = set_methods, NOTIFY)]
+        #[qproperty(SharedPtr<QQmlPropertyMap>, methods, READ = methods, NOTIFY)]
         // dump
         #[qproperty(QByteArray, ec_dump, READ = ec_dump, NOTIFY)]
         #[qproperty(QString, ec_dump_pretty, READ, NOTIFY)]
@@ -176,8 +181,7 @@ pub mod qobject {
         fn set_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
 
         fn method_list(&self) -> QList_QVariant;
-        //fn methods(&self) -> QMap_QString_QVariant;
-        //fn set_methods(self: Pin<&mut Self>, methods: QMap_QString_QVariant);
+        fn methods(&self) -> SharedPtr<QQmlPropertyMap>;
 
         fn ec_dump(&self) -> QByteArray;
 
@@ -261,7 +265,7 @@ pub struct EcchanClientRust {
     gpu_hysteresis_curve_wmi2: Curve6,
 
     method_list: Vec<Method<'static>>,
-    methods: HashMap<String, MethodData>,
+    methods: SharedPtr<QQmlPropertyMap>,
 
     ec_dump: Box<Bin>,
     ec_dump_pretty: QString,
@@ -339,7 +343,7 @@ impl Default for EcchanClientRust {
             gpu_hysteresis_curve_wmi2: Curve6::default(),
 
             method_list: Vec::new(),
-            methods: HashMap::new(),
+            methods: qqml_property_map::new_shared(),
 
             ec_dump: Box::default(),
             ec_dump_pretty: QString::default(),
@@ -348,20 +352,13 @@ impl Default for EcchanClientRust {
 }
 
 impl qobject::EcchanClient {
-    #[track_caller]
     pub fn call(
         mut self: Pin<&mut Self>,
         method: MethodCall<'static>,
     ) -> Result<RetVal<'static>, ClientError> {
         if !self.connected || self.client.is_none() {
             if !matches!(method, MethodCall::Ping) {
-                let caller = Location::caller();
-                q_warning!(
-                    "<{}:{}:{}>::call: not connected; cannot call {method:?}",
-                    caller.file(),
-                    caller.line(),
-                    caller.column()
-                );
+                q_warning!("not connected; cannot call {method:?}");
             }
 
             return Err(ClientError::Io {
@@ -381,17 +378,15 @@ impl qobject::EcchanClient {
                         // socket error, so we now disconnect
                         this.connected = false;
                         this.client.take();
-                        self.as_mut().connected_changed();
+                        self.connected_changed();
                     }
                 }
 
-                let caller = Location::caller();
-                q_critical!(
-                    "<{}:{}:{}>::call: {e}",
-                    caller.file(),
-                    caller.line(),
-                    caller.column()
-                );
+                q_critical!("{e}");
+
+                if matches!(method, MethodCall::Ping) {
+                    q_warning!("heartbeat failed; disconnecting");
+                }
 
                 Err(e)
             }
@@ -975,12 +970,8 @@ impl qobject::EcchanClient {
         list
     }
 
-    pub fn methods(&self) -> QMap<QMapPair_QString_QVariant> {
-        todo!()
-    }
-
-    pub fn set_methods(self: Pin<&mut Self>, methods: QMap<QMapPair_QString_QVariant>) {
-        todo!()
+    pub fn methods(&self) -> SharedPtr<QQmlPropertyMap> {
+        self.methods.clone()
     }
 
     pub fn ec_dump(&self) -> QByteArray {

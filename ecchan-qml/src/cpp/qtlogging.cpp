@@ -20,7 +20,7 @@ log(QtMsgType type,
 {
   qt_message_output(
     type,
-    QMessageLogContext(fileName, lineNumber, nullptr, "default"),
+    QMessageLogContext(fileName, lineNumber, nullptr, "EcchanClient"),
     message);
 }
 

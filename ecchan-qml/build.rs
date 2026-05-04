@@ -6,7 +6,7 @@ fn main() {
     let manifest_dir: PathBuf = env::var("CARGO_MANIFEST_DIR").unwrap().into();
 
     CxxQtBuilder::new_qml_module(QmlModule::new("ecchan_client").plugin_type(PluginType::Dynamic))
-        .files(["src/qml.rs", "src/qtlogging.rs"])
+        .files(["src/qml.rs", "src/qtlogging.rs", "src/qqml_property_map.rs"])
         .cpp_file("src/cpp/qtlogging.cpp")
         .include_dir(manifest_dir.join("includes/"))
         .build();
