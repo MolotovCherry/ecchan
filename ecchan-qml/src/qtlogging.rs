@@ -95,8 +95,8 @@ macro_rules! q_debug {
         let args = std::format_args!($($arg)*);
 
         let val = match args.as_str() {
-            Some(s) => QString::from(s),
-            None => QString::from(&args.to_string()),
+            Some(s) => cxx_qt_lib::QString::from(s),
+            None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
         $crate::qtlogging::q_debug(
@@ -125,8 +125,8 @@ macro_rules! q_info {
         let args = std::format_args!($($arg)*);
 
         let val = match args.as_str() {
-            Some(s) => QString::from(s),
-            None => QString::from(&args.to_string()),
+            Some(s) => cxx_qt_lib::QString::from(s),
+            None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
         $crate::qtlogging::q_info(
@@ -156,8 +156,8 @@ macro_rules! q_warning {
         let args = std::format_args!($($arg)*);
 
         let val = match args.as_str() {
-            Some(s) => QString::from(s),
-            None => QString::from(&args.to_string()),
+            Some(s) => cxx_qt_lib::QString::from(s),
+            None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
         $crate::qtlogging::q_warning(
@@ -188,8 +188,8 @@ macro_rules! q_critical {
         let args = std::format_args!($($arg)*);
 
         let val = match args.as_str() {
-            Some(s) => QString::from(s),
-            None => QString::from(&args.to_string()),
+            Some(s) => cxx_qt_lib::QString::from(s),
+            None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
         $crate::qtlogging::q_critical(
@@ -221,8 +221,8 @@ macro_rules! q_fatal {
         let args = std::format_args!($($arg)*);
 
         let val = match args.as_str() {
-            Some(s) => QString::from(s),
-            None => QString::from(&args.to_string()),
+            Some(s) => cxx_qt_lib::QString::from(s),
+            None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
         $crate::qtlogging::q_fatal(

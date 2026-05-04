@@ -12,7 +12,7 @@ use std::{
 };
 
 use cxx::UniquePtr;
-use cxx_qt::{CxxQtType, Threading};
+use cxx_qt::{Constructor, CxxQtType, Threading};
 use cxx_qt_lib::{
     QByteArray, QList, QMap, QMapPair as _, QMapPair_QString_QVariant, QString, QStringList,
     QVariant, QVariantValue,
@@ -28,6 +28,7 @@ use crate::{
     client::{Client, ClientError},
     q_critical, q_warning,
     qqml_property_map::QQmlPropertyMap,
+    setup::setup,
 };
 
 #[cxx_qt::bridge]
@@ -54,6 +55,7 @@ pub mod qobject {
     }
 
     impl cxx_qt::Threading for EcchanClient {}
+    impl cxx_qt::Constructor<()> for EcchanClient {}
 
     #[auto_cxx_name]
     extern "RustQt" {
@@ -192,6 +194,29 @@ pub mod qobject {
         // #[qinvokable]
         // #[cxx_name = "sayHi"]
         // fn say_hi(&self, string: &QString, number: i32);
+    }
+}
+
+impl Constructor<()> for qobject::EcchanClient {
+    type NewArguments = ();
+
+    type BaseArguments = ();
+
+    type InitializeArguments = ();
+
+    fn route_arguments(
+        args: (),
+    ) -> (
+        Self::NewArguments,
+        Self::BaseArguments,
+        Self::InitializeArguments,
+    ) {
+        (args, (), ())
+    }
+
+    fn new(_: Self::NewArguments) -> <Self as CxxQtType>::Rust {
+        setup();
+        <Self as CxxQtType>::Rust::default()
     }
 }
 
