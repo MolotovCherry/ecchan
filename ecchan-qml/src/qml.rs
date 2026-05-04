@@ -27,7 +27,7 @@ use ecchan_ipc::{
 use crate::{
     client::{Client, ClientError},
     q_critical, q_warning,
-    qqml_property_map::{self, QQmlPropertyMap},
+    qqml_property_map::QQmlPropertyMap,
 };
 
 #[cxx_qt::bridge]
@@ -343,7 +343,7 @@ impl Default for EcchanClientRust {
             gpu_hysteresis_curve_wmi2: Curve6::default(),
 
             method_list: Vec::new(),
-            methods: qqml_property_map::new(),
+            methods: QQmlPropertyMap::new(),
 
             ec_dump: Box::default(),
             ec_dump_pretty: QString::default(),

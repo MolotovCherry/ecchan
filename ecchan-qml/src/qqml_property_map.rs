@@ -1,5 +1,9 @@
 #![allow(dead_code)]
 
+use cxx::{SharedPtr, UniquePtr};
+
+pub use ffi::QQmlPropertyMap;
+
 #[doc(hidden)]
 #[cxx_qt::bridge]
 mod ffi {
@@ -57,5 +61,12 @@ mod ffi {
     }
 }
 
-#[expect(unused_imports)]
-pub use ffi::{QQmlPropertyMap, new, new_shared};
+impl ffi::QQmlPropertyMap {
+    pub fn new() -> UniquePtr<Self> {
+        ffi::new()
+    }
+
+    pub fn new_shared() -> SharedPtr<Self> {
+        ffi::new_shared()
+    }
+}
