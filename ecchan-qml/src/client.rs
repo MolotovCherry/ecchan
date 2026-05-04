@@ -10,6 +10,8 @@ use ecchan_ipc::{
 use serde::Deserialize;
 use snafu::{ResultExt as _, Snafu};
 
+use crate::q_warning;
+
 #[derive(Debug, Snafu)]
 pub enum ClientError {
     #[snafu(display("{msg}"))]
@@ -50,11 +52,18 @@ impl Client {
         self.conn.write_all(data.as_bytes()).context(IoSnafu)?;
 
         let mut buf = [0; 1024];
+        let mut res = Ok(RetVal::Unit);
+        let mut should_empty_buffer = false;
         loop {
-            let t = match self.conn.read(&mut buf) {
+            match self.conn.read(&mut buf) {
+                Ok(0) if should_empty_buffer => break,
                 Ok(0) => return Err(ClientError::Eof),
 
                 Ok(n) => {
+                    if should_empty_buffer {
+                        continue;
+                    }
+
                     let msg = &buf[..n];
 
                     self.buf.extend_from_slice(msg);
@@ -64,22 +73,28 @@ impl Client {
                         continue;
                     };
 
-                    let data = Cursor::new(self.buf.drain(..=newline_pos));
+                    res = {
+                        let data = Cursor::new(self.buf.drain(..=newline_pos));
+                        // work around lifetime is not general enough error
+                        let mut deserializer = serde_json::Deserializer::from_reader(data);
+                        Ret::<'static>::deserialize(&mut deserializer).context(JsonSnafu)?
+                    };
 
-                    // TODO: What if there's extra bytes after this? Do we want to handle it?
-
-                    // work around lifetime is not general enough error
-                    let mut deserializer = serde_json::Deserializer::from_reader(data);
-                    Ret::<'static>::deserialize(&mut deserializer).context(JsonSnafu)?
+                    if !self.buf.is_empty() {
+                        q_warning!("call: buf should not have extra data!!: {buf:?}");
+                        should_empty_buffer = true;
+                        continue;
+                    }
                 }
 
                 Err(e) => match e.kind() {
+                    ErrorKind::WouldBlock if should_empty_buffer => break,
                     ErrorKind::WouldBlock => continue,
                     _ => return Err(e).context(IoSnafu),
                 },
-            };
-
-            break t.map_err(|e| ClientError::Call { msg: e });
+            }
         }
+
+        res.map_err(|e| ClientError::Call { msg: e })
     }
 }
