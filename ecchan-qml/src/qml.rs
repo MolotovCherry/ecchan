@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-use cxx::SharedPtr;
+use cxx::UniquePtr;
 use cxx_qt::{CxxQtType, Threading};
 use cxx_qt_lib::{
     QByteArray, QList, QMap, QMapPair as _, QMapPair_QString_QVariant, QString, QStringList,
@@ -124,7 +124,7 @@ pub mod qobject {
         #[qproperty(QList_u8, gpu_hysteresis_curve_wmi2, READ = gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY)]
         // methods
         #[qproperty(QList_QVariant, method_list, READ = method_list, NOTIFY)]
-        #[qproperty(SharedPtr<QQmlPropertyMap>, methods, READ = methods, NOTIFY)]
+        #[qproperty(*mut QQmlPropertyMap, methods, READ = methods, NOTIFY)]
         // dump
         #[qproperty(QByteArray, ec_dump, READ = ec_dump, NOTIFY)]
         #[qproperty(QString, ec_dump_pretty, READ, NOTIFY)]
@@ -181,7 +181,7 @@ pub mod qobject {
         fn set_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
 
         fn method_list(&self) -> QList_QVariant;
-        fn methods(&self) -> SharedPtr<QQmlPropertyMap>;
+        fn methods(&self) -> *mut QQmlPropertyMap;
 
         fn ec_dump(&self) -> QByteArray;
 
@@ -265,7 +265,7 @@ pub struct EcchanClientRust {
     gpu_hysteresis_curve_wmi2: Curve6,
 
     method_list: Vec<Method<'static>>,
-    methods: SharedPtr<QQmlPropertyMap>,
+    methods: UniquePtr<QQmlPropertyMap>,
 
     ec_dump: Box<Bin>,
     ec_dump_pretty: QString,
@@ -343,7 +343,7 @@ impl Default for EcchanClientRust {
             gpu_hysteresis_curve_wmi2: Curve6::default(),
 
             method_list: Vec::new(),
-            methods: qqml_property_map::new_shared(),
+            methods: qqml_property_map::new(),
 
             ec_dump: Box::default(),
             ec_dump_pretty: QString::default(),
@@ -970,8 +970,8 @@ impl qobject::EcchanClient {
         list
     }
 
-    pub fn methods(&self) -> SharedPtr<QQmlPropertyMap> {
-        self.methods.clone()
+    pub fn methods(&self) -> *mut QQmlPropertyMap {
+        self.methods.as_mut_ptr()
     }
 
     pub fn ec_dump(&self) -> QByteArray {

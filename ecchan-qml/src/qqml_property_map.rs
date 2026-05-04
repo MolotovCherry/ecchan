@@ -30,10 +30,10 @@ mod ffi {
     #[namespace = "rust::cxxqtlib1"]
     unsafe extern "C++" {
         include!("cxx-qt-lib/common.h");
-    
+
         #[rust_name = "new"]
         fn make_unique() -> UniquePtr<QQmlPropertyMap>;
-        
+
         #[rust_name = "new_shared"]
         fn make_shared() -> SharedPtr<QQmlPropertyMap>;
     }
@@ -57,4 +57,5 @@ mod ffi {
     }
 }
 
+#[expect(unused_imports)]
 pub use ffi::{QQmlPropertyMap, new, new_shared};
