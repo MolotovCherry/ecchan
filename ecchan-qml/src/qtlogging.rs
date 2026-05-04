@@ -232,3 +232,17 @@ macro_rules! q_fatal {
         )
     }};
 }
+
+#[macro_export]
+macro_rules! println {
+    ($($arg:tt)*) => {
+        $crate::q_info!($($arg)*);
+    };
+}
+
+#[macro_export]
+macro_rules! eprintln {
+    ($($arg:tt)*) => {
+        $crate::q_critical!($($arg)*);
+    };
+}
