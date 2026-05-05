@@ -913,69 +913,62 @@ impl qobject::EcchanClient {
     pub fn init_state(mut self: Pin<&mut Self>) {
         self.as_mut().init_state_changed(true);
 
-        self.as_mut()._update("fanCount");
-        self.as_mut()._update("fanMax");
-        self.as_mut()._update("hasDGpu");
-        self.as_mut()._update("wmiVer");
+        let names = [
+            "fanCount",
+            "fanMax",
+            "hasDGpu",
+            "wmiVer",
+            "fwVersion",
+            "fwDate",
+            "fwTime",
+            "shiftModes",
+            "shiftMode",
+            "shiftModeSupported",
+            "batteryChargeMode",
+            "batteryChargeModeSupported",
+            "superBattery",
+            "superBatterySupported",
+            "fan1Rpm",
+            "fan2Rpm",
+            "fan3Rpm",
+            "fan4Rpm",
+            "fan1Supported",
+            "fan2Supported",
+            "fan3Supported",
+            "fan4Supported",
+            "fanModes",
+            "fanMode",
+            "fanModeSupported",
+            "webcam",
+            "webcamBlock",
+            "webcamSupported",
+            "webcamBlockSupported",
+            "coolerBoost",
+            "coolerBoostSupported",
+            "fnKey",
+            "winKey",
+            "fnWinSwapSupported",
+            "micMuteLed",
+            "muteLed",
+            "micMuteLedSupported",
+            "muteLedSupported",
+            "cpuRtFanSpeed",
+            "cpuRtTemp",
+            "gpuRtFanSpeed",
+            "gpuRtTemp",
+            "cpuFanCurveWmi2",
+            "cpuTempCurveWmi2",
+            "cpuHysteresisCurveWmi2",
+            "gpuFanCurveWmi2",
+            "gpuTempCurveWmi2",
+            "gpuHysteresisCurveWmi2",
+            "methodList",
+            "methods",
+        ];
 
-        self.as_mut()._update("fwVersion");
-        self.as_mut()._update("fwDate");
-        self.as_mut()._update("fwTime");
-
-        self.as_mut()._update("shiftModes");
-        self.as_mut()._update("shiftMode");
-        self.as_mut()._update("shiftModeSupported");
-
-        self.as_mut()._update("batteryChargeMode");
-        self.as_mut()._update("batteryChargeModeSupported");
-
-        self.as_mut()._update("superBattery");
-        self.as_mut()._update("superBatterySupported");
-
-        self.as_mut()._update("fan1Rpm");
-        self.as_mut()._update("fan2Rpm");
-        self.as_mut()._update("fan3Rpm");
-        self.as_mut()._update("fan4Rpm");
-        self.as_mut()._update("fan1Supported");
-        self.as_mut()._update("fan2Supported");
-        self.as_mut()._update("fan3Supported");
-        self.as_mut()._update("fan4Supported");
-
-        self.as_mut()._update("fanModes");
-        self.as_mut()._update("fanMode");
-        self.as_mut()._update("fanModeSupported");
-
-        self.as_mut()._update("webcam");
-        self.as_mut()._update("webcamBlock");
-        self.as_mut()._update("webcamSupported");
-        self.as_mut()._update("webcamBlockSupported");
-
-        self.as_mut()._update("coolerBoost");
-        self.as_mut()._update("coolerBoostSupported");
-
-        self.as_mut()._update("fnKey");
-        self.as_mut()._update("winKey");
-        self.as_mut()._update("fnWinSwapSupported");
-
-        self.as_mut()._update("micMuteLed");
-        self.as_mut()._update("muteLed");
-        self.as_mut()._update("micMuteLedSupported");
-        self.as_mut()._update("muteLedSupported");
-
-        self.as_mut()._update("cpuRtFanSpeed");
-        self.as_mut()._update("cpuRtTemp");
-        self.as_mut()._update("gpuRtFanSpeed");
-        self.as_mut()._update("gpuRtTemp");
-
-        self.as_mut()._update("cpuFanCurveWmi2");
-        self.as_mut()._update("cpuTempCurveWmi2");
-        self.as_mut()._update("cpuHysteresisCurveWmi2");
-        self.as_mut()._update("gpuFanCurveWmi2");
-        self.as_mut()._update("gpuTempCurveWmi2");
-        self.as_mut()._update("gpuHysteresisCurveWmi2");
-
-        self.as_mut()._update("methodList");
-        self.as_mut()._update("methods");
+        for name in names {
+            self.as_mut()._update(name);
+        }
 
         self.init_state_changed(false);
     }
