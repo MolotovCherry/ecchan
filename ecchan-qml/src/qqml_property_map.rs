@@ -65,7 +65,7 @@ mod ffi {
         #[rust_name = "can_convert_QQmlPropertyMap"]
         fn qvariantCanConvertQQmlPropertyMap(variant: &QVariant) -> bool;
         #[rust_name = "construct_QQmlPropertyMap"]
-        fn qvariantConstructQQmlPropertyMap(value: UniquePtr<QQmlPropertyMap>) -> QVariant;
+        fn qvariantConstructQQmlPropertyMap(value: &UniquePtr<QQmlPropertyMap>) -> QVariant;
         #[rust_name = "value_or_default_QQmlPropertyMap"]
         fn qvariantValueOrDefaultQQmlPropertyMap(
             variant: Pin<&mut QVariant>,
@@ -75,9 +75,7 @@ mod ffi {
 
 impl ffi::QQmlPropertyMap {
     pub fn new() -> UniquePtr<Self> {
-        let mut n = ffi::new();
-        n.pin_mut().clear(&"objectName".into());
-        n
+        ffi::new()
     }
 }
 
@@ -85,14 +83,15 @@ pub trait QVariantConvertQQmlPropertyMap
 where
     Self: Sized,
 {
-    fn into_qvariant(self) -> QVariant;
+    unsafe fn as_qvariant(&self) -> QVariant;
     fn can_convert(variant: &QVariant) -> bool;
-    fn as_mut<'a>(variant: Pin<&'a mut QVariant>) -> Option<&'a mut ffi::QQmlPropertyMap>;
+    fn as_mut(variant: Pin<&mut QVariant>) -> Option<&mut ffi::QQmlPropertyMap>;
 }
 
 impl QVariantConvertQQmlPropertyMap for UniquePtr<ffi::QQmlPropertyMap> {
-    fn into_qvariant(self) -> QVariant {
-        // this function takes ownership of the UniquePtr!
+    /// Self MUST live at least as long as the QVariant
+    unsafe fn as_qvariant(&self) -> QVariant {
+        // this is a shallow copy! you must keep the UniquePtr around!
         ffi::construct_QQmlPropertyMap(self)
     }
 
@@ -100,7 +99,7 @@ impl QVariantConvertQQmlPropertyMap for UniquePtr<ffi::QQmlPropertyMap> {
         ffi::can_convert_QQmlPropertyMap(variant)
     }
 
-    fn as_mut<'a>(variant: Pin<&'a mut QVariant>) -> Option<&'a mut ffi::QQmlPropertyMap> {
+    fn as_mut(variant: Pin<&mut QVariant>) -> Option<&mut ffi::QQmlPropertyMap> {
         let raw = ffi::value_or_default_QQmlPropertyMap(variant);
         if raw.is_null() {
             None

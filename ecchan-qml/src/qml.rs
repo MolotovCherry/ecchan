@@ -14,12 +14,12 @@ use std::{
 use cxx::UniquePtr;
 use cxx_qt::{Constructor, CxxQtType, Threading};
 use cxx_qt_lib::{
-    QByteArray, QList, QMap, QMapPair as _, QMapPair_QString_QVariant, QString, QStringList,
-    QVariant, QVariantValue,
+    QByteArray, QList, QMap, QMapPair as _, QMapPair_QString_QVariant, QObjectExt, QString,
+    QStringList, QVariant, QVariantValue,
 };
 use ecchan_ipc::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, Method,
-    ShiftMode, SuperBattery, Webcam, WmiVer,
+    MethodData, MethodOp, ShiftMode, SuperBattery, Webcam, WmiVer,
     method::Method as MethodCall,
     ret::{Bin, RetVal},
 };
@@ -27,7 +27,7 @@ use ecchan_ipc::{
 use crate::{
     client::{Client, ClientError},
     q_critical, q_warning,
-    qqml_property_map::QQmlPropertyMap,
+    qqml_property_map::{QQmlPropertyMap, QVariantConvertQQmlPropertyMap},
     setup::setup,
 };
 
@@ -126,7 +126,7 @@ pub mod qobject {
         #[qproperty(QList_u8, gpu_hysteresis_curve_wmi2, READ = gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY)]
         // methods
         #[qproperty(QList_QVariant, method_list, READ = method_list, NOTIFY)]
-        #[qproperty(*mut QQmlPropertyMap, methods, READ = methods, NOTIFY)]
+        #[qproperty(*mut QQmlPropertyMap, methods, READ = methods)]
         // dump
         #[qproperty(QByteArray, ec_dump, READ = ec_dump, NOTIFY)]
         #[qproperty(QString, ec_dump_pretty, READ, NOTIFY)]
@@ -186,6 +186,17 @@ pub mod qobject {
         fn methods(&self) -> *mut QQmlPropertyMap;
 
         fn ec_dump(&self) -> QByteArray;
+
+        #[qsignal]
+        #[cxx_name = "initStateChanged"]
+        fn init_state_changed(self: Pin<&mut Self>, running: bool);
+
+        #[qinvokable]
+        #[cxx_name = "initState"]
+        fn init_state(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn update(self: Pin<&mut Self>, name: &QString);
 
         // #[qinvokable]
         // #[cxx_name = "incrementNumber"]
@@ -290,10 +301,15 @@ pub struct EcchanClientRust {
     gpu_hysteresis_curve_wmi2: Curve6,
 
     method_list: Vec<Method<'static>>,
-    methods: UniquePtr<QQmlPropertyMap>,
+    methods: Methods,
 
     ec_dump: Box<Bin>,
     ec_dump_pretty: QString,
+}
+
+struct Methods {
+    map: UniquePtr<QQmlPropertyMap>,
+    children: Vec<UniquePtr<QQmlPropertyMap>>,
 }
 
 impl Default for EcchanClientRust {
@@ -368,7 +384,10 @@ impl Default for EcchanClientRust {
             gpu_hysteresis_curve_wmi2: Curve6::default(),
 
             method_list: Vec::new(),
-            methods: QQmlPropertyMap::new(),
+            methods: Methods {
+                map: QQmlPropertyMap::new(),
+                children: Vec::new(),
+            },
 
             ec_dump: Box::default(),
             ec_dump_pretty: QString::default(),
@@ -376,6 +395,7 @@ impl Default for EcchanClientRust {
     }
 }
 
+// Internal
 impl qobject::EcchanClient {
     pub fn call(
         mut self: Pin<&mut Self>,
@@ -407,7 +427,9 @@ impl qobject::EcchanClient {
                     }
                 }
 
-                q_critical!("{e}");
+                if !matches!(e, ClientError::Eof) {
+                    q_critical!("{e}");
+                }
 
                 if matches!(method, MethodCall::Ping) {
                     q_warning!("heartbeat failed; disconnecting");
@@ -418,6 +440,549 @@ impl qobject::EcchanClient {
         }
     }
 
+    pub fn _update(mut self: Pin<&mut Self>, name: &str) {
+        match name {
+            "fanCount" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FanCount) {
+                    self.as_mut().rust_mut().fan_count = val.fans().unwrap();
+                    self.fan_count_changed();
+                }
+            }
+
+            "fanMax" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FanMax) {
+                    self.as_mut().rust_mut().fan_max = val.byte().unwrap();
+                    self.fan_max_changed();
+                }
+            }
+
+            "hasDGpu" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::HasDGpu) {
+                    self.as_mut().rust_mut().has_dgpu = val.state().unwrap();
+                    self.has_dgpu_changed();
+                }
+            }
+
+            "wmiVer" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::WmiVer) {
+                    self.as_mut().rust_mut().wmi_ver = val.wmi_ver().unwrap();
+                    self.wmi_ver_changed();
+                }
+            }
+
+            "fwVersion" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FwVersion) {
+                    self.as_mut().rust_mut().fw_version = val.str().unwrap().into();
+                    self.fw_version_changed();
+                }
+            }
+
+            "fwDate" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FwDate) {
+                    self.as_mut().rust_mut().fw_date = val.str().unwrap().into();
+                    self.fw_date_changed();
+                }
+            }
+
+            "fwTime" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FwTime) {
+                    self.as_mut().rust_mut().fw_time = val.str().unwrap().into();
+                    self.fw_time_changed();
+                }
+            }
+
+            "shiftModes" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::ShiftModes) {
+                    self.as_mut().rust_mut().shift_modes = val.shift_modes().unwrap();
+                    self.shift_modes_changed();
+                }
+            }
+
+            "shiftMode" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::ShiftMode) {
+                    self.as_mut().rust_mut().shift_mode = val.shift_mode().unwrap();
+                    self.shift_mode_changed();
+                }
+            }
+
+            "shiftModeSupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::ShiftModeSupported) {
+                    self.as_mut().rust_mut().shift_mode_supported = val.state().unwrap();
+                    self.shift_mode_supported_changed();
+                }
+            }
+
+            "batteryChargeMode" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::BatteryChargeMode) {
+                    self.as_mut().rust_mut().battery_charge_mode =
+                        val.battery_charge_mode().unwrap();
+                    self.battery_charge_mode_changed();
+                }
+            }
+
+            "batteryChargeModeSupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::BatteryChargeModeSupported) {
+                    self.as_mut().rust_mut().battery_charge_mode_supported = val.state().unwrap();
+                    self.battery_charge_mode_supported_changed();
+                }
+            }
+
+            "superBattery" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::SuperBattery) {
+                    self.as_mut().rust_mut().super_battery = val.super_battery().unwrap();
+                    self.super_battery_changed();
+                }
+            }
+
+            "superBatterySupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::SuperBatterySupported) {
+                    self.as_mut().rust_mut().super_battery_supported = val.state().unwrap();
+                    self.super_battery_supported_changed();
+                }
+            }
+
+            "fan1Rpm" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::Fan1Rpm) {
+                    self.as_mut().rust_mut().fan1_rpm = val.word().unwrap();
+                    self.fan1_rpm_changed();
+                }
+            }
+
+            "fan2Rpm" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::Fan2Rpm) {
+                    self.as_mut().rust_mut().fan2_rpm = val.word().unwrap();
+                    self.fan2_rpm_changed();
+                }
+            }
+
+            "fan3Rpm" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::Fan3Rpm) {
+                    self.as_mut().rust_mut().fan3_rpm = val.word().unwrap();
+                    self.fan3_rpm_changed();
+                }
+            }
+
+            "fan4Rpm" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::Fan4Rpm) {
+                    self.as_mut().rust_mut().fan4_rpm = val.word().unwrap();
+                    self.fan4_rpm_changed();
+                }
+            }
+
+            "fan1Supported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::Fan1Supported) {
+                    self.as_mut().rust_mut().fan1_supported = val.state().unwrap();
+                    self.fan1_supported_changed();
+                }
+            }
+
+            "fan2Supported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::Fan2Supported) {
+                    self.as_mut().rust_mut().fan2_supported = val.state().unwrap();
+                    self.fan2_supported_changed();
+                }
+            }
+
+            "fan3Supported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::Fan3Supported) {
+                    self.as_mut().rust_mut().fan3_supported = val.state().unwrap();
+                    self.fan3_supported_changed();
+                }
+            }
+
+            "fan4Supported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::Fan4Supported) {
+                    self.as_mut().rust_mut().fan4_supported = val.state().unwrap();
+                    self.fan4_supported_changed();
+                }
+            }
+
+            "fanModes" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FanModes) {
+                    self.as_mut().rust_mut().fan_modes = val.fan_modes().unwrap();
+                    self.fan_modes_changed();
+                }
+            }
+
+            "fanMode" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FanMode) {
+                    self.as_mut().rust_mut().fan_mode = val.fan_mode().unwrap();
+                    self.fan_mode_changed();
+                }
+            }
+
+            "fanModeSupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FanModeSupported) {
+                    self.as_mut().rust_mut().fan_mode_supported = val.state().unwrap();
+                    self.fan_mode_supported_changed();
+                }
+            }
+
+            "webcam" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::Webcam) {
+                    self.as_mut().rust_mut().webcam = val.webcam().unwrap();
+                    self.webcam_changed();
+                }
+            }
+
+            "webcamBlock" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::WebcamBlock) {
+                    self.as_mut().rust_mut().webcam_block = val.webcam().unwrap();
+                    self.webcam_block_changed();
+                }
+            }
+
+            "webcamSupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::WebcamSupported) {
+                    self.as_mut().rust_mut().webcam_supported = val.state().unwrap();
+                    self.webcam_supported_changed();
+                }
+            }
+
+            "webcamBlockSupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::WebcamBlockSupported) {
+                    self.as_mut().rust_mut().webcam_block_supported = val.state().unwrap();
+                    self.webcam_block_supported_changed();
+                }
+            }
+
+            "coolerBoost" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::CoolerBoost) {
+                    self.as_mut().rust_mut().cooler_boost = val.cooler_boost().unwrap();
+                    self.cooler_boost_changed();
+                }
+            }
+
+            "coolerBoostSupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::CoolerBoostSupported) {
+                    self.as_mut().rust_mut().cooler_boost_supported = val.state().unwrap();
+                    self.cooler_boost_supported_changed();
+                }
+            }
+
+            "fnKey" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FnKey) {
+                    self.as_mut().rust_mut().fn_key = val.key_direction().unwrap();
+                    self.fn_key_changed();
+                }
+            }
+
+            "winKey" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::WinKey) {
+                    self.as_mut().rust_mut().win_key = val.key_direction().unwrap();
+                    self.win_key_changed();
+                }
+            }
+
+            "fnWinSwapSupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::FnWinSwapSupported) {
+                    self.as_mut().rust_mut().fn_win_swap_supported = val.state().unwrap();
+                    self.fn_win_swap_supported_changed();
+                }
+            }
+
+            "micMuteLed" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::MicMuteLed) {
+                    self.as_mut().rust_mut().mic_mute_led = val.led().unwrap();
+                    self.mic_mute_led_changed();
+                }
+            }
+
+            "muteLed" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::MuteLed) {
+                    self.as_mut().rust_mut().mute_led = val.led().unwrap();
+                    self.mute_led_changed();
+                }
+            }
+
+            "micMuteLedSupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::MicMuteLedSupported) {
+                    self.as_mut().rust_mut().mic_mute_led_supported = val.state().unwrap();
+                    self.mic_mute_led_supported_changed();
+                }
+            }
+
+            "muteLedSupported" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::MuteLedSupported) {
+                    self.as_mut().rust_mut().mute_led_supported = val.state().unwrap();
+                    self.mute_led_supported_changed();
+                }
+            }
+
+            "cpuRtFanSpeed" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::CpuRtFanSpeed) {
+                    self.as_mut().rust_mut().cpu_rt_fan_speed = val.byte().unwrap();
+                    self.cpu_rt_fan_speed_changed();
+                }
+            }
+
+            "cpuRtTemp" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::CpuRtTemp) {
+                    self.as_mut().rust_mut().cpu_rt_temp = val.byte().unwrap();
+                    self.cpu_rt_temp_changed();
+                }
+            }
+
+            "gpuRtTemp" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::GpuRtTemp) {
+                    self.as_mut().rust_mut().gpu_rt_temp = val.byte().unwrap();
+                    self.gpu_rt_temp_changed();
+                }
+            }
+
+            "gpuRtFanSpeed" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::GpuRtFanSpeed) {
+                    self.as_mut().rust_mut().gpu_rt_fan_speed = val.byte().unwrap();
+                    self.gpu_rt_fan_speed_changed();
+                }
+            }
+
+            "cpuFanCurveWmi2" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::CpuFanCurveWmi2) {
+                    self.as_mut().rust_mut().cpu_fan_curve_wmi2 = val.curve7().unwrap();
+                    self.cpu_fan_curve_wmi2_changed();
+                }
+            }
+
+            "cpuTempCurveWmi2" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::CpuTempCurveWmi2) {
+                    self.as_mut().rust_mut().cpu_temp_curve_wmi2 = val.curve7().unwrap();
+                    self.cpu_temp_curve_wmi2_changed();
+                }
+            }
+
+            "cpuHysteresisCurveWmi2" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::CpuHysteresisCurveWmi2) {
+                    self.as_mut().rust_mut().cpu_hysteresis_curve_wmi2 = val.curve6().unwrap();
+                    self.cpu_hysteresis_curve_wmi2_changed();
+                }
+            }
+
+            "gpuFanCurveWmi2" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::GpuFanCurveWmi2) {
+                    self.as_mut().rust_mut().gpu_fan_curve_wmi2 = val.curve7().unwrap();
+                    self.gpu_fan_curve_wmi2_changed();
+                }
+            }
+
+            "gpuTempCurveWmi2" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::GpuTempCurveWmi2) {
+                    self.as_mut().rust_mut().gpu_temp_curve_wmi2 = val.curve7().unwrap();
+                    self.gpu_temp_curve_wmi2_changed();
+                }
+            }
+
+            "gpuHysteresisCurveWmi2" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::GpuHysteresisCurveWmi2) {
+                    self.as_mut().rust_mut().gpu_hysteresis_curve_wmi2 = val.curve6().unwrap();
+                    self.gpu_hysteresis_curve_wmi2_changed();
+                }
+            }
+
+            "methodList" => {
+                if let Ok(val) = self.as_mut().call(MethodCall::MethodList) {
+                    let method_list = val.into_methods().unwrap();
+
+                    self.as_mut().rust_mut().method_list = method_list;
+                    self.as_mut().method_list_changed();
+                }
+            }
+
+            "methods" => 'b: {
+                if self.method_list.is_empty() || self.methods.map.size() > 1 {
+                    break 'b;
+                }
+
+                let method_list = self.method_list.clone();
+                let mut list = Vec::with_capacity(self.method_list.len());
+
+                list.resize_with(list.capacity(), || {
+                    let mut map = QQmlPropertyMap::new();
+                    map.pin_mut()
+                        .set_parent(self.as_mut().rust_mut().methods.map.pin_mut());
+                    map
+                });
+
+                for (method, mut map) in method_list.into_iter().zip(list) {
+                    let name = QString::from(&*method.method);
+
+                    let is_read = method.ops.iter().any(|o| {
+                        matches!(o, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)
+                    });
+
+                    let is_write = method.ops.iter().any(|o| {
+                        matches!(
+                            o,
+                            MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange
+                        )
+                    });
+
+                    let string_op = if let Some(op) = method.ops.first() {
+                        let op = match op {
+                            MethodOp::ReadBit | MethodOp::WriteBit => "Bit",
+                            MethodOp::Read | MethodOp::Write => "Byte",
+                            MethodOp::ReadRange | MethodOp::WriteRange => "Range",
+                        };
+
+                        Some(op)
+                    } else {
+                        None
+                    };
+
+                    let op = method
+                        .ops
+                        .iter()
+                        .find(|o| {
+                            matches!(o, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)
+                        })
+                        .copied();
+
+                    let value = if let Some(op) = op {
+                        let res = self.as_mut().call(MethodCall::MethodRead {
+                            method: method.method,
+                            op,
+                        });
+
+                        if let Ok(res) = res {
+                            let val = res.method_data().unwrap();
+                            let val = match val {
+                                MethodData::Bit(b) => QVariant::from(&b),
+                                MethodData::Byte(b) => QVariant::from(&b),
+                                MethodData::Range(items) => {
+                                    let arr = QByteArray::from(&*items);
+                                    QVariant::from(&arr)
+                                }
+                            };
+
+                            Some(val)
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
+
+                    let mut pin_map = map.pin_mut();
+
+                    if let Some(op) = string_op {
+                        pin_map
+                            .as_mut()
+                            .insert(&"type".into(), &QVariant::from(&QString::from(op)));
+                    }
+
+                    pin_map
+                        .as_mut()
+                        .insert(&"read".into(), &QVariant::from(&is_read));
+
+                    pin_map
+                        .as_mut()
+                        .insert(&"write".into(), &QVariant::from(&is_write));
+
+                    if let Some(value) = value {
+                        pin_map.as_mut().insert(&"value".into(), &value);
+                    }
+
+                    pin_map.as_mut().freeze();
+
+                    let variant = unsafe { map.as_qvariant() };
+                    self.as_mut()
+                        .rust_mut()
+                        .methods
+                        .map
+                        .pin_mut()
+                        .insert(&name, &variant);
+
+                    self.as_mut().rust_mut().methods.children.push(map);
+                }
+
+                // no more changes thx
+                self.as_mut().rust_mut().methods.map.pin_mut().freeze();
+            }
+
+            _ => q_warning!("{name} is not a valid update property"),
+        }
+    }
+}
+
+// Invokables
+impl qobject::EcchanClient {
+    pub fn update(self: Pin<&mut Self>, name: &QString) {
+        self._update(&name.to_string());
+    }
+
+    pub fn init_state(mut self: Pin<&mut Self>) {
+        self.as_mut().init_state_changed(true);
+
+        self.as_mut()._update("fanCount");
+        self.as_mut()._update("fanMax");
+        self.as_mut()._update("hasDGpu");
+        self.as_mut()._update("wmiVer");
+
+        self.as_mut()._update("fwVersion");
+        self.as_mut()._update("fwDate");
+        self.as_mut()._update("fwTime");
+
+        self.as_mut()._update("shiftModes");
+        self.as_mut()._update("shiftMode");
+        self.as_mut()._update("shiftModeSupported");
+
+        self.as_mut()._update("batteryChargeMode");
+        self.as_mut()._update("batteryChargeModeSupported");
+
+        self.as_mut()._update("superBattery");
+        self.as_mut()._update("superBatterySupported");
+
+        self.as_mut()._update("fan1Rpm");
+        self.as_mut()._update("fan2Rpm");
+        self.as_mut()._update("fan3Rpm");
+        self.as_mut()._update("fan4Rpm");
+        self.as_mut()._update("fan1Supported");
+        self.as_mut()._update("fan2Supported");
+        self.as_mut()._update("fan3Supported");
+        self.as_mut()._update("fan4Supported");
+
+        self.as_mut()._update("fanModes");
+        self.as_mut()._update("fanMode");
+        self.as_mut()._update("fanModeSupported");
+
+        self.as_mut()._update("webcam");
+        self.as_mut()._update("webcamBlock");
+        self.as_mut()._update("webcamSupported");
+        self.as_mut()._update("webcamBlockSupported");
+
+        self.as_mut()._update("coolerBoost");
+        self.as_mut()._update("coolerBoostSupported");
+
+        self.as_mut()._update("fnKey");
+        self.as_mut()._update("winKey");
+        self.as_mut()._update("fnWinSwapSupported");
+
+        self.as_mut()._update("micMuteLed");
+        self.as_mut()._update("muteLed");
+        self.as_mut()._update("micMuteLedSupported");
+        self.as_mut()._update("muteLedSupported");
+
+        self.as_mut()._update("cpuRtFanSpeed");
+        self.as_mut()._update("cpuRtTemp");
+        self.as_mut()._update("gpuRtFanSpeed");
+        self.as_mut()._update("gpuRtTemp");
+
+        self.as_mut()._update("cpuFanCurveWmi2");
+        self.as_mut()._update("cpuTempCurveWmi2");
+        self.as_mut()._update("cpuHysteresisCurveWmi2");
+        self.as_mut()._update("gpuFanCurveWmi2");
+        self.as_mut()._update("gpuTempCurveWmi2");
+        self.as_mut()._update("gpuHysteresisCurveWmi2");
+
+        self.as_mut()._update("methodList");
+        self.as_mut()._update("methods");
+
+        self.init_state_changed(false);
+    }
+}
+
+// Properties
+impl qobject::EcchanClient {
     pub fn set_connected(mut self: Pin<&mut Self>, connected: bool) {
         if connected && self.as_ref().rust().client.is_none() {
             if self.as_ref().rust().path.is_empty() {
@@ -996,7 +1561,7 @@ impl qobject::EcchanClient {
     }
 
     pub fn methods(&self) -> *mut QQmlPropertyMap {
-        self.methods.as_mut_ptr()
+        self.methods.map.as_mut_ptr()
     }
 
     pub fn ec_dump(&self) -> QByteArray {

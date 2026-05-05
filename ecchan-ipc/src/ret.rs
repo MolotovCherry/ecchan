@@ -85,6 +85,12 @@ pub enum RetVal<'a> {
     MethodData(MethodData),
 }
 
+impl RetVal<'static> {
+    pub fn into_methods(self) -> Result<Vec<Method<'static>>, RetValError> {
+        extract_val!(self, RetVal::Methods(v), "Methods", v)
+    }
+}
+
 impl RetVal<'_> {
     pub fn pong(self) -> Result<(), RetValError> {
         extract_val!(self, RetVal::Pong, "Pong", ())
