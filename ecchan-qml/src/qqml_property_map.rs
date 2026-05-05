@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
-use cxx::{SharedPtr, UniquePtr};
+use std::pin::Pin;
+
+use cxx::UniquePtr;
+use cxx_qt_lib::QVariant;
 
 pub use ffi::QQmlPropertyMap;
 
@@ -37,9 +40,6 @@ mod ffi {
 
         #[rust_name = "new"]
         fn make_unique() -> UniquePtr<QQmlPropertyMap>;
-
-        #[rust_name = "new_shared"]
-        fn make_shared() -> SharedPtr<QQmlPropertyMap>;
     }
 
     unsafe extern "C++" {
@@ -59,14 +59,53 @@ mod ffi {
         fn size(self: &QQmlPropertyMap) -> i32;
         fn value(self: &QQmlPropertyMap, key: &QString) -> QVariant;
     }
+
+    #[namespace = "ecchan::qvariant"]
+    unsafe extern "C++" {
+        #[rust_name = "can_convert_QQmlPropertyMap"]
+        fn qvariantCanConvertQQmlPropertyMap(variant: &QVariant) -> bool;
+        #[rust_name = "construct_QQmlPropertyMap"]
+        fn qvariantConstructQQmlPropertyMap(value: UniquePtr<QQmlPropertyMap>) -> QVariant;
+        #[rust_name = "value_or_default_QQmlPropertyMap"]
+        fn qvariantValueOrDefaultQQmlPropertyMap(
+            variant: Pin<&mut QVariant>,
+        ) -> *mut QQmlPropertyMap;
+    }
 }
 
 impl ffi::QQmlPropertyMap {
     pub fn new() -> UniquePtr<Self> {
-        ffi::new()
+        let mut n = ffi::new();
+        n.pin_mut().clear(&"objectName".into());
+        n
+    }
+}
+
+pub trait QVariantConvertQQmlPropertyMap
+where
+    Self: Sized,
+{
+    fn into_qvariant(self) -> QVariant;
+    fn can_convert(variant: &QVariant) -> bool;
+    fn as_mut<'a>(variant: Pin<&'a mut QVariant>) -> Option<&'a mut ffi::QQmlPropertyMap>;
+}
+
+impl QVariantConvertQQmlPropertyMap for UniquePtr<ffi::QQmlPropertyMap> {
+    fn into_qvariant(self) -> QVariant {
+        // this function takes ownership of the UniquePtr!
+        ffi::construct_QQmlPropertyMap(self)
     }
 
-    pub fn new_shared() -> SharedPtr<Self> {
-        ffi::new_shared()
+    fn can_convert(variant: &QVariant) -> bool {
+        ffi::can_convert_QQmlPropertyMap(variant)
+    }
+
+    fn as_mut<'a>(variant: Pin<&'a mut QVariant>) -> Option<&'a mut ffi::QQmlPropertyMap> {
+        let raw = ffi::value_or_default_QQmlPropertyMap(variant);
+        if raw.is_null() {
+            None
+        } else {
+            Some(unsafe { &mut *raw })
+        }
     }
 }
