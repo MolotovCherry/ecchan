@@ -85,6 +85,8 @@ impl Client {
                         should_empty_buffer = true;
                         continue;
                     }
+
+                    break;
                 }
 
                 Err(e) => match e.kind() {
