@@ -1661,3 +1661,33 @@ pub enum MethodData {
     /// ReadRange/WriteRange ops
     Range(Vec<u8>),
 }
+
+impl MethodData {
+    pub fn as_bit(&self) -> bool {
+        match self {
+            Self::Bit(v) => *v,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        match self {
+            Self::Byte(v) => *v,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn as_range(&self) -> &[u8] {
+        match self {
+            Self::Range(v) => v,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn into_range(self) -> Vec<u8> {
+        match self {
+            Self::Range(v) => v,
+            _ => unreachable!(),
+        }
+    }
+}
