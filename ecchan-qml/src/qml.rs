@@ -1297,13 +1297,10 @@ impl qobject::EcchanClient {
     }
 
     pub fn set_battery_charge_mode(mut self: Pin<&mut Self>, mode: QVariant) {
-        let (mode, res) = if let Some(mode) = mode.value::<QString>() {
-            let mode = match BatteryChargeMode::from_str(&mode.to_string()) {
-                Ok(m) => m,
-                Err(e) => {
-                    q_warning!("battery_charge_mode: {e}");
-                    return;
-                }
+        let (mode, res) = if let Some(mode) = mode.value::<u8>() {
+            let Some(mode) = BatteryChargeMode::from_end(mode) else {
+                q_warning!("battery_charge_mode: {mode} out of range; only accept 10..=100");
+                return;
             };
 
             let res = self
@@ -1311,10 +1308,13 @@ impl qobject::EcchanClient {
                 .call(MethodCall::SetBatteryChargeMode { mode });
 
             (mode, res)
-        } else if let Some(mode) = mode.value::<u8>() {
-            let Some(mode) = BatteryChargeMode::from_end(mode) else {
-                q_warning!("battery_charge_mode: {mode} out of range; only accept 10..=100");
-                return;
+        } else if let Some(mode) = mode.value::<QString>() {
+            let mode = match BatteryChargeMode::from_str(&mode.to_string()) {
+                Ok(m) => m,
+                Err(e) => {
+                    q_warning!("battery_charge_mode: {e}");
+                    return;
+                }
             };
 
             let res = self
