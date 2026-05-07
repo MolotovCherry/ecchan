@@ -231,6 +231,16 @@ impl Constructor<()> for qobject::EcchanClient {
         setup();
         <Self as CxxQtType>::Rust::default()
     }
+
+    fn initialize(self: Pin<&mut Self>, _: Self::InitializeArguments) {
+        self.on_connected_changed(|ctx| {
+            let state = ctx.as_ref().rust().connected;
+            if !state {
+                ctx.rust_mut().disconnected();
+            }
+        })
+        .release();
+    }
 }
 
 pub struct EcchanClientRust {
@@ -395,6 +405,15 @@ impl Default for EcchanClientRust {
 
             ec_dump: Box::default(),
             ec_dump_pretty: "|      | _0 _1 _2 _3 _4 _5 _6 _7 _8 _9 _A _B _C _D _E _F\n|------+------------------------------------------------\n| 0x0_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x1_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x2_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x3_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x4_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x5_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x6_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x7_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x8_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x9_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xA_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xB_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xC_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xD_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xE_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xF_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n".into(),
+        }
+    }
+}
+
+impl EcchanClientRust {
+    // common takss to run on disconnect
+    pub fn disconnected(&mut self) {
+        if let Some(token) = self.heartbeats.take() {
+            _ = token.send(());
         }
     }
 }
@@ -1207,9 +1226,7 @@ impl qobject::EcchanClient {
                 }
             });
         } else {
-            if let Some(token) = self.as_mut().rust_mut().heartbeats.take() {
-                _ = token.send(());
-            }
+            self.as_mut().rust_mut().disconnected();
 
             if self.as_mut().rust_mut().client.take().is_some() {
                 // take client and drop it, causing a disconnection
