@@ -1167,8 +1167,6 @@ impl qobject::EcchanClient {
                         Err(TryRecvError::Empty) => (),
                     }
 
-                    thread::sleep(Duration::from_millis(1500));
-
                     let event_loop_should_exit = should_exit.clone();
                     let res =
                         qt_thread.queue(move |mut ctx| match ctx.as_mut().call(MethodCall::Ping) {
@@ -1185,6 +1183,8 @@ impl qobject::EcchanClient {
                     if res.is_err() {
                         break;
                     }
+
+                    thread::sleep(Duration::from_millis(1500));
                 }
             });
         } else {
