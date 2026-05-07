@@ -5,11 +5,10 @@ use std::pin::Pin;
 use cxx::UniquePtr;
 use cxx_qt_lib::QVariant;
 
-pub use ffi::QQmlPropertyMap;
+pub use qobject::QQmlPropertyMap;
 
-#[doc(hidden)]
 #[cxx_qt::bridge]
-mod ffi {
+mod qobject {
     extern "C++" {
         include!("cxx-qt-lib/qstring.h");
         type QString = cxx_qt_lib::QString;
@@ -73,9 +72,9 @@ mod ffi {
     }
 }
 
-impl ffi::QQmlPropertyMap {
+impl qobject::QQmlPropertyMap {
     pub fn new() -> UniquePtr<Self> {
-        ffi::new()
+        qobject::new()
     }
 }
 
@@ -85,22 +84,22 @@ where
 {
     unsafe fn as_qvariant(&self) -> QVariant;
     fn can_convert(variant: &QVariant) -> bool;
-    fn as_mut(variant: Pin<&mut QVariant>) -> Option<&mut ffi::QQmlPropertyMap>;
+    fn as_mut(variant: Pin<&mut QVariant>) -> Option<&mut qobject::QQmlPropertyMap>;
 }
 
-impl QVariantConvertQQmlPropertyMap for UniquePtr<ffi::QQmlPropertyMap> {
+impl QVariantConvertQQmlPropertyMap for UniquePtr<qobject::QQmlPropertyMap> {
     /// Self MUST live at least as long as the QVariant
     unsafe fn as_qvariant(&self) -> QVariant {
         // this is a shallow copy! you must keep the UniquePtr around!
-        ffi::construct_QQmlPropertyMap(self)
+        qobject::construct_QQmlPropertyMap(self)
     }
 
     fn can_convert(variant: &QVariant) -> bool {
-        ffi::can_convert_QQmlPropertyMap(variant)
+        qobject::can_convert_QQmlPropertyMap(variant)
     }
 
-    fn as_mut(variant: Pin<&mut QVariant>) -> Option<&mut ffi::QQmlPropertyMap> {
-        let raw = ffi::value_or_default_QQmlPropertyMap(variant);
+    fn as_mut(variant: Pin<&mut QVariant>) -> Option<&mut qobject::QQmlPropertyMap> {
+        let raw = qobject::value_or_default_QQmlPropertyMap(variant);
         if raw.is_null() {
             None
         } else {

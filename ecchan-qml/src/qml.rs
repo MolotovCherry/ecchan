@@ -234,8 +234,7 @@ impl Constructor<()> for qobject::EcchanClient {
 
     fn initialize(self: Pin<&mut Self>, _: Self::InitializeArguments) {
         self.on_connected_changed(|ctx| {
-            let state = ctx.as_ref().rust().connected;
-            if !state {
+            if !ctx.connected {
                 ctx.rust_mut().disconnected();
             }
         })
@@ -410,644 +409,912 @@ impl Default for EcchanClientRust {
 }
 
 impl EcchanClientRust {
-    // common takss to run on disconnect
+    // common tasks to run on disconnect
     pub fn disconnected(&mut self) {
         if let Some(token) = self.heartbeats.take() {
             _ = token.send(());
         }
+
+        self.client.take();
     }
 }
 
 // Internal
 impl qobject::EcchanClient {
+    fn disconnect(mut self: Pin<&mut Self>) {
+        self.as_mut().rust_mut().connected = false;
+        self.connected_changed();
+        // handlers connected to signal will handle cleanup
+    }
+
+    pub fn queued_call(mut self: Pin<&mut Self>, cb: impl FnOnce(Pin<&mut Self>) + Send + 'static) {
+        let mut this = self.as_mut().rust_mut();
+        let Some(client) = this.client.as_mut() else {
+            q_warning!("not connected; cannot call queued cb");
+            return;
+        };
+
+        client.queued_call(cb);
+    }
+
     pub fn call(
         mut self: Pin<&mut Self>,
         method: MethodCall<'static>,
-    ) -> Result<RetVal<'static>, ClientError> {
-        if !self.connected || self.client.is_none() {
+        cb: impl FnOnce(Pin<&mut qobject::EcchanClient>, Result<RetVal<'static>, ClientError>)
+        + Send
+        + 'static,
+    ) {
+        let mut this = self.as_mut().rust_mut();
+        let Some(client) = this.client.as_mut() else {
             if !matches!(method, MethodCall::Ping) {
                 q_warning!("not connected; cannot call {method:?}");
             }
 
-            return Err(ClientError::Io {
+            let err = Err(ClientError::Io {
                 source: io::Error::new(io::ErrorKind::NotConnected, "not connected"),
             });
-        }
 
-        let mut this = self.as_mut().rust_mut();
-        let res = this.client.as_mut().unwrap().call(&method);
+            cb(self, err);
+            return;
+        };
 
-        match res {
-            o @ Ok(_) => o,
-            Err(e) => {
-                match e {
-                    ClientError::Call { .. } | ClientError::Json { .. } => (),
-                    ClientError::Io { .. } | ClientError::Eof => {
-                        // socket error, so we now disconnect
-                        this.connected = false;
-                        this.client.take();
-                        self.connected_changed();
+        client.call(method.clone(), move |mut ctx, res| {
+            let res = match res {
+                o @ Ok(_) => o,
+
+                Err(e) => {
+                    match e {
+                        ClientError::Call { .. } | ClientError::Json { .. } => (),
+                        ClientError::Io { .. } | ClientError::Eof => {
+                            // socket error, so we now disconnect
+                            ctx.as_mut().disconnect();
+                        }
                     }
-                }
 
-                if !matches!(e, ClientError::Eof) {
-                    q_critical!("{e}");
-                }
+                    if !matches!(e, ClientError::Eof) {
+                        q_critical!("{e}");
+                    }
 
-                if matches!(method, MethodCall::Ping) {
-                    q_warning!("heartbeat failed; disconnecting");
-                }
+                    if matches!(method, MethodCall::Ping) {
+                        q_warning!("heartbeat failed; disconnecting");
+                    }
 
-                Err(e)
-            }
-        }
+                    Err(e)
+                }
+            };
+
+            cb(ctx, res);
+        });
     }
 
     pub fn _update(mut self: Pin<&mut Self>, name: &str) {
         match name {
             "fanCount" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FanCount) {
-                    self.as_mut().rust_mut().fan_count = val.fans().unwrap();
-                    self.fan_count_changed();
-                }
+                self.as_mut().call(MethodCall::FanCount, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fan_count = res.fans().unwrap();
+                    ctx.fan_count_changed();
+                });
             }
 
             "fanMax" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FanMax) {
-                    self.as_mut().rust_mut().fan_max = val.byte().unwrap();
-                    self.fan_max_changed();
-                }
+                self.as_mut().call(MethodCall::FanMax, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fan_max = res.byte().unwrap();
+                    ctx.fan_max_changed();
+                });
             }
 
             "hasDGpu" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::HasDGpu) {
-                    self.as_mut().rust_mut().has_dgpu = val.state().unwrap();
-                    self.has_dgpu_changed();
-                }
+                self.as_mut().call(MethodCall::HasDGpu, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().has_dgpu = res.state().unwrap();
+                    ctx.has_dgpu_changed();
+                });
             }
 
             "wmiVer" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::WmiVer) {
-                    self.as_mut().rust_mut().wmi_ver = val.wmi_ver().unwrap();
-                    self.wmi_ver_changed();
-                }
+                self.as_mut().call(MethodCall::WmiVer, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+                    ctx.as_mut().rust_mut().wmi_ver = res.wmi_ver().unwrap();
+                    ctx.wmi_ver_changed();
+                });
             }
 
             "fwVersion" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FwVersion) {
-                    self.as_mut().rust_mut().fw_version = val.str().unwrap().into();
-                    self.fw_version_changed();
-                }
+                self.as_mut().call(MethodCall::FwVersion, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fw_version = res.str().unwrap().into();
+                    ctx.fw_version_changed();
+                });
             }
 
             "fwDate" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FwDate) {
-                    self.as_mut().rust_mut().fw_date = val.str().unwrap().into();
-                    self.fw_date_changed();
-                }
+                self.as_mut().call(MethodCall::FwDate, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fw_date = res.str().unwrap().into();
+                    ctx.fw_date_changed();
+                });
             }
 
             "fwTime" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FwTime) {
-                    self.as_mut().rust_mut().fw_time = val.str().unwrap().into();
-                    self.fw_time_changed();
-                }
+                self.as_mut().call(MethodCall::FwTime, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+                    ctx.as_mut().rust_mut().fw_time = res.str().unwrap().into();
+                    ctx.fw_time_changed();
+                });
             }
 
             "shiftModes" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::ShiftModes) {
-                    self.as_mut().rust_mut().shift_modes = val.shift_modes().unwrap();
-                    self.shift_modes_changed();
-                }
+                self.as_mut().call(MethodCall::ShiftModes, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().shift_modes = res.shift_modes().unwrap();
+                    ctx.shift_modes_changed();
+                });
             }
 
             "shiftMode" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::ShiftMode) {
-                    self.as_mut().rust_mut().shift_mode = val.shift_mode().unwrap();
-                    self.shift_mode_changed();
-                }
+                self.as_mut().call(MethodCall::ShiftMode, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().shift_mode = res.shift_mode().unwrap();
+                    ctx.shift_mode_changed();
+                });
             }
 
             "shiftModeSupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::ShiftModeSupported) {
-                    self.as_mut().rust_mut().shift_mode_supported = val.state().unwrap();
-                    self.shift_mode_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::ShiftModeSupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().shift_mode_supported = res.state().unwrap();
+                        ctx.shift_mode_supported_changed();
+                    });
             }
 
             "batteryChargeMode" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::BatteryChargeMode) {
-                    self.as_mut().rust_mut().battery_charge_mode =
-                        val.battery_charge_mode().unwrap();
-                    self.battery_charge_mode_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::BatteryChargeMode, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().battery_charge_mode =
+                            res.battery_charge_mode().unwrap();
+                        ctx.battery_charge_mode_changed();
+                    });
             }
 
             "batteryChargeModeSupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::BatteryChargeModeSupported) {
-                    self.as_mut().rust_mut().battery_charge_mode_supported = val.state().unwrap();
-                    self.battery_charge_mode_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::BatteryChargeModeSupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().battery_charge_mode_supported =
+                            res.state().unwrap();
+                        ctx.battery_charge_mode_supported_changed();
+                    });
             }
 
             "superBattery" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::SuperBattery) {
-                    self.as_mut().rust_mut().super_battery = val.super_battery().unwrap();
-                    self.super_battery_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::SuperBattery, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().super_battery = res.super_battery().unwrap();
+                        ctx.super_battery_changed();
+                    });
             }
 
             "superBatterySupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::SuperBatterySupported) {
-                    self.as_mut().rust_mut().super_battery_supported = val.state().unwrap();
-                    self.super_battery_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::SuperBatterySupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().super_battery_supported = res.state().unwrap();
+                        ctx.super_battery_supported_changed();
+                    });
             }
 
             "fan1Rpm" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::Fan1Rpm) {
-                    self.as_mut().rust_mut().fan1_rpm = val.word().unwrap();
-                    self.fan1_rpm_changed();
-                }
+                self.as_mut().call(MethodCall::Fan1Rpm, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fan1_rpm = res.word().unwrap();
+                    ctx.fan1_rpm_changed();
+                });
             }
 
             "fan2Rpm" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::Fan2Rpm) {
-                    self.as_mut().rust_mut().fan2_rpm = val.word().unwrap();
-                    self.fan2_rpm_changed();
-                }
+                self.as_mut().call(MethodCall::Fan2Rpm, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fan2_rpm = res.word().unwrap();
+                    ctx.fan2_rpm_changed();
+                });
             }
 
             "fan3Rpm" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::Fan3Rpm) {
-                    self.as_mut().rust_mut().fan3_rpm = val.word().unwrap();
-                    self.fan3_rpm_changed();
-                }
+                self.as_mut().call(MethodCall::Fan3Rpm, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fan3_rpm = res.word().unwrap();
+                    ctx.fan3_rpm_changed();
+                });
             }
 
             "fan4Rpm" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::Fan4Rpm) {
-                    self.as_mut().rust_mut().fan4_rpm = val.word().unwrap();
-                    self.fan4_rpm_changed();
-                }
+                self.as_mut().call(MethodCall::Fan4Rpm, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fan4_rpm = res.word().unwrap();
+                    ctx.fan4_rpm_changed();
+                });
             }
 
             "fan1Supported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::Fan1Supported) {
-                    self.as_mut().rust_mut().fan1_supported = val.state().unwrap();
-                    self.fan1_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::Fan1Supported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().fan1_supported = res.state().unwrap();
+                        ctx.fan1_supported_changed();
+                    });
             }
 
             "fan2Supported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::Fan2Supported) {
-                    self.as_mut().rust_mut().fan2_supported = val.state().unwrap();
-                    self.fan2_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::Fan2Supported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().fan2_supported = res.state().unwrap();
+                        ctx.fan2_supported_changed();
+                    });
             }
 
             "fan3Supported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::Fan3Supported) {
-                    self.as_mut().rust_mut().fan3_supported = val.state().unwrap();
-                    self.fan3_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::Fan3Supported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().fan3_supported = res.state().unwrap();
+                        ctx.fan3_supported_changed();
+                    });
             }
 
             "fan4Supported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::Fan4Supported) {
-                    self.as_mut().rust_mut().fan4_supported = val.state().unwrap();
-                    self.fan4_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::Fan4Supported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().fan4_supported = res.state().unwrap();
+                        ctx.fan4_supported_changed();
+                    });
             }
 
             "fanModes" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FanModes) {
-                    self.as_mut().rust_mut().fan_modes = val.fan_modes().unwrap();
-                    self.fan_modes_changed();
-                }
+                self.as_mut().call(MethodCall::FanModes, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fan_modes = res.fan_modes().unwrap();
+                    ctx.fan_modes_changed();
+                });
             }
 
             "fanMode" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FanMode) {
-                    self.as_mut().rust_mut().fan_mode = val.fan_mode().unwrap();
-                    self.fan_mode_changed();
-                }
+                self.as_mut().call(MethodCall::FanMode, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fan_mode = res.fan_mode().unwrap();
+                    ctx.fan_mode_changed();
+                });
             }
 
             "fanModeSupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FanModeSupported) {
-                    self.as_mut().rust_mut().fan_mode_supported = val.state().unwrap();
-                    self.fan_mode_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::FanModeSupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().fan_mode_supported = res.state().unwrap();
+                        ctx.fan_mode_supported_changed();
+                    });
             }
 
             "webcam" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::Webcam) {
-                    self.as_mut().rust_mut().webcam = val.webcam().unwrap();
-                    self.webcam_changed();
-                }
+                self.as_mut().call(MethodCall::Webcam, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().webcam = res.webcam().unwrap();
+                    ctx.webcam_changed();
+                });
             }
 
             "webcamBlock" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::WebcamBlock) {
-                    self.as_mut().rust_mut().webcam_block = val.webcam().unwrap();
-                    self.webcam_block_changed();
-                }
+                self.as_mut().call(MethodCall::WebcamBlock, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().webcam_block = res.webcam().unwrap();
+                    ctx.webcam_block_changed();
+                });
             }
 
             "webcamSupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::WebcamSupported) {
-                    self.as_mut().rust_mut().webcam_supported = val.state().unwrap();
-                    self.webcam_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::WebcamSupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().webcam_supported = res.state().unwrap();
+                        ctx.webcam_supported_changed();
+                    });
             }
 
             "webcamBlockSupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::WebcamBlockSupported) {
-                    self.as_mut().rust_mut().webcam_block_supported = val.state().unwrap();
-                    self.webcam_block_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::WebcamBlockSupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().webcam_block_supported = res.state().unwrap();
+                        ctx.webcam_block_supported_changed();
+                    });
             }
 
             "coolerBoost" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::CoolerBoost) {
-                    self.as_mut().rust_mut().cooler_boost = val.cooler_boost().unwrap();
-                    self.cooler_boost_changed();
-                }
+                self.as_mut().call(MethodCall::CoolerBoost, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().cooler_boost = res.cooler_boost().unwrap();
+                    ctx.cooler_boost_changed();
+                });
             }
 
             "coolerBoostSupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::CoolerBoostSupported) {
-                    self.as_mut().rust_mut().cooler_boost_supported = val.state().unwrap();
-                    self.cooler_boost_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::CoolerBoostSupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().cooler_boost_supported = res.state().unwrap();
+                        ctx.cooler_boost_supported_changed();
+                    });
             }
 
             "fnKey" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FnKey) {
-                    self.as_mut().rust_mut().fn_key = val.key_direction().unwrap();
-                    self.fn_key_changed();
-                }
+                self.as_mut().call(MethodCall::FnKey, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().fn_key = res.key_direction().unwrap();
+                    ctx.fn_key_changed();
+                });
             }
 
             "winKey" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::WinKey) {
-                    self.as_mut().rust_mut().win_key = val.key_direction().unwrap();
-                    self.win_key_changed();
-                }
+                self.as_mut().call(MethodCall::WinKey, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().win_key = res.key_direction().unwrap();
+                    ctx.win_key_changed();
+                });
             }
 
             "fnWinSwapSupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::FnWinSwapSupported) {
-                    self.as_mut().rust_mut().fn_win_swap_supported = val.state().unwrap();
-                    self.fn_win_swap_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::FnWinSwapSupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().fn_win_swap_supported = res.state().unwrap();
+                        ctx.fn_win_swap_supported_changed();
+                    });
             }
 
             "micMuteLed" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::MicMuteLed) {
-                    self.as_mut().rust_mut().mic_mute_led = val.led().unwrap();
-                    self.mic_mute_led_changed();
-                }
+                self.as_mut().call(MethodCall::MicMuteLed, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().mic_mute_led = res.led().unwrap();
+                    ctx.mic_mute_led_changed();
+                });
             }
 
             "muteLed" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::MuteLed) {
-                    self.as_mut().rust_mut().mute_led = val.led().unwrap();
-                    self.mute_led_changed();
-                }
+                self.as_mut().call(MethodCall::MuteLed, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().mute_led = res.led().unwrap();
+                    ctx.mute_led_changed();
+                });
             }
 
             "micMuteLedSupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::MicMuteLedSupported) {
-                    self.as_mut().rust_mut().mic_mute_led_supported = val.state().unwrap();
-                    self.mic_mute_led_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::MicMuteLedSupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().mic_mute_led_supported = res.state().unwrap();
+                        ctx.mic_mute_led_supported_changed();
+                    });
             }
 
             "muteLedSupported" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::MuteLedSupported) {
-                    self.as_mut().rust_mut().mute_led_supported = val.state().unwrap();
-                    self.mute_led_supported_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::MuteLedSupported, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().mute_led_supported = res.state().unwrap();
+                        ctx.mute_led_supported_changed();
+                    });
             }
 
             "cpuRtFanSpeed" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::CpuRtFanSpeed) {
-                    self.as_mut().rust_mut().cpu_rt_fan_speed = val.byte().unwrap();
-                    self.cpu_rt_fan_speed_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::CpuRtFanSpeed, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().cpu_rt_fan_speed = res.byte().unwrap();
+                        ctx.cpu_rt_fan_speed_changed();
+                    });
             }
 
             "cpuRtTemp" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::CpuRtTemp) {
-                    self.as_mut().rust_mut().cpu_rt_temp = val.byte().unwrap();
-                    self.cpu_rt_temp_changed();
-                }
+                self.as_mut().call(MethodCall::CpuRtTemp, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().cpu_rt_temp = res.byte().unwrap();
+                    ctx.cpu_rt_temp_changed();
+                });
             }
 
             "gpuRtTemp" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::GpuRtTemp) {
-                    self.as_mut().rust_mut().gpu_rt_temp = val.byte().unwrap();
-                    self.gpu_rt_temp_changed();
-                }
+                self.as_mut().call(MethodCall::GpuRtTemp, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().gpu_rt_temp = res.byte().unwrap();
+                    ctx.gpu_rt_temp_changed();
+                });
             }
 
             "gpuRtFanSpeed" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::GpuRtFanSpeed) {
-                    self.as_mut().rust_mut().gpu_rt_fan_speed = val.byte().unwrap();
-                    self.gpu_rt_fan_speed_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::GpuRtFanSpeed, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().gpu_rt_fan_speed = res.byte().unwrap();
+                        ctx.gpu_rt_fan_speed_changed();
+                    });
             }
 
             "cpuFanCurveWmi2" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::CpuFanCurveWmi2) {
-                    self.as_mut().rust_mut().cpu_fan_curve_wmi2 = val.curve7().unwrap();
-                    self.cpu_fan_curve_wmi2_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::CpuFanCurveWmi2, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().cpu_fan_curve_wmi2 = res.curve7().unwrap();
+                        ctx.cpu_fan_curve_wmi2_changed();
+                    });
             }
 
             "cpuTempCurveWmi2" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::CpuTempCurveWmi2) {
-                    self.as_mut().rust_mut().cpu_temp_curve_wmi2 = val.curve7().unwrap();
-                    self.cpu_temp_curve_wmi2_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::CpuTempCurveWmi2, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().cpu_temp_curve_wmi2 = res.curve7().unwrap();
+                        ctx.cpu_temp_curve_wmi2_changed();
+                    });
             }
 
             "cpuHysteresisCurveWmi2" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::CpuHysteresisCurveWmi2) {
-                    self.as_mut().rust_mut().cpu_hysteresis_curve_wmi2 = val.curve6().unwrap();
-                    self.cpu_hysteresis_curve_wmi2_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::CpuHysteresisCurveWmi2, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().cpu_hysteresis_curve_wmi2 = res.curve6().unwrap();
+                        ctx.cpu_hysteresis_curve_wmi2_changed();
+                    });
             }
 
             "gpuFanCurveWmi2" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::GpuFanCurveWmi2) {
-                    self.as_mut().rust_mut().gpu_fan_curve_wmi2 = val.curve7().unwrap();
-                    self.gpu_fan_curve_wmi2_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::GpuFanCurveWmi2, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().gpu_fan_curve_wmi2 = res.curve7().unwrap();
+                        ctx.gpu_fan_curve_wmi2_changed();
+                    });
             }
 
             "gpuTempCurveWmi2" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::GpuTempCurveWmi2) {
-                    self.as_mut().rust_mut().gpu_temp_curve_wmi2 = val.curve7().unwrap();
-                    self.gpu_temp_curve_wmi2_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::GpuTempCurveWmi2, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().gpu_temp_curve_wmi2 = res.curve7().unwrap();
+                        ctx.gpu_temp_curve_wmi2_changed();
+                    });
             }
 
             "gpuHysteresisCurveWmi2" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::GpuHysteresisCurveWmi2) {
-                    self.as_mut().rust_mut().gpu_hysteresis_curve_wmi2 = val.curve6().unwrap();
-                    self.gpu_hysteresis_curve_wmi2_changed();
-                }
+                self.as_mut()
+                    .call(MethodCall::GpuHysteresisCurveWmi2, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().gpu_hysteresis_curve_wmi2 = res.curve6().unwrap();
+                        ctx.gpu_hysteresis_curve_wmi2_changed();
+                    });
             }
 
             "methodList" => {
-                if let Ok(val) = self.as_mut().call(MethodCall::MethodList) {
-                    let method_list = val.into_methods().unwrap();
-
-                    self.as_mut().rust_mut().method_list = method_list;
-                    self.as_mut().method_list_changed();
-                }
-            }
-
-            "methods" => 'b: {
-                // > 1 because objectName property is added by default
-                if self.method_list.is_empty() || self.methods.map.size() > 1 {
-                    break 'b;
-                }
-
-                let method_list = self.method_list.clone();
-                let mut list = Vec::with_capacity(self.method_list.len());
-
-                list.resize_with(list.capacity(), || {
-                    let mut map = QQmlPropertyMap::new();
-                    map.pin_mut()
-                        .set_parent(self.as_mut().rust_mut().methods.map.pin_mut());
-                    map
-                });
-
-                for (method, mut map) in method_list.into_iter().zip(list) {
-                    let name = QString::from(&*method.method);
-
-                    let is_read = method.ops.iter().any(|o| {
-                        matches!(o, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)
-                    });
-
-                    let is_write = method.ops.iter().any(|o| {
-                        matches!(
-                            o,
-                            MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange
-                        )
-                    });
-
-                    let string_op = if let Some(op) = method.ops.first() {
-                        let op = match op {
-                            MethodOp::ReadBit | MethodOp::WriteBit => "Bit",
-                            MethodOp::Read | MethodOp::Write => "Byte",
-                            MethodOp::ReadRange | MethodOp::WriteRange => "Range",
+                self.as_mut()
+                    .call(MethodCall::MethodList, move |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
                         };
 
-                        Some(op)
-                    } else {
-                        None
-                    };
+                        let method_list = res.into_methods().unwrap();
 
-                    // set custom slot to react to value setting
-                    map.pin_mut()
-                        .on_value_changed({
-                            let qthread = self.qt_thread();
-                            let op = method.ops.iter().find(|op| matches!(op, MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange)).copied();
-                            let method = method.method.clone().into_owned();
+                        ctx.as_mut().rust_mut().method_list = method_list;
+                        ctx.as_mut().method_list_changed();
+                    });
+            }
 
-                            move |_, key, value| {
-                                let key = key.to_string();
-                                if key !=  "value" {
-                                    q_warning!("custom method {method}'s key {key} should not be set by user; setting anything else may cause unexpected failures; please only set `value`");
-                                    return;
-                                }
+            "methods" => {
+                // this is queued because it is called after methodList, and is expected to work in order
+                self.as_mut().queued_call(|mut ctx| {
+                    // > 1 because objectName property is added by default
+                    if ctx.method_list.is_empty() || ctx.methods.map.size() > 1 {
+                        return;
+                    }
 
-                                if !is_write {
-                                    q_warning!("custom method {method} does not support writes");
-                                    return;
-                                }
+                    let method_list = ctx.method_list.clone();
+                    let mut list = Vec::with_capacity(ctx.method_list.len());
 
-                                let Some(op) = op else {
-                                    q_warning!("no write ops were found for custom method {method}");
-                                    return;
-                                };
+                    list.resize_with(list.capacity(), || {
+                        let mut map = QQmlPropertyMap::new();
+                        map.pin_mut()
+                            .set_parent(ctx.as_mut().rust_mut().methods.map.pin_mut());
+                        map
+                    });
 
-                                match op {
-                                    MethodOp::WriteBit => {
-                                        let Some(state) = QVariant::value::<bool>(value) else {
-                                            q_warning!("custom method {method} received an unsupported type; please use `bool` for setting");
-                                            return;
-                                        };
+                    let last = method_list.len().saturating_sub(1);
+                    for (i, (method, mut map)) in method_list.into_iter().zip(list).enumerate() {
+                        let is_last_iter = i == last;
 
-                                        _ = qthread.queue({
-                                            let method: Cow<str> = Cow::Owned(method.clone());
-                                            move |mut ctx| {
-                                                let res = ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Bit(state) }).ok();
-                                                if res.is_none() {
-                                                    // get previous value; don't update the cache since it failed
-                                                    let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
-                                                    if let Some(prev) = prev && let Some(child) = ctx.as_mut().rust_mut().methods.children.get_mut(&*method) {
-                                                        child.pin_mut().insert(&"value".into(), &QVariant::from(&prev.as_bit()));
-                                                    }
-                                                } else {
-                                                    // update the previous cache to new value
-                                                    ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Bit(state));
-                                                }
-                                            }
-                                        });
-                                    }
+                        let name = QString::from(&*method.method);
 
-                                    MethodOp::Write => {
-                                        let Some(byte) = QVariant::value::<u8>(value) else {
-                                            q_warning!("custom method {method} received an unsupported type; please use `number` (u8) for setting");
-                                            return;
-                                        };
-
-                                        _ = qthread.queue({
-                                            q_warning!("writeBit queuing");
-                                            let method: Cow<str> = Cow::Owned(method.clone());
-                                            move |mut ctx| {
-                                                let res = ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Byte(byte) }).ok();
-                                                if res.is_none() {
-                                                    // get previous value; don't update the cache since it failed
-                                                    let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
-                                                    if let Some(prev) = prev && let Some(child) = ctx.as_mut().rust_mut().methods.children.get_mut(&*method) {
-                                                        child.pin_mut().insert(&"value".into(), &QVariant::from(&prev.as_byte()));
-                                                    }
-                                                } else {
-                                                    // update the previous cache to new value
-                                                    ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Byte(byte));
-                                                }
-                                            }
-                                        });
-                                    }
-
-                                    MethodOp::WriteRange => {
-                                        let Some(bytes) = QVariant::value::<QByteArray>(value) else {
-                                            q_warning!("custom method {method} received an unsupported type; please use a byte array for setting");
-                                            return;
-                                        };
-
-                                        let bytes = bytes.as_slice().to_vec();
-
-                                        _ = qthread.queue({
-                                            q_warning!("writeBit queuing");
-                                            let method: Cow<str> = Cow::Owned(method.clone());
-                                            move |mut ctx| {
-                                                let res = ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Range(bytes.clone()) }).ok();
-                                                if res.is_none() {
-                                                    // get previous value; don't update the cache since it failed
-                                                    let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
-                                                    if let Some(prev) = prev && let Some(child) = ctx.as_mut().rust_mut().methods.children.get_mut(&*method) {
-                                                        child.pin_mut().insert(&"value".into(), &QVariant::from(&QByteArray::from(prev.as_range())));
-                                                    }
-                                                } else {
-                                                    // update the previous cache to new value
-                                                    ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Range(bytes));
-                                                }
-                                            }
-                                        });
-                                    }
-
-                                    _ => {
-                                        q_warning!("entered unreachable code");
-                                    }
-                                }
-                            }
-                        })
-                        .release();
-
-                    let op = method
-                        .ops
-                        .iter()
-                        .find(|o| {
+                        let is_read = method.ops.iter().any(|o| {
                             matches!(o, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)
-                        })
-                        .copied();
+                        });
 
-                    let value = match op {
-                        Some(op) => {
-                            let res = self.as_mut().call(MethodCall::MethodRead {
-                                method: method.method.clone(),
-                                op,
-                            });
+                        let is_write = method.ops.iter().any(|o| {
+                            matches!(
+                                o,
+                                MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange
+                            )
+                        });
 
-                            if let Ok(res) = res {
-                                let data = res.method_data().unwrap();
+                        let string_op = if let Some(op) = method.ops.first() {
+                            let op = match op {
+                                MethodOp::ReadBit | MethodOp::WriteBit => "Bit",
+                                MethodOp::Read | MethodOp::Write => "Byte",
+                                MethodOp::ReadRange | MethodOp::WriteRange => "Range",
+                            };
 
-                                self.as_mut()
-                                    .rust_mut()
-                                    .methods
-                                    .cache
-                                    .insert(method.method.clone().into_owned(), data.clone());
+                            Some(op)
+                        } else {
+                            None
+                        };
 
-                                let val = match data {
-                                    MethodData::Bit(b) => QVariant::from(&b),
-                                    MethodData::Byte(b) => QVariant::from(&b),
-                                    MethodData::Range(items) => {
-                                        let arr = QByteArray::from(&*items);
-                                        QVariant::from(&arr)
+                        // set custom slot to react to value setting
+                        map.pin_mut()
+                            .on_value_changed({
+                                let qthread = ctx.qt_thread();
+                                let op = method.ops.iter().find(|op| matches!(op, MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange)).copied();
+                                let method = method.method.clone().into_owned();
+
+                                move |_, key, value| {
+                                    let key = key.to_string();
+                                    if key !=  "value" {
+                                        q_warning!("custom method {method}'s key {key} should not be set by user; setting anything else may cause unexpected failures; please only set `value`");
+                                        return;
                                     }
-                                };
 
-                                Some(val)
-                            } else {
-                                None
+                                    if !is_write {
+                                        q_warning!("custom method {method} does not support writes");
+                                        return;
+                                    }
+
+                                    let Some(op) = op else {
+                                        q_warning!("no write ops were found for custom method {method}");
+                                        return;
+                                    };
+
+                                    match op {
+                                        MethodOp::WriteBit => {
+                                            let Some(state) = QVariant::value::<bool>(value) else {
+                                                q_warning!("custom method {method} received an unsupported type; please use `bool` for setting");
+                                                return;
+                                            };
+
+                                            _ = qthread.queue({
+                                                let method: Cow<str> = Cow::Owned(method.clone());
+                                                move |mut ctx| {
+                                                    ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Bit(state) }, move |mut ctx, res| {
+                                                        if res.is_err() {
+                                                            // get previous value; don't update the cache since it failed
+                                                            let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
+                                                            if let Some(prev) = prev && let Some(child) = ctx.as_mut().rust_mut().methods.children.get_mut(&*method) {
+                                                                child.pin_mut().insert(&"value".into(), &QVariant::from(&prev.as_bit()));
+                                                            }
+                                                        } else {
+                                                            // update the previous cache to new value
+                                                            ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Bit(state));
+                                                        }
+                                                    });
+
+                                                }
+                                            });
+                                        }
+
+                                        MethodOp::Write => {
+                                            let Some(byte) = QVariant::value::<u8>(value) else {
+                                                q_warning!("custom method {method} received an unsupported type; please use `number` (u8) for setting");
+                                                return;
+                                            };
+
+                                            _ = qthread.queue({
+                                                let method: Cow<str> = Cow::Owned(method.clone());
+                                                move |mut ctx| {
+                                                ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Byte(byte) }, move |mut ctx, res| {
+                                                        if res.is_err() {
+                                                            // get previous value; don't update the cache since it failed
+                                                            let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
+                                                            if let Some(prev) = prev && let Some(child) = ctx.as_mut().rust_mut().methods.children.get_mut(&*method) {
+                                                                child.pin_mut().insert(&"value".into(), &QVariant::from(&prev.as_byte()));
+                                                            }
+                                                        } else {
+                                                            // update the previous cache to new value
+                                                            ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Byte(byte));
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+
+                                        MethodOp::WriteRange => {
+                                            let Some(bytes) = QVariant::value::<QByteArray>(value) else {
+                                                q_warning!("custom method {method} received an unsupported type; please use a byte array for setting");
+                                                return;
+                                            };
+
+                                            let bytes = bytes.as_slice().to_vec();
+
+                                            _ = qthread.queue({
+                                                let method: Cow<str> = Cow::Owned(method.clone());
+                                                move |mut ctx| {
+                                                ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Range(bytes.clone()) }, move |mut ctx, res| {
+                                                        if res.is_err() {
+                                                            // get previous value; don't update the cache since it failed
+                                                            let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
+                                                            if let Some(prev) = prev && let Some(child) = ctx.as_mut().rust_mut().methods.children.get_mut(&*method) {
+                                                                child.pin_mut().insert(&"value".into(), &QVariant::from(&QByteArray::from(prev.as_range())));
+                                                            }
+                                                        } else {
+                                                            // update the previous cache to new value
+                                                            ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Range(bytes));
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+
+                                        _ => {
+                                            q_warning!("entered unreachable code");
+                                        }
+                                    }
+                                }
+                            })
+                            .release();
+
+                        let variant = unsafe { map.as_qvariant() };
+                        ctx.as_mut()
+                            .rust_mut()
+                            .methods
+                            .map
+                            .pin_mut()
+                            .insert(&name, &variant);
+
+                        // insert map as child to keep it alive for qvariant above
+                        ctx.as_mut()
+                            .rust_mut()
+                            .methods
+                            .children
+                            .insert(method.method.clone().into_owned(), map);
+
+                        let op = method.ops.into_iter().find(|o| {
+                            matches!(o, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)
+                        });
+
+                        let _method = method.method.clone().into_owned();
+                        let finish = move |mut ctx: Pin<&mut qobject::EcchanClient>| {
+                            let mut this = ctx.as_mut().rust_mut();
+                            let map = this.methods.children.get_mut(&*_method).unwrap();
+
+                            let mut pin_map = map.pin_mut();
+
+                            if let Some(op) = string_op {
+                                pin_map
+                                    .as_mut()
+                                    .insert(&"type".into(), &QVariant::from(&QString::from(op)));
+                            }
+
+                            pin_map
+                                .as_mut()
+                                .insert(&"read".into(), &QVariant::from(&is_read));
+
+                            pin_map
+                                .as_mut()
+                                .insert(&"write".into(), &QVariant::from(&is_write));
+
+                            pin_map.as_mut().freeze();
+                        };
+
+                        match op {
+                            Some(op) => {
+                                let _method = method.method.clone().into_owned();
+
+                                ctx.as_mut().call(
+                                    MethodCall::MethodRead {
+                                        method: method.method.clone(),
+                                        op,
+                                    },
+                                    move |mut ctx, res| {
+                                        if let Ok(res) = res {
+                                            let data = res.method_data().unwrap();
+
+                                            ctx.as_mut()
+                                                .rust_mut()
+                                                .methods
+                                                .cache
+                                                .insert(_method.clone(), data.clone());
+
+                                            let variant = match data {
+                                                MethodData::Bit(b) => QVariant::from(&b),
+                                                MethodData::Byte(b) => QVariant::from(&b),
+                                                MethodData::Range(items) => {
+                                                    let arr = QByteArray::from(&*items);
+                                                    QVariant::from(&arr)
+                                                }
+                                            };
+
+                                            let mut this = ctx.as_mut().rust_mut();
+                                            let map = this.methods.children.get_mut(&*_method).unwrap();
+                                            map.pin_mut().insert(&"value".into(), &variant);
+
+                                            finish(ctx.as_mut());
+                                            if is_last_iter {
+                                                ctx.as_mut().methods_changed();
+                                            }
+                                        } else {
+                                            finish(ctx.as_mut());
+                                            if is_last_iter {
+                                                ctx.as_mut().methods_changed();
+                                            }
+                                        }
+                                    },
+                                );
+                            }
+
+                            None => {
+                                finish(ctx.as_mut());
+
+                                if is_last_iter {
+                                    ctx.as_mut().methods_changed();
+                                }
                             }
                         }
-
-                        None => None,
-                    };
-
-                    let mut pin_map = map.pin_mut();
-
-                    if let Some(op) = string_op {
-                        pin_map
-                            .as_mut()
-                            .insert(&"type".into(), &QVariant::from(&QString::from(op)));
                     }
 
-                    pin_map
-                        .as_mut()
-                        .insert(&"read".into(), &QVariant::from(&is_read));
-
-                    pin_map
-                        .as_mut()
-                        .insert(&"write".into(), &QVariant::from(&is_write));
-
-                    if let Some(variant) = &value {
-                        pin_map.as_mut().insert(&"value".into(), variant);
-                    }
-
-                    pin_map.as_mut().freeze();
-
-                    let variant = unsafe { map.as_qvariant() };
-                    self.as_mut()
-                        .rust_mut()
-                        .methods
-                        .map
-                        .pin_mut()
-                        .insert(&name, &variant);
-
-                    // insert map as child to keep it alive for qvariant above
-                    self.as_mut()
-                        .rust_mut()
-                        .methods
-                        .children
-                        .insert(method.method.into_owned(), map);
-                }
-
-                // no more changes thx
-                self.as_mut().rust_mut().methods.map.pin_mut().freeze();
-
-                if self.rust().methods.map.size() > 1 {
-                    self.methods_changed();
-                }
+                    // no more changes thx
+                    ctx.as_mut().rust_mut().methods.map.pin_mut().freeze();
+                });
             }
 
             _ => q_warning!("{name} is not a valid update property"),
@@ -1121,20 +1388,22 @@ impl qobject::EcchanClient {
             self.as_mut()._update(name);
         }
 
-        self.init_state_changed(false);
+        self.queued_call(|ctx| {
+            ctx.init_state_changed(false);
+        });
     }
 }
 
 // Properties
 impl qobject::EcchanClient {
     pub fn set_connected(mut self: Pin<&mut Self>, connected: bool) {
-        if connected && self.as_ref().rust().client.is_none() {
-            if self.as_ref().rust().path.is_empty() {
+        if connected && self.client.is_none() {
+            if self.path.is_empty() {
                 return;
             }
 
-            let path = self.as_ref().rust().path.to_string();
-            let client = match Client::new(&path) {
+            let path = self.path.to_string();
+            let client = match Client::new(&path, self.qt_thread()) {
                 Ok(c) => c,
                 Err(e) => {
                     q_warning!("{e}");
@@ -1148,7 +1417,7 @@ impl qobject::EcchanClient {
 
             self.as_mut().init_state();
 
-            let qt_thread = self.qt_thread();
+            let qthread = self.qt_thread();
 
             // start heartbeat thread
             let (tx, rx) = channel();
@@ -1167,17 +1436,18 @@ impl qobject::EcchanClient {
                         Err(TryRecvError::Empty) => (),
                     }
 
-                    let event_loop_should_exit = should_exit.clone();
-                    let res =
-                        qt_thread.queue(move |mut ctx| match ctx.as_mut().call(MethodCall::Ping) {
+                    let should_exit = should_exit.clone();
+                    let res = qthread.queue(move |ctx| {
+                        ctx.call(MethodCall::Ping, move |_, res| match res {
                             Ok(_) => (),
                             Err(e) => match e {
                                 ClientError::Call { .. } | ClientError::Json { .. } => (),
                                 ClientError::Io { .. } | ClientError::Eof => {
-                                    event_loop_should_exit.store(true, Ordering::Relaxed)
+                                    should_exit.store(true, Ordering::Relaxed)
                                 }
                             },
                         });
+                    });
 
                     // probably destroyed qobject
                     if res.is_err() {
@@ -1188,13 +1458,7 @@ impl qobject::EcchanClient {
                 }
             });
         } else {
-            self.as_mut().rust_mut().disconnected();
-
-            if self.as_mut().rust_mut().client.take().is_some() {
-                // take client and drop it, causing a disconnection
-                self.as_mut().rust_mut().connected = false;
-                self.as_mut().connected_changed();
-            }
+            self.as_mut().disconnect();
         }
     }
 
@@ -1237,12 +1501,15 @@ impl qobject::EcchanClient {
             }
         };
 
-        let res = self.as_mut().call(MethodCall::SetShiftMode { mode });
+        self.as_mut()
+            .call(MethodCall::SetShiftMode { mode }, move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().shift_mode = mode;
-            self.shift_mode_changed();
-        }
+                ctx.as_mut().rust_mut().shift_mode = mode;
+                ctx.shift_mode_changed();
+            });
     }
 
     pub fn battery_charge_mode(&self) -> QVariant {
@@ -1259,17 +1526,23 @@ impl qobject::EcchanClient {
     }
 
     pub fn set_battery_charge_mode(mut self: Pin<&mut Self>, mode: QVariant) {
-        let (mode, res) = if let Some(mode) = mode.value::<u8>() {
+        if let Some(mode) = mode.value::<u8>() {
             let Some(mode) = BatteryChargeMode::from_end(mode) else {
                 q_warning!("battery_charge_mode: {mode} out of range; only accept 10..=100");
                 return;
             };
 
-            let res = self
-                .as_mut()
-                .call(MethodCall::SetBatteryChargeMode { mode });
+            self.as_mut().call(
+                MethodCall::SetBatteryChargeMode { mode },
+                move |mut ctx, res| {
+                    if res.is_err() {
+                        return;
+                    }
 
-            (mode, res)
+                    ctx.as_mut().rust_mut().battery_charge_mode = mode;
+                    ctx.battery_charge_mode_changed();
+                },
+            );
         } else if let Some(mode) = mode.value::<QString>() {
             let mode = match BatteryChargeMode::from_str(&mode.to_string()) {
                 Ok(m) => m,
@@ -1279,19 +1552,19 @@ impl qobject::EcchanClient {
                 }
             };
 
-            let res = self
-                .as_mut()
-                .call(MethodCall::SetBatteryChargeMode { mode });
+            self.as_mut().call(
+                MethodCall::SetBatteryChargeMode { mode },
+                move |mut ctx, res| {
+                    if res.is_err() {
+                        return;
+                    }
 
-            (mode, res)
+                    ctx.as_mut().rust_mut().battery_charge_mode = mode;
+                    ctx.battery_charge_mode_changed();
+                },
+            );
         } else {
             q_warning!("battery_charge_mode: only string and number are supported");
-            return;
-        };
-
-        if res.is_ok() {
-            self.as_mut().rust_mut().battery_charge_mode = mode;
-            self.battery_charge_mode_changed();
         }
     }
 
@@ -1302,12 +1575,17 @@ impl qobject::EcchanClient {
     pub fn set_super_battery(mut self: Pin<&mut Self>, state: bool) {
         let state = SuperBattery::from(state);
 
-        let res = self.as_mut().call(MethodCall::SetSuperBattery { state });
+        self.as_mut().call(
+            MethodCall::SetSuperBattery { state },
+            move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().super_battery = state;
-            self.super_battery_changed();
-        }
+                ctx.as_mut().rust_mut().super_battery = state;
+                ctx.super_battery_changed();
+            },
+        );
     }
 
     pub fn fan_modes(&self) -> QList<QString> {
@@ -1333,12 +1611,15 @@ impl qobject::EcchanClient {
             }
         };
 
-        let res = self.as_mut().call(MethodCall::SetFanMode { mode });
+        self.as_mut()
+            .call(MethodCall::SetFanMode { mode }, move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().fan_mode = mode;
-            self.fan_mode_changed();
-        }
+                ctx.as_mut().rust_mut().fan_mode = mode;
+                ctx.fan_mode_changed();
+            });
     }
 
     pub fn webcam(&self) -> bool {
@@ -1352,23 +1633,29 @@ impl qobject::EcchanClient {
     pub fn set_webcam(mut self: Pin<&mut Self>, state: bool) {
         let state = Webcam::from(state);
 
-        let res = self.as_mut().call(MethodCall::SetWebcam { state });
+        self.as_mut()
+            .call(MethodCall::SetWebcam { state }, move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().webcam = state;
-            self.webcam_changed();
-        }
+                ctx.as_mut().rust_mut().webcam = state;
+                ctx.webcam_changed();
+            });
     }
 
     pub fn set_webcam_block(mut self: Pin<&mut Self>, state: bool) {
         let state = Webcam::from(state);
 
-        let res = self.as_mut().call(MethodCall::SetWebcamBlock { state });
+        self.as_mut()
+            .call(MethodCall::SetWebcamBlock { state }, move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().webcam_block = state;
-            self.webcam_block_changed();
-        }
+                ctx.as_mut().rust_mut().webcam_block = state;
+                ctx.webcam_block_changed();
+            });
     }
 
     fn cooler_boost(&self) -> bool {
@@ -1378,12 +1665,15 @@ impl qobject::EcchanClient {
     fn set_cooler_boost(mut self: Pin<&mut Self>, state: bool) {
         let state = CoolerBoost::from(state);
 
-        let res = self.as_mut().call(MethodCall::SetCoolerBoost { state });
+        self.as_mut()
+            .call(MethodCall::SetCoolerBoost { state }, move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().cooler_boost = state;
-            self.cooler_boost_changed();
-        }
+                ctx.as_mut().rust_mut().cooler_boost = state;
+                ctx.cooler_boost_changed();
+            });
     }
 
     fn fn_key(&self) -> QString {
@@ -1403,12 +1693,15 @@ impl qobject::EcchanClient {
             }
         };
 
-        let res = self.as_mut().call(MethodCall::SetFnKey { state });
+        self.as_mut()
+            .call(MethodCall::SetFnKey { state }, move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().fn_key = state;
-            self.fn_key_changed();
-        }
+                ctx.as_mut().rust_mut().fn_key = state;
+                ctx.fn_key_changed();
+            });
     }
 
     fn set_win_key(mut self: Pin<&mut Self>, dir: &QString) {
@@ -1420,12 +1713,15 @@ impl qobject::EcchanClient {
             }
         };
 
-        let res = self.as_mut().call(MethodCall::SetWinKey { state });
+        self.as_mut()
+            .call(MethodCall::SetWinKey { state }, move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().win_key = state;
-            self.win_key_changed();
-        }
+                ctx.as_mut().rust_mut().win_key = state;
+                ctx.win_key_changed();
+            });
     }
 
     fn mic_mute_led(&self) -> bool {
@@ -1439,23 +1735,29 @@ impl qobject::EcchanClient {
     fn set_mic_mute_led(mut self: Pin<&mut Self>, state: bool) {
         let state = Led::from(state);
 
-        let res = self.as_mut().call(MethodCall::SetMicMuteLed { state });
+        self.as_mut()
+            .call(MethodCall::SetMicMuteLed { state }, move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().mic_mute_led = state;
-            self.mic_mute_led_changed();
-        }
+                ctx.as_mut().rust_mut().mic_mute_led = state;
+                ctx.mic_mute_led_changed();
+            });
     }
 
     fn set_mute_led(mut self: Pin<&mut Self>, state: bool) {
         let state = Led::from(state);
 
-        let res = self.as_mut().call(MethodCall::SetMuteLed { state });
+        self.as_mut()
+            .call(MethodCall::SetMuteLed { state }, move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().mute_led = state;
-            self.mute_led_changed();
-        }
+                ctx.as_mut().rust_mut().mute_led = state;
+                ctx.mute_led_changed();
+            });
     }
 
     fn cpu_fan_curve_wmi2(&self) -> QList<u8> {
@@ -1486,12 +1788,17 @@ impl qobject::EcchanClient {
             n7: curve.get(6).copied().unwrap(),
         };
 
-        let res = self.as_mut().call(MethodCall::SetCpuFanCurveWmi2 { curve });
+        self.as_mut().call(
+            MethodCall::SetCpuFanCurveWmi2 { curve },
+            move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().cpu_fan_curve_wmi2 = curve;
-            self.cpu_fan_curve_wmi2_changed();
-        }
+                ctx.as_mut().rust_mut().cpu_fan_curve_wmi2 = curve;
+                ctx.cpu_fan_curve_wmi2_changed();
+            },
+        );
     }
 
     fn cpu_temp_curve_wmi2(&self) -> QList<u8> {
@@ -1522,14 +1829,17 @@ impl qobject::EcchanClient {
             n7: curve.get(6).copied().unwrap(),
         };
 
-        let res = self
-            .as_mut()
-            .call(MethodCall::SetCpuTempCurveWmi2 { curve });
+        self.as_mut().call(
+            MethodCall::SetCpuTempCurveWmi2 { curve },
+            move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().cpu_temp_curve_wmi2 = curve;
-            self.cpu_temp_curve_wmi2_changed();
-        }
+                ctx.as_mut().rust_mut().cpu_temp_curve_wmi2 = curve;
+                ctx.cpu_temp_curve_wmi2_changed();
+            },
+        );
     }
 
     fn cpu_hysteresis_curve_wmi2(&self) -> QList<u8> {
@@ -1557,14 +1867,17 @@ impl qobject::EcchanClient {
             n6: curve.get(5).copied().unwrap(),
         };
 
-        let res = self
-            .as_mut()
-            .call(MethodCall::SetCpuHysteresisCurveWmi2 { curve });
+        self.as_mut().call(
+            MethodCall::SetCpuHysteresisCurveWmi2 { curve },
+            move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().cpu_hysteresis_curve_wmi2 = curve;
-            self.cpu_hysteresis_curve_wmi2_changed();
-        }
+                ctx.as_mut().rust_mut().cpu_hysteresis_curve_wmi2 = curve;
+                ctx.cpu_hysteresis_curve_wmi2_changed();
+            },
+        );
     }
 
     fn gpu_fan_curve_wmi2(&self) -> QList<u8> {
@@ -1595,12 +1908,17 @@ impl qobject::EcchanClient {
             n7: curve.get(6).copied().unwrap(),
         };
 
-        let res = self.as_mut().call(MethodCall::SetGpuFanCurveWmi2 { curve });
+        self.as_mut().call(
+            MethodCall::SetGpuFanCurveWmi2 { curve },
+            move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().gpu_fan_curve_wmi2 = curve;
-            self.gpu_fan_curve_wmi2_changed();
-        }
+                ctx.as_mut().rust_mut().gpu_fan_curve_wmi2 = curve;
+                ctx.gpu_fan_curve_wmi2_changed();
+            },
+        );
     }
 
     fn gpu_temp_curve_wmi2(&self) -> QList<u8> {
@@ -1631,14 +1949,17 @@ impl qobject::EcchanClient {
             n7: curve.get(6).copied().unwrap(),
         };
 
-        let res = self
-            .as_mut()
-            .call(MethodCall::SetGpuTempCurveWmi2 { curve });
+        self.as_mut().call(
+            MethodCall::SetGpuTempCurveWmi2 { curve },
+            move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().gpu_temp_curve_wmi2 = curve;
-            self.gpu_temp_curve_wmi2_changed();
-        }
+                ctx.as_mut().rust_mut().gpu_temp_curve_wmi2 = curve;
+                ctx.gpu_temp_curve_wmi2_changed();
+            },
+        );
     }
 
     fn gpu_hysteresis_curve_wmi2(&self) -> QList<u8> {
@@ -1666,14 +1987,17 @@ impl qobject::EcchanClient {
             n6: curve.get(5).copied().unwrap(),
         };
 
-        let res = self
-            .as_mut()
-            .call(MethodCall::SetGpuHysteresisCurveWmi2 { curve });
+        self.as_mut().call(
+            MethodCall::SetGpuHysteresisCurveWmi2 { curve },
+            move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
 
-        if res.is_ok() {
-            self.as_mut().rust_mut().gpu_hysteresis_curve_wmi2 = curve;
-            self.gpu_hysteresis_curve_wmi2_changed();
-        }
+                ctx.as_mut().rust_mut().gpu_hysteresis_curve_wmi2 = curve;
+                ctx.gpu_hysteresis_curve_wmi2_changed();
+            },
+        );
     }
 
     pub fn method_list(&self) -> QList<QVariant> {
