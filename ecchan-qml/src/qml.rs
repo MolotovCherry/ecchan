@@ -1165,6 +1165,8 @@ impl qobject::EcchanClient {
             self.as_mut().rust_mut().connected = true;
             self.as_mut().connected_changed();
 
+            self.as_mut().init_state();
+
             let qt_thread = self.qt_thread();
 
             // start heartbeat thread
