@@ -1,11 +1,13 @@
 use std::{
+    borrow::Cow,
+    collections::HashMap,
     io,
     pin::Pin,
     str::FromStr,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
-        mpsc::{Sender, TryRecvError, channel},
+        mpsc::{Sender, TryRecvError, channel, sync_channel},
     },
     thread,
     time::Duration,
@@ -310,6 +312,7 @@ pub struct EcchanClientRust {
 struct Methods {
     map: UniquePtr<QQmlPropertyMap>,
     children: Vec<UniquePtr<QQmlPropertyMap>>,
+    cache: HashMap<String, MethodData>,
 }
 
 impl Default for EcchanClientRust {
@@ -387,6 +390,7 @@ impl Default for EcchanClientRust {
             methods: Methods {
                 map: QQmlPropertyMap::new(),
                 children: Vec::new(),
+                cache: HashMap::new(),
             },
 
             ec_dump: Box::default(),
@@ -789,6 +793,7 @@ impl qobject::EcchanClient {
             }
 
             "methods" => 'b: {
+                // > 1 because objectName property is added by default
                 if self.method_list.is_empty() || self.methods.map.size() > 1 {
                     break 'b;
                 }
@@ -829,6 +834,162 @@ impl qobject::EcchanClient {
                         None
                     };
 
+                    // set custom slot to react to value setting
+                    map.pin_mut()
+                        .on_value_changed({
+                            let qthread = self.qt_thread();
+                            let op = method.ops.iter().find(|op| matches!(op, MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange)).copied();
+                            let method = method.method.clone().into_owned();
+
+                            move |ctx, key, value| {
+                                let key = key.to_string();
+                                if key !=  "value" {
+                                    q_warning!("custom method {method}'s key {key} should not be set by user; setting anything else may cause unexpected failures; please only set `value`");
+                                    return;
+                                }
+
+                                if !is_write {
+                                    q_warning!("custom method {method} does not support writes");
+                                    return;
+                                }
+
+                                let Some(op) = op else {
+                                    q_warning!("no write ops were found for custom method {method}");
+                                    return;
+                                };
+
+                                match op {
+                                    MethodOp::WriteBit => {
+                                        let Some(state) = QVariant::value::<bool>(value) else {
+                                            q_warning!("custom method {method} received an unsupported type; please use `bool` for setting");
+                                            return;
+                                        };
+
+                                        let (tx, rx) = sync_channel(1);
+                                        let tx = Arc::new(tx);
+
+                                        let res = qthread.queue({
+                                            let tx = tx.clone();
+                                            let method: Cow<str> = Cow::Owned(method.clone());
+                                            move |mut ctx| {
+                                                let res = ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Bit(state) }).ok();
+
+                                                let method_data = if res.is_none() {
+                                                    // get previous value; don't update the cache since it failed
+                                                    ctx.as_ref().rust().methods.cache.get(&method.into_owned()).cloned()
+                                                } else {
+                                                    // update the previous cache to new value
+                                                    ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Bit(state));
+                                                    None
+                                                };
+
+                                                _ = tx.send(method_data);
+
+                                            }
+                                        });
+
+                                        // so we don't deadlock if call fails
+                                        if res.is_err() {
+                                            _ = tx.try_send(None);
+                                        }
+
+                                        let data = rx.recv().unwrap();
+                                        if let Some(data) = data {
+                                            ctx.insert(&"value".into(), &QVariant::from(&data.as_bit()));
+                                        }
+                                    }
+
+                                    MethodOp::Write => {
+                                        let Some(byte) = QVariant::value::<u8>(value) else {
+                                            q_warning!("custom method {method} received an unsupported type; please use `number` (u8) for setting");
+                                            return;
+                                        };
+
+                                        let (tx, rx) = sync_channel(1);
+                                        let tx = Arc::new(tx);
+
+                                        let res = qthread.queue({
+                                            let tx = tx.clone();
+                                            let method: Cow<str> = Cow::Owned(method.clone());
+                                            move |mut ctx| {
+                                                let res = ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Byte(byte) }).ok();
+
+                                                let method_data = if res.is_none() {
+                                                    // get previous value; don't update the cache since it failed
+                                                    ctx.as_ref().rust().methods.cache.get(&method.into_owned()).cloned()
+                                                } else {
+                                                    // update the previous cache to new value
+                                                    ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Byte(byte));
+                                                    None
+                                                };
+
+                                                _ = tx.send(method_data);
+
+                                            }
+                                        });
+
+                                        // so we don't deadlock if call fails
+                                        if res.is_err() {
+                                            _ = tx.try_send(None);
+                                        }
+
+                                        let data = rx.recv().unwrap();
+                                        if let Some(data) = data {
+                                            ctx.insert(&"value".into(), &QVariant::from(&data.as_byte()));
+                                        }
+                                    }
+
+                                    MethodOp::WriteRange => {
+                                        let Some(bytes) = QVariant::value::<QByteArray>(value) else {
+                                            q_warning!("custom method {method} received an unsupported type; please use a byte array for setting");
+                                            return;
+                                        };
+
+                                        let bytes = bytes.as_slice().to_vec();
+
+                                        let (tx, rx) = sync_channel(1);
+                                        let tx = Arc::new(tx);
+
+                                        let res = qthread.queue({
+                                            let tx = tx.clone();
+                                            let method: Cow<str> = Cow::Owned(method.clone());
+                                            move |mut ctx| {
+                                                let res = ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Range(bytes.clone()) }).ok();
+
+                                                let method_data = if res.is_none() {
+                                                    // get previous value; don't update the cache since it failed
+                                                    ctx.as_ref().rust().methods.cache.get(&method.into_owned()).cloned()
+                                                } else {
+                                                    // update the previous cache to new value
+                                                    ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Range(bytes));
+                                                    None
+                                                };
+
+                                                _ = tx.send(method_data);
+
+                                            }
+                                        });
+
+                                        // so we don't deadlock if call fails
+                                        if res.is_err() {
+                                            _ = tx.try_send(None);
+                                        }
+
+                                        let data = rx.recv().unwrap();
+                                        if let Some(data) = data {
+                                            let data = data.into_range();
+                                            ctx.insert(&"value".into(), &QVariant::from(&QByteArray::from(&*data)));
+                                        }
+                                    }
+
+                                    _ => {
+                                        q_warning!("entered unreachable code");
+                                    }
+                                }
+                            }
+                        })
+                        .release();
+
                     let op = method
                         .ops
                         .iter()
@@ -837,29 +998,38 @@ impl qobject::EcchanClient {
                         })
                         .copied();
 
-                    let value = if let Some(op) = op {
-                        let res = self.as_mut().call(MethodCall::MethodRead {
-                            method: method.method,
-                            op,
-                        });
+                    let value = match op {
+                        Some(op) => {
+                            let res = self.as_mut().call(MethodCall::MethodRead {
+                                method: method.method.clone(),
+                                op,
+                            });
 
-                        if let Ok(res) = res {
-                            let val = res.method_data().unwrap();
-                            let val = match val {
-                                MethodData::Bit(b) => QVariant::from(&b),
-                                MethodData::Byte(b) => QVariant::from(&b),
-                                MethodData::Range(items) => {
-                                    let arr = QByteArray::from(&*items);
-                                    QVariant::from(&arr)
-                                }
-                            };
+                            if let Ok(res) = res {
+                                let data = res.method_data().unwrap();
 
-                            Some(val)
-                        } else {
-                            None
+                                self.as_mut()
+                                    .rust_mut()
+                                    .methods
+                                    .cache
+                                    .insert(method.method.into_owned(), data.clone());
+
+                                let val = match data {
+                                    MethodData::Bit(b) => QVariant::from(&b),
+                                    MethodData::Byte(b) => QVariant::from(&b),
+                                    MethodData::Range(items) => {
+                                        let arr = QByteArray::from(&*items);
+                                        QVariant::from(&arr)
+                                    }
+                                };
+
+                                Some(val)
+                            } else {
+                                None
+                            }
                         }
-                    } else {
-                        None
+
+                        None => None,
                     };
 
                     let mut pin_map = map.pin_mut();
@@ -878,8 +1048,8 @@ impl qobject::EcchanClient {
                         .as_mut()
                         .insert(&"write".into(), &QVariant::from(&is_write));
 
-                    if let Some(value) = value {
-                        pin_map.as_mut().insert(&"value".into(), &value);
+                    if let Some(variant) = &value {
+                        pin_map.as_mut().insert(&"value".into(), variant);
                     }
 
                     pin_map.as_mut().freeze();
