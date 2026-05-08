@@ -1552,7 +1552,7 @@ impl qobject::EcchanClient {
     }
 }
 
-macro_rules! set_fns {
+macro_rules! update_fns {
     ($($fn_name:ident, $update_name:ident),*) => {
         $(
             fn $fn_name(self: Pin<&mut Self>) {
@@ -1629,7 +1629,7 @@ impl qobject::EcchanClient {
         });
     }
 
-    set_fns! {
+    update_fns! {
         fan_count, fanCount,
         fan_max, fanMax,
         has_dgpu, hasDGpu,
