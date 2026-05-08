@@ -1602,8 +1602,6 @@ impl qobject::EcchanClient {
             MethodTy::GpuFanCurveWmi2,
             MethodTy::GpuTempCurveWmi2,
             MethodTy::GpuHysteresisCurveWmi2,
-            MethodTy::EcDumpRaw,
-            MethodTy::EcDumpPretty,
             MethodTy::MethodList,
             MethodTy::Methods,
         ];
