@@ -25,6 +25,7 @@ use ecchan_ipc::{
     method::{Method, MethodTy},
     ret::{Bin, RetVal},
 };
+use strum::IntoEnumIterator as _;
 
 use crate::{
     client::{Client, ClientError},
@@ -1707,60 +1708,7 @@ impl qobject::EcchanClient {
     fn init_state(mut self: Pin<&mut Self>) {
         self.as_mut().init_state_changed(true);
 
-        let names = [
-            MethodTy::FanCount,
-            MethodTy::FanMax,
-            MethodTy::HasDGpu,
-            MethodTy::WmiVer,
-            MethodTy::FwVersion,
-            MethodTy::FwDate,
-            MethodTy::FwTime,
-            MethodTy::ShiftModes,
-            MethodTy::ShiftMode,
-            MethodTy::ShiftModeSupported,
-            MethodTy::BatteryChargeMode,
-            MethodTy::BatteryChargeModeSupported,
-            MethodTy::SuperBattery,
-            MethodTy::SuperBatterySupported,
-            MethodTy::Fan1Rpm,
-            MethodTy::Fan2Rpm,
-            MethodTy::Fan3Rpm,
-            MethodTy::Fan4Rpm,
-            MethodTy::Fan1Supported,
-            MethodTy::Fan2Supported,
-            MethodTy::Fan3Supported,
-            MethodTy::Fan4Supported,
-            MethodTy::FanModes,
-            MethodTy::FanMode,
-            MethodTy::FanModeSupported,
-            MethodTy::Webcam,
-            MethodTy::WebcamBlock,
-            MethodTy::WebcamSupported,
-            MethodTy::WebcamBlockSupported,
-            MethodTy::CoolerBoost,
-            MethodTy::CoolerBoostSupported,
-            MethodTy::FnKey,
-            MethodTy::WinKey,
-            MethodTy::FnWinSwapSupported,
-            MethodTy::MicMuteLed,
-            MethodTy::MuteLed,
-            MethodTy::MicMuteLedSupported,
-            MethodTy::MuteLedSupported,
-            MethodTy::CpuRtFanSpeed,
-            MethodTy::CpuRtTemp,
-            MethodTy::GpuRtFanSpeed,
-            MethodTy::GpuRtTemp,
-            MethodTy::CpuFanCurveWmi2,
-            MethodTy::CpuTempCurveWmi2,
-            MethodTy::CpuHysteresisCurveWmi2,
-            MethodTy::GpuFanCurveWmi2,
-            MethodTy::GpuTempCurveWmi2,
-            MethodTy::GpuHysteresisCurveWmi2,
-            MethodTy::MethodList,
-            MethodTy::Methods,
-        ];
-
-        for name in names {
+        for name in MethodTy::iter() {
             self.as_mut()._update(name);
         }
 

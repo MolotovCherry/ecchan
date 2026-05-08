@@ -5,6 +5,7 @@ use ec::{
     MethodOp, ShiftMode, SuperBattery, Webcam,
 };
 use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 
 /// A ipc call. Make a value of this and json serialize it to call.
 /// Returns an equivalent return type in Ret (see original fn for type)
@@ -156,7 +157,7 @@ pub enum Method<'a> {
     },
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, EnumIter)]
 pub enum MethodTy {
     // Utils
     FanCount,
