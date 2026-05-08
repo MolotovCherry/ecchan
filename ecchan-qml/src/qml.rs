@@ -43,9 +43,10 @@ pub mod qobject {
         include!("cxx-qt-lib/qvariant.h");
         type QVariant = cxx_qt_lib::QVariant;
 
+        include!("cxx-qt-lib/qstringlist.h");
+        type QStringList = cxx_qt_lib::QStringList;
+
         include!("cxx-qt-lib/qlist.h");
-        type QList_QString = cxx_qt_lib::QList<QString>;
-        type QList_u8 = cxx_qt_lib::QList<u8>;
         type QList_QVariant = cxx_qt_lib::QList<QVariant>;
 
         include!("cxx-qt-lib/qbytearray.h");
@@ -76,7 +77,7 @@ pub mod qobject {
         #[qproperty(QString, fw_date, READ = get_fw_date, NOTIFY, FINAL)]
         #[qproperty(QString, fw_time, READ = get_fw_time, NOTIFY, FINAL)]
         // shift mode
-        #[qproperty(QList_QString, shift_modes, READ = get_shift_modes, NOTIFY, FINAL)]
+        #[qproperty(QStringList, shift_modes, READ = get_shift_modes, NOTIFY, FINAL)]
         #[qproperty(QString, shift_mode, READ = get_shift_mode, WRITE = set_shift_mode, NOTIFY, FINAL)]
         #[qproperty(bool, shift_mode_supported, READ = get_shift_mode_supported, NOTIFY, FINAL)]
         // battery charge mode
@@ -95,7 +96,7 @@ pub mod qobject {
         #[qproperty(bool, fan3_supported, READ = get_fan3_supported, NOTIFY, FINAL)]
         #[qproperty(bool, fan4_supported, READ = get_fan4_supported, NOTIFY, FINAL)]
         // fan modes
-        #[qproperty(QList_QString, fan_modes, READ = get_fan_modes, NOTIFY, FINAL)]
+        #[qproperty(QStringList, fan_modes, READ = get_fan_modes, NOTIFY, FINAL)]
         #[qproperty(QString, fan_mode, READ = get_fan_mode, WRITE = set_fan_mode, NOTIFY, FINAL)]
         #[qproperty(bool, fan_mode_supported, READ = get_fan_mode_supported, NOTIFY, FINAL)]
         // webcam
@@ -121,12 +122,12 @@ pub mod qobject {
         #[qproperty(u8, gpu_rt_fan_speed, READ = get_gpu_rt_fan_speed, NOTIFY, FINAL)]
         #[qproperty(u8, gpu_rt_temp, READ = get_gpu_rt_temp, NOTIFY, FINAL)]
         // curves
-        #[qproperty(QList_u8, cpu_fan_curve_wmi2, READ = get_cpu_fan_curve_wmi2, WRITE = set_cpu_fan_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QList_u8, cpu_temp_curve_wmi2, READ = get_cpu_temp_curve_wmi2, WRITE = set_cpu_temp_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QList_u8, cpu_hysteresis_curve_wmi2, READ = get_cpu_hysteresis_curve_wmi2, WRITE = set_cpu_hysteresis_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QList_u8, gpu_fan_curve_wmi2, READ = get_gpu_fan_curve_wmi2, WRITE = set_gpu_fan_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QList_u8, gpu_temp_curve_wmi2, READ = get_gpu_temp_curve_wmi2, WRITE = set_gpu_temp_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QList_u8, gpu_hysteresis_curve_wmi2, READ = get_gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QByteArray, cpu_fan_curve_wmi2, READ = get_cpu_fan_curve_wmi2, WRITE = set_cpu_fan_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QByteArray, cpu_temp_curve_wmi2, READ = get_cpu_temp_curve_wmi2, WRITE = set_cpu_temp_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QByteArray, cpu_hysteresis_curve_wmi2, READ = get_cpu_hysteresis_curve_wmi2, WRITE = set_cpu_hysteresis_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QByteArray, gpu_fan_curve_wmi2, READ = get_gpu_fan_curve_wmi2, WRITE = set_gpu_fan_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QByteArray, gpu_temp_curve_wmi2, READ = get_gpu_temp_curve_wmi2, WRITE = set_gpu_temp_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QByteArray, gpu_hysteresis_curve_wmi2, READ = get_gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY, FINAL)]
         // methods
         #[qproperty(QList_QVariant, method_list, READ = get_method_list, NOTIFY, FINAL)]
         #[qproperty(*mut QQmlPropertyMap, methods, READ = get_methods, NOTIFY, FINAL)]
@@ -147,7 +148,7 @@ pub mod qobject {
         fn get_fw_date(&self) -> &QString;
         fn get_fw_time(&self) -> &QString;
 
-        fn get_shift_modes(&self) -> QList_QString;
+        fn get_shift_modes(&self) -> QStringList;
         fn get_shift_mode(&self) -> QString;
         fn set_shift_mode(self: Pin<&mut Self>, mode: &QString);
         fn get_shift_mode_supported(&self) -> bool;
@@ -169,7 +170,7 @@ pub mod qobject {
         fn get_fan3_supported(&self) -> bool;
         fn get_fan4_supported(&self) -> bool;
 
-        fn get_fan_modes(&self) -> QList_QString;
+        fn get_fan_modes(&self) -> QStringList;
         fn get_fan_mode(&self) -> QString;
         fn set_fan_mode(self: Pin<&mut Self>, mode: &QString);
         fn get_fan_mode_supported(&self) -> bool;
@@ -203,18 +204,18 @@ pub mod qobject {
         fn get_gpu_rt_fan_speed(&self) -> u8;
         fn get_gpu_rt_temp(&self) -> u8;
 
-        fn get_cpu_fan_curve_wmi2(&self) -> QList_u8;
-        fn set_cpu_fan_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
-        fn get_cpu_temp_curve_wmi2(&self) -> QList_u8;
-        fn set_cpu_temp_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
-        fn get_cpu_hysteresis_curve_wmi2(&self) -> QList_u8;
-        fn set_cpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
-        fn get_gpu_fan_curve_wmi2(&self) -> QList_u8;
-        fn set_gpu_fan_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
-        fn get_gpu_temp_curve_wmi2(&self) -> QList_u8;
-        fn set_gpu_temp_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
-        fn get_gpu_hysteresis_curve_wmi2(&self) -> QList_u8;
-        fn set_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
+        fn get_cpu_fan_curve_wmi2(&self) -> QByteArray;
+        fn set_cpu_fan_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
+        fn get_cpu_temp_curve_wmi2(&self) -> QByteArray;
+        fn set_cpu_temp_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
+        fn get_cpu_hysteresis_curve_wmi2(&self) -> QByteArray;
+        fn set_cpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
+        fn get_gpu_fan_curve_wmi2(&self) -> QByteArray;
+        fn set_gpu_fan_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
+        fn get_gpu_temp_curve_wmi2(&self) -> QByteArray;
+        fn set_gpu_temp_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
+        fn get_gpu_hysteresis_curve_wmi2(&self) -> QByteArray;
+        fn set_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
 
         fn get_method_list(&self) -> QList_QVariant;
         fn get_methods(&self) -> *mut QQmlPropertyMap;
@@ -228,6 +229,9 @@ pub mod qobject {
 
         #[qsignal]
         fn init_state_changed(self: Pin<&mut Self>, running: bool);
+
+        #[qsignal]
+        fn state_changed(self: Pin<&mut Self>, prop: &QString, variant: &QVariant);
 
         //
         // Invokables
@@ -793,8 +797,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan_count = res.fans().unwrap();
-                    ctx.fan_count_changed();
+                    let val = res.fans().unwrap();
+
+                    if val == ctx.fan_count {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan_count = val;
+                    ctx.as_mut().fan_count_changed();
+
+                    let variant = ctx.get_fan_count();
+                    ctx.state_changed(&"fanCount".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -804,8 +817,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan_max = res.byte().unwrap();
-                    ctx.fan_max_changed();
+                    let val = res.byte().unwrap();
+
+                    if val == ctx.fan_max {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan_max = val;
+                    ctx.as_mut().fan_max_changed();
+
+                    let variant = ctx.get_fan_max();
+                    ctx.state_changed(&"fanMax".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -815,8 +837,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().has_dgpu = res.state().unwrap();
-                    ctx.has_dgpu_changed();
+                    let val = res.state().unwrap();
+
+                    if val == ctx.has_dgpu {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().has_dgpu = val;
+                    ctx.as_mut().has_dgpu_changed();
+
+                    let variant = ctx.get_has_dgpu();
+                    ctx.state_changed(&"hasDgpu".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -825,8 +856,18 @@ impl qobject::EcchanClient {
                     let Ok(res) = res else {
                         return;
                     };
-                    ctx.as_mut().rust_mut().wmi_ver = res.wmi_ver().unwrap();
-                    ctx.wmi_ver_changed();
+
+                    let val = res.wmi_ver().unwrap();
+
+                    if val == ctx.wmi_ver {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().wmi_ver = val;
+                    ctx.as_mut().wmi_ver_changed();
+
+                    let variant = ctx.get_wmi_ver();
+                    ctx.state_changed(&"wmiVer".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -836,8 +877,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fw_version = res.str().unwrap().into();
-                    ctx.fw_version_changed();
+                    let val: QString = res.str().unwrap().into();
+
+                    if val == ctx.fw_version {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fw_version = val;
+                    ctx.as_mut().fw_version_changed();
+
+                    let variant = QVariant::from(ctx.get_fw_version());
+                    ctx.state_changed(&"fwVersion".into(), &variant);
                 });
             }
 
@@ -847,8 +897,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fw_date = res.str().unwrap().into();
-                    ctx.fw_date_changed();
+                    let val: QString = res.str().unwrap().into();
+
+                    if val == ctx.fw_date {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fw_date = val;
+                    ctx.as_mut().fw_date_changed();
+
+                    let variant = QVariant::from(ctx.get_fw_date());
+                    ctx.state_changed(&"fwDate".into(), &variant);
                 });
             }
 
@@ -857,8 +916,18 @@ impl qobject::EcchanClient {
                     let Ok(res) = res else {
                         return;
                     };
-                    ctx.as_mut().rust_mut().fw_time = res.str().unwrap().into();
-                    ctx.fw_time_changed();
+
+                    let val: QString = res.str().unwrap().into();
+
+                    if val == ctx.fw_time {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fw_time = val;
+                    ctx.as_mut().fw_time_changed();
+
+                    let variant = QVariant::from(ctx.get_fw_time());
+                    ctx.state_changed(&"fwtime".into(), &variant);
                 });
             }
 
@@ -868,8 +937,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().shift_modes = res.shift_modes().unwrap();
-                    ctx.shift_modes_changed();
+                    let val = res.shift_modes().unwrap();
+
+                    if val == ctx.shift_modes {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().shift_modes = val;
+                    ctx.as_mut().shift_modes_changed();
+
+                    let variant = QVariant::from(&ctx.get_shift_modes());
+                    ctx.state_changed(&"shiftModes".into(), &variant);
                 });
             }
 
@@ -879,8 +957,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().shift_mode = res.shift_mode().unwrap();
-                    ctx.shift_mode_changed();
+                    let val = res.shift_mode().unwrap();
+
+                    if val == ctx.shift_mode {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().shift_mode = val;
+                    ctx.as_mut().shift_mode_changed();
+
+                    let variant = ctx.get_shift_mode();
+                    ctx.state_changed(&"shiftMode".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -891,8 +978,17 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().shift_mode_supported = res.state().unwrap();
-                        ctx.shift_mode_supported_changed();
+                        let val = res.state().unwrap();
+
+                        if val == ctx.shift_mode_supported {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().shift_mode_supported = val;
+                        ctx.as_mut().shift_mode_supported_changed();
+
+                        let variant = ctx.get_shift_mode_supported();
+                        ctx.state_changed(&"shiftModeSupported".into(), &QVariant::from(&variant));
                     });
             }
 
@@ -903,9 +999,17 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().battery_charge_mode =
-                            res.battery_charge_mode().unwrap();
-                        ctx.battery_charge_mode_changed();
+                        let val = res.battery_charge_mode().unwrap();
+
+                        if val == ctx.battery_charge_mode {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().battery_charge_mode = val;
+                        ctx.as_mut().battery_charge_mode_changed();
+
+                        let variant = ctx.get_battery_charge_mode();
+                        ctx.state_changed(&"batteryChargeMode".into(), &variant);
                     });
             }
 
@@ -916,9 +1020,20 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().battery_charge_mode_supported =
-                            res.state().unwrap();
-                        ctx.battery_charge_mode_supported_changed();
+                        let val = res.state().unwrap();
+
+                        if val == ctx.battery_charge_mode_supported {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().battery_charge_mode_supported = val;
+                        ctx.as_mut().battery_charge_mode_supported_changed();
+
+                        let variant = ctx.get_battery_charge_mode_supported();
+                        ctx.state_changed(
+                            &"batteryChargeModeSupported".into(),
+                            &QVariant::from(&variant),
+                        );
                     });
             }
 
@@ -928,8 +1043,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().super_battery = res.super_battery().unwrap();
-                    ctx.super_battery_changed();
+                    let val = res.super_battery().unwrap();
+
+                    if val == ctx.super_battery {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().super_battery = val;
+                    ctx.as_mut().super_battery_changed();
+
+                    let variant = ctx.get_super_battery();
+                    ctx.state_changed(&"superBattery".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -940,8 +1064,20 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().super_battery_supported = res.state().unwrap();
-                        ctx.super_battery_supported_changed();
+                        let val = res.state().unwrap();
+
+                        if val == ctx.super_battery_supported {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().super_battery_supported = val;
+                        ctx.as_mut().super_battery_supported_changed();
+
+                        let variant = ctx.get_super_battery_supported();
+                        ctx.state_changed(
+                            &"superBatterySupported".into(),
+                            &QVariant::from(&variant),
+                        );
                     });
             }
 
@@ -951,8 +1087,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan1_rpm = res.word().unwrap();
-                    ctx.fan1_rpm_changed();
+                    let val = res.word().unwrap();
+
+                    if val == ctx.fan1_rpm {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan1_rpm = val;
+                    ctx.as_mut().fan1_rpm_changed();
+
+                    let variant = ctx.get_fan1_rpm();
+                    ctx.state_changed(&"fan1Rpm".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -962,8 +1107,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan2_rpm = res.word().unwrap();
-                    ctx.fan2_rpm_changed();
+                    let val = res.word().unwrap();
+
+                    if val == ctx.fan2_rpm {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan2_rpm = val;
+                    ctx.as_mut().fan2_rpm_changed();
+
+                    let variant = ctx.get_fan2_rpm();
+                    ctx.state_changed(&"fan2Rpm".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -973,8 +1127,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan3_rpm = res.word().unwrap();
-                    ctx.fan3_rpm_changed();
+                    let val = res.word().unwrap();
+
+                    if val == ctx.fan3_rpm {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan3_rpm = val;
+                    ctx.as_mut().fan3_rpm_changed();
+
+                    let variant = ctx.get_fan3_rpm();
+                    ctx.state_changed(&"fan3Rpm".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -984,8 +1147,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan4_rpm = res.word().unwrap();
-                    ctx.fan4_rpm_changed();
+                    let val = res.word().unwrap();
+
+                    if val == ctx.fan4_rpm {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan4_rpm = val;
+                    ctx.as_mut().fan4_rpm_changed();
+
+                    let variant = ctx.get_fan4_rpm();
+                    ctx.state_changed(&"fan4Rpm".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -995,8 +1167,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan1_supported = res.state().unwrap();
-                    ctx.fan1_supported_changed();
+                    let val = res.state().unwrap();
+
+                    if val == ctx.fan1_supported {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan1_supported = val;
+                    ctx.as_mut().fan1_supported_changed();
+
+                    let variant = ctx.get_fan1_supported();
+                    ctx.state_changed(&"fan1Supported".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1006,8 +1187,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan2_supported = res.state().unwrap();
-                    ctx.fan2_supported_changed();
+                    let val = res.state().unwrap();
+
+                    if val == ctx.fan2_supported {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan2_supported = val;
+                    ctx.as_mut().fan2_supported_changed();
+
+                    let variant = ctx.get_fan2_supported();
+                    ctx.state_changed(&"fan2Supported".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1017,8 +1207,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan3_supported = res.state().unwrap();
-                    ctx.fan3_supported_changed();
+                    let val = res.state().unwrap();
+
+                    if val == ctx.fan3_supported {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan3_supported = val;
+                    ctx.as_mut().fan3_supported_changed();
+
+                    let variant = ctx.get_fan3_supported();
+                    ctx.state_changed(&"fan3Supported".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1028,8 +1227,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan4_supported = res.state().unwrap();
-                    ctx.fan4_supported_changed();
+                    let val = res.state().unwrap();
+
+                    if val == ctx.fan4_supported {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan4_supported = val;
+                    ctx.as_mut().fan4_supported_changed();
+
+                    let variant = ctx.get_fan4_supported();
+                    ctx.state_changed(&"fan4Supported".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1039,8 +1247,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan_modes = res.fan_modes().unwrap();
-                    ctx.fan_modes_changed();
+                    let val = res.fan_modes().unwrap();
+
+                    if val == ctx.fan_modes {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan_modes = val;
+                    ctx.as_mut().fan_modes_changed();
+
+                    let variant = ctx.get_fan_modes();
+                    ctx.state_changed(&"fanModes".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1050,8 +1267,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fan_mode = res.fan_mode().unwrap();
-                    ctx.fan_mode_changed();
+                    let val = res.fan_mode().unwrap();
+
+                    if val == ctx.fan_mode {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fan_mode = val;
+                    ctx.as_mut().fan_mode_changed();
+
+                    let variant = ctx.get_fan_mode();
+                    ctx.state_changed(&"fanMode".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1062,8 +1288,17 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().fan_mode_supported = res.state().unwrap();
-                        ctx.fan_mode_supported_changed();
+                        let val = res.state().unwrap();
+
+                        if val == ctx.fan_mode_supported {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().fan_mode_supported = val;
+                        ctx.as_mut().fan_mode_supported_changed();
+
+                        let variant = ctx.get_fan_mode_supported();
+                        ctx.state_changed(&"fanModeSupported".into(), &QVariant::from(&variant));
                     });
             }
 
@@ -1073,8 +1308,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().webcam = res.webcam().unwrap();
-                    ctx.webcam_changed();
+                    let val = res.webcam().unwrap();
+
+                    if val == ctx.webcam {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().webcam = val;
+                    ctx.as_mut().webcam_changed();
+
+                    let variant = ctx.get_webcam();
+                    ctx.state_changed(&"webcam".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1084,8 +1328,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().webcam_block = res.webcam().unwrap();
-                    ctx.webcam_block_changed();
+                    let val = res.webcam().unwrap();
+
+                    if val == ctx.webcam_block {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().webcam_block = val;
+                    ctx.as_mut().webcam_block_changed();
+
+                    let variant = ctx.get_webcam_block();
+                    ctx.state_changed(&"webcamBlock".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1095,8 +1348,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().webcam_supported = res.state().unwrap();
-                    ctx.webcam_supported_changed();
+                    let val = res.state().unwrap();
+
+                    if val == ctx.webcam_supported {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().webcam_supported = val;
+                    ctx.as_mut().webcam_supported_changed();
+
+                    let variant = ctx.get_webcam_supported();
+                    ctx.state_changed(&"webcamSupported".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1107,8 +1369,20 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().webcam_block_supported = res.state().unwrap();
-                        ctx.webcam_block_supported_changed();
+                        let val = res.state().unwrap();
+
+                        if val == ctx.webcam_block_supported {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().webcam_block_supported = val;
+                        ctx.as_mut().webcam_block_supported_changed();
+
+                        let variant = ctx.get_webcam_block_supported();
+                        ctx.state_changed(
+                            &"webcamBlockSupported".into(),
+                            &QVariant::from(&variant),
+                        );
                     });
             }
 
@@ -1118,8 +1392,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().cooler_boost = res.cooler_boost().unwrap();
-                    ctx.cooler_boost_changed();
+                    let val = res.cooler_boost().unwrap();
+
+                    if val == ctx.cooler_boost {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().cooler_boost = val;
+                    ctx.as_mut().cooler_boost_changed();
+
+                    let variant = ctx.get_cooler_boost();
+                    ctx.state_changed(&"coolerBoost".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1130,8 +1413,20 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().cooler_boost_supported = res.state().unwrap();
-                        ctx.cooler_boost_supported_changed();
+                        let val = res.state().unwrap();
+
+                        if val == ctx.cooler_boost_supported {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().cooler_boost_supported = val;
+                        ctx.as_mut().cooler_boost_supported_changed();
+
+                        let variant = ctx.get_cooler_boost_supported();
+                        ctx.state_changed(
+                            &"coolerBoostSupported".into(),
+                            &QVariant::from(&variant),
+                        );
                     });
             }
 
@@ -1141,8 +1436,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().fn_key = res.key_direction().unwrap();
-                    ctx.fn_key_changed();
+                    let val = res.key_direction().unwrap();
+
+                    if val == ctx.fn_key {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().fn_key = val;
+                    ctx.as_mut().fn_key_changed();
+
+                    let variant = ctx.get_fn_key();
+                    ctx.state_changed(&"fnKey".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1152,8 +1456,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().win_key = res.key_direction().unwrap();
-                    ctx.win_key_changed();
+                    let val = res.key_direction().unwrap();
+
+                    if val == ctx.win_key {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().win_key = val;
+                    ctx.as_mut().win_key_changed();
+
+                    let variant = ctx.get_win_key();
+                    ctx.state_changed(&"winKey".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1164,8 +1477,17 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().fn_win_swap_supported = res.state().unwrap();
-                        ctx.fn_win_swap_supported_changed();
+                        let val = res.state().unwrap();
+
+                        if val == ctx.fn_win_swap_supported {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().fn_win_swap_supported = val;
+                        ctx.as_mut().fn_win_swap_supported_changed();
+
+                        let variant = ctx.get_fn_win_swap_supported();
+                        ctx.state_changed(&"fnWinSwapSupported".into(), &QVariant::from(&variant));
                     });
             }
 
@@ -1175,8 +1497,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().mic_mute_led = res.led().unwrap();
-                    ctx.mic_mute_led_changed();
+                    let val = res.led().unwrap();
+
+                    if val == ctx.mic_mute_led {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().mic_mute_led = val;
+                    ctx.as_mut().mic_mute_led_changed();
+
+                    let variant = ctx.get_mic_mute_led();
+                    ctx.state_changed(&"micMuteLed".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1186,8 +1517,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().mute_led = res.led().unwrap();
-                    ctx.mute_led_changed();
+                    let val = res.led().unwrap();
+
+                    if val == ctx.mute_led {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().mute_led = val;
+                    ctx.as_mut().mute_led_changed();
+
+                    let variant = ctx.get_mute_led();
+                    ctx.state_changed(&"muteLed".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1198,8 +1538,17 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().mic_mute_led_supported = res.state().unwrap();
-                        ctx.mic_mute_led_supported_changed();
+                        let val = res.state().unwrap();
+
+                        if val == ctx.mic_mute_led_supported {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().mic_mute_led_supported = val;
+                        ctx.as_mut().mic_mute_led_supported_changed();
+
+                        let variant = ctx.get_mic_mute_led_supported();
+                        ctx.state_changed(&"micMuteLedSupported".into(), &QVariant::from(&variant));
                     });
             }
 
@@ -1210,8 +1559,17 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().mute_led_supported = res.state().unwrap();
-                        ctx.mute_led_supported_changed();
+                        let val = res.state().unwrap();
+
+                        if val == ctx.mute_led_supported {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().mute_led_supported = val;
+                        ctx.as_mut().mute_led_supported_changed();
+
+                        let variant = ctx.get_mute_led_supported();
+                        ctx.state_changed(&"muteLedSupported".into(), &QVariant::from(&variant));
                     });
             }
 
@@ -1221,8 +1579,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().cpu_rt_fan_speed = res.byte().unwrap();
-                    ctx.cpu_rt_fan_speed_changed();
+                    let val = res.byte().unwrap();
+
+                    if val == ctx.cpu_rt_fan_speed {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().cpu_rt_fan_speed = val;
+                    ctx.as_mut().cpu_rt_fan_speed_changed();
+
+                    let variant = ctx.get_cpu_rt_fan_speed();
+                    ctx.state_changed(&"cpuRtFanSpeed".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1232,8 +1599,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().cpu_rt_temp = res.byte().unwrap();
-                    ctx.cpu_rt_temp_changed();
+                    let val = res.byte().unwrap();
+
+                    if val == ctx.cpu_rt_temp {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().cpu_rt_temp = val;
+                    ctx.as_mut().cpu_rt_temp_changed();
+
+                    let variant = ctx.get_cpu_rt_temp();
+                    ctx.state_changed(&"cpuRtTemp".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1243,8 +1619,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().gpu_rt_temp = res.byte().unwrap();
-                    ctx.gpu_rt_temp_changed();
+                    let val = res.byte().unwrap();
+
+                    if val == ctx.gpu_rt_temp {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().gpu_rt_temp = val;
+                    ctx.as_mut().gpu_rt_temp_changed();
+
+                    let variant = ctx.get_gpu_rt_temp();
+                    ctx.state_changed(&"gpuRtTemp".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1254,8 +1639,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().gpu_rt_fan_speed = res.byte().unwrap();
-                    ctx.gpu_rt_fan_speed_changed();
+                    let val = res.byte().unwrap();
+
+                    if val == ctx.gpu_rt_fan_speed {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().gpu_rt_fan_speed = val;
+                    ctx.as_mut().gpu_rt_fan_speed_changed();
+
+                    let variant = ctx.get_gpu_rt_fan_speed();
+                    ctx.state_changed(&"gpuRtFanSpeed".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1265,8 +1659,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().cpu_fan_curve_wmi2 = res.curve7().unwrap();
-                    ctx.cpu_fan_curve_wmi2_changed();
+                    let val = res.curve7().unwrap();
+
+                    if val == ctx.cpu_fan_curve_wmi2 {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().cpu_fan_curve_wmi2 = val;
+                    ctx.as_mut().cpu_fan_curve_wmi2_changed();
+
+                    let variant = ctx.get_cpu_fan_curve_wmi2();
+                    ctx.state_changed(&"cpuFanCurveWmi2".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1277,8 +1680,17 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().cpu_temp_curve_wmi2 = res.curve7().unwrap();
-                        ctx.cpu_temp_curve_wmi2_changed();
+                        let val = res.curve7().unwrap();
+
+                        if val == ctx.cpu_temp_curve_wmi2 {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().cpu_temp_curve_wmi2 = val;
+                        ctx.as_mut().cpu_temp_curve_wmi2_changed();
+
+                        let variant = ctx.get_cpu_temp_curve_wmi2();
+                        ctx.state_changed(&"cpuTempCurveWmi2".into(), &QVariant::from(&variant));
                     });
             }
 
@@ -1289,8 +1701,20 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().cpu_hysteresis_curve_wmi2 = res.curve6().unwrap();
-                        ctx.cpu_hysteresis_curve_wmi2_changed();
+                        let val = res.curve6().unwrap();
+
+                        if val == ctx.cpu_hysteresis_curve_wmi2 {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().cpu_hysteresis_curve_wmi2 = val;
+                        ctx.as_mut().cpu_hysteresis_curve_wmi2_changed();
+
+                        let variant = ctx.get_cpu_hysteresis_curve_wmi2();
+                        ctx.state_changed(
+                            &"cpuHysteresisCurveWmi2".into(),
+                            &QVariant::from(&variant),
+                        );
                     });
             }
 
@@ -1300,8 +1724,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().gpu_fan_curve_wmi2 = res.curve7().unwrap();
-                    ctx.gpu_fan_curve_wmi2_changed();
+                    let val = res.curve7().unwrap();
+
+                    if val == ctx.gpu_fan_curve_wmi2 {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().gpu_fan_curve_wmi2 = val;
+                    ctx.as_mut().gpu_fan_curve_wmi2_changed();
+
+                    let variant = ctx.get_gpu_fan_curve_wmi2();
+                    ctx.state_changed(&"gpuFanCurveWmi2".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1312,8 +1745,17 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().gpu_temp_curve_wmi2 = res.curve7().unwrap();
-                        ctx.gpu_temp_curve_wmi2_changed();
+                        let val = res.curve7().unwrap();
+
+                        if val == ctx.gpu_temp_curve_wmi2 {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().gpu_temp_curve_wmi2 = val;
+                        ctx.as_mut().gpu_temp_curve_wmi2_changed();
+
+                        let variant = ctx.get_gpu_temp_curve_wmi2();
+                        ctx.state_changed(&"gpuTempCurveWmi2".into(), &QVariant::from(&variant));
                     });
             }
 
@@ -1324,8 +1766,20 @@ impl qobject::EcchanClient {
                             return;
                         };
 
-                        ctx.as_mut().rust_mut().gpu_hysteresis_curve_wmi2 = res.curve6().unwrap();
-                        ctx.gpu_hysteresis_curve_wmi2_changed();
+                        let val = res.curve6().unwrap();
+
+                        if val == ctx.gpu_hysteresis_curve_wmi2 {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().gpu_hysteresis_curve_wmi2 = val;
+                        ctx.as_mut().gpu_hysteresis_curve_wmi2_changed();
+
+                        let variant = ctx.get_gpu_hysteresis_curve_wmi2();
+                        ctx.state_changed(
+                            &"gpuHysteresisCurveWmi2".into(),
+                            &QVariant::from(&variant),
+                        );
                     });
             }
 
@@ -1335,10 +1789,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    let method_list = res.into_methods().unwrap();
+                    let val = res.into_methods().unwrap();
 
-                    ctx.as_mut().rust_mut().method_list = method_list;
-                    ctx.as_mut().method_list_changed();
+                    if val == ctx.method_list {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().method_list = val;
+                    ctx.as_mut().as_mut().method_list_changed();
+
+                    let variant = ctx.get_method_list();
+                    ctx.state_changed(&"methodList".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1403,9 +1864,10 @@ impl qobject::EcchanClient {
                             }});
                         }
 
-                        ctx.queued_call(move |ctx| {
+                        ctx.queued_call(move |mut ctx| {
                             if updated.load(Ordering::Relaxed) {
-                                ctx.methods_changed();
+                                ctx.as_mut().methods_changed();
+                                ctx.state_changed(&"methods".into(), &QVariant::default());
                             }
                         });
 
@@ -1642,11 +2104,13 @@ impl qobject::EcchanClient {
                                             finish(ctx.as_mut());
                                             if is_last_iter {
                                                 ctx.as_mut().methods_changed();
+                                                ctx.as_mut().state_changed(&"methods".into(), &QVariant::default());
                                             }
                                         } else {
                                             finish(ctx.as_mut());
                                             if is_last_iter {
                                                 ctx.as_mut().methods_changed();
+                                                ctx.as_mut().state_changed(&"methods".into(), &QVariant::default());
                                             }
                                         }
                                     },
@@ -1658,6 +2122,7 @@ impl qobject::EcchanClient {
 
                                 if is_last_iter {
                                     ctx.as_mut().methods_changed();
+                                    ctx.as_mut().state_changed(&"methods".into(), &QVariant::default());
                                 }
                             }
                         }
@@ -1674,8 +2139,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().ec_dump = res.ec_dump().unwrap();
-                    ctx.ec_dump_changed();
+                    let val = res.ec_dump().unwrap();
+
+                    if val == ctx.ec_dump {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().ec_dump = val;
+                    ctx.as_mut().ec_dump_changed();
+
+                    let variant = ctx.get_ec_dump();
+                    ctx.state_changed(&"ecDump".into(), &QVariant::from(&variant));
                 });
             }
 
@@ -1685,8 +2159,17 @@ impl qobject::EcchanClient {
                         return;
                     };
 
-                    ctx.as_mut().rust_mut().ec_dump_pretty = res.str().unwrap().into();
-                    ctx.ec_dump_pretty_changed();
+                    let val: QString = res.str().unwrap().into();
+
+                    if val == ctx.ec_dump_pretty {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().ec_dump_pretty = val;
+                    ctx.as_mut().ec_dump_pretty_changed();
+
+                    let variant = QVariant::from(ctx.get_ec_dump_pretty());
+                    ctx.state_changed(&"ecDumpPretty".into(), &variant);
                 });
             }
         }
@@ -1895,8 +2378,8 @@ impl qobject::EcchanClient {
         }
     }
 
-    fn get_shift_modes(&self) -> QList<QString> {
-        let mut qlist = QList::default();
+    fn get_shift_modes(&self) -> QStringList {
+        let mut qlist = QStringList::default();
 
         for item in &self.shift_modes {
             qlist.append(item.to_string().into());
@@ -2047,8 +2530,8 @@ impl qobject::EcchanClient {
         self.fan4_supported
     }
 
-    fn get_fan_modes(&self) -> QList<QString> {
-        let mut list = QList::default();
+    fn get_fan_modes(&self) -> QStringList {
+        let mut list = QStringList::default();
 
         for mode in &self.fan_modes {
             list.append(mode.to_string().into());
@@ -2263,33 +2746,20 @@ impl qobject::EcchanClient {
         self.gpu_rt_temp
     }
 
-    fn get_cpu_fan_curve_wmi2(&self) -> QList<u8> {
-        let mut list = QList::default();
-
-        let curve = self.cpu_fan_curve_wmi2;
-        list.extend([
-            curve.n1, curve.n2, curve.n3, curve.n4, curve.n5, curve.n6, curve.n7,
-        ]);
-
-        list
+    fn get_cpu_fan_curve_wmi2(&self) -> QByteArray {
+        let curve: [u8; 7] = self.cpu_fan_curve_wmi2.into();
+        QByteArray::from(&curve)
     }
 
-    fn set_cpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
+    fn set_cpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
         let len = curve.len();
         if len != 7 {
             q_warning!("cpu_fan_curve_wmi2: need array of len 7, instead got len {len}");
             return;
         }
 
-        let curve = Curve7 {
-            n1: curve.get(0).copied().unwrap(),
-            n2: curve.get(1).copied().unwrap(),
-            n3: curve.get(2).copied().unwrap(),
-            n4: curve.get(3).copied().unwrap(),
-            n5: curve.get(4).copied().unwrap(),
-            n6: curve.get(5).copied().unwrap(),
-            n7: curve.get(6).copied().unwrap(),
-        };
+        let data: [u8; 7] = curve.as_slice().try_into().unwrap();
+        let curve = Curve7::from(data);
 
         self.as_mut()
             .call(Method::SetCpuFanCurveWmi2 { curve }, move |mut ctx, res| {
@@ -2302,33 +2772,20 @@ impl qobject::EcchanClient {
             });
     }
 
-    fn get_cpu_temp_curve_wmi2(&self) -> QList<u8> {
-        let mut list = QList::default();
-
-        let curve = self.cpu_temp_curve_wmi2;
-        list.extend([
-            curve.n1, curve.n2, curve.n3, curve.n4, curve.n5, curve.n6, curve.n7,
-        ]);
-
-        list
+    fn get_cpu_temp_curve_wmi2(&self) -> QByteArray {
+        let curve: [u8; 7] = self.cpu_temp_curve_wmi2.into();
+        QByteArray::from(&curve)
     }
 
-    fn set_cpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
+    fn set_cpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
         let len = curve.len();
         if len != 7 {
             q_warning!("cpu_temp_curve_wmi2: need array of len 7, instead got len {len}");
             return;
         }
 
-        let curve = Curve7 {
-            n1: curve.get(0).copied().unwrap(),
-            n2: curve.get(1).copied().unwrap(),
-            n3: curve.get(2).copied().unwrap(),
-            n4: curve.get(3).copied().unwrap(),
-            n5: curve.get(4).copied().unwrap(),
-            n6: curve.get(5).copied().unwrap(),
-            n7: curve.get(6).copied().unwrap(),
-        };
+        let data: [u8; 7] = curve.as_slice().try_into().unwrap();
+        let curve = Curve7::from(data);
 
         self.as_mut().call(
             Method::SetCpuTempCurveWmi2 { curve },
@@ -2343,30 +2800,20 @@ impl qobject::EcchanClient {
         );
     }
 
-    fn get_cpu_hysteresis_curve_wmi2(&self) -> QList<u8> {
-        let mut list = QList::default();
-
-        let curve = self.cpu_hysteresis_curve_wmi2;
-        list.extend([curve.n1, curve.n2, curve.n3, curve.n4, curve.n5, curve.n6]);
-
-        list
+    fn get_cpu_hysteresis_curve_wmi2(&self) -> QByteArray {
+        let curve: [u8; 6] = self.cpu_hysteresis_curve_wmi2.into();
+        QByteArray::from(&curve)
     }
 
-    fn set_cpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
+    fn set_cpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
         let len = curve.len();
         if len != 6 {
             q_warning!("cpu_hysteresis_curve_wmi2: need array of len 6, instead got len {len}");
             return;
         }
 
-        let curve = Curve6 {
-            n1: curve.get(0).copied().unwrap(),
-            n2: curve.get(1).copied().unwrap(),
-            n3: curve.get(2).copied().unwrap(),
-            n4: curve.get(3).copied().unwrap(),
-            n5: curve.get(4).copied().unwrap(),
-            n6: curve.get(5).copied().unwrap(),
-        };
+        let data: [u8; 6] = curve.as_slice().try_into().unwrap();
+        let curve = Curve6::from(data);
 
         self.as_mut().call(
             Method::SetCpuHysteresisCurveWmi2 { curve },
@@ -2381,33 +2828,20 @@ impl qobject::EcchanClient {
         );
     }
 
-    fn get_gpu_fan_curve_wmi2(&self) -> QList<u8> {
-        let mut list = QList::default();
-
-        let curve = self.gpu_fan_curve_wmi2;
-        list.extend([
-            curve.n1, curve.n2, curve.n3, curve.n4, curve.n5, curve.n6, curve.n7,
-        ]);
-
-        list
+    fn get_gpu_fan_curve_wmi2(&self) -> QByteArray {
+        let curve: [u8; 7] = self.gpu_fan_curve_wmi2.into();
+        QByteArray::from(&curve)
     }
 
-    fn set_gpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
+    fn set_gpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
         let len = curve.len();
         if len != 7 {
             q_warning!("gpu_fan_curve_wmi2: need array of len 7, instead got len {len}");
             return;
         }
 
-        let curve = Curve7 {
-            n1: curve.get(0).copied().unwrap(),
-            n2: curve.get(1).copied().unwrap(),
-            n3: curve.get(2).copied().unwrap(),
-            n4: curve.get(3).copied().unwrap(),
-            n5: curve.get(4).copied().unwrap(),
-            n6: curve.get(5).copied().unwrap(),
-            n7: curve.get(6).copied().unwrap(),
-        };
+        let data: [u8; 7] = curve.as_slice().try_into().unwrap();
+        let curve = Curve7::from(data);
 
         self.as_mut()
             .call(Method::SetGpuFanCurveWmi2 { curve }, move |mut ctx, res| {
@@ -2420,33 +2854,20 @@ impl qobject::EcchanClient {
             });
     }
 
-    fn get_gpu_temp_curve_wmi2(&self) -> QList<u8> {
-        let mut list = QList::default();
-
-        let curve = self.gpu_temp_curve_wmi2;
-        list.extend([
-            curve.n1, curve.n2, curve.n3, curve.n4, curve.n5, curve.n6, curve.n7,
-        ]);
-
-        list
+    fn get_gpu_temp_curve_wmi2(&self) -> QByteArray {
+        let curve: [u8; 7] = self.gpu_temp_curve_wmi2.into();
+        QByteArray::from(&curve)
     }
 
-    fn set_gpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
+    fn set_gpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
         let len = curve.len();
         if len != 7 {
             q_warning!("gpu_temp_curve_wmi2: need array of len 7, instead got len {len}");
             return;
         }
 
-        let curve = Curve7 {
-            n1: curve.get(0).copied().unwrap(),
-            n2: curve.get(1).copied().unwrap(),
-            n3: curve.get(2).copied().unwrap(),
-            n4: curve.get(3).copied().unwrap(),
-            n5: curve.get(4).copied().unwrap(),
-            n6: curve.get(5).copied().unwrap(),
-            n7: curve.get(6).copied().unwrap(),
-        };
+        let data: [u8; 7] = curve.as_slice().try_into().unwrap();
+        let curve = Curve7::from(data);
 
         self.as_mut().call(
             Method::SetGpuTempCurveWmi2 { curve },
@@ -2461,30 +2882,20 @@ impl qobject::EcchanClient {
         );
     }
 
-    fn get_gpu_hysteresis_curve_wmi2(&self) -> QList<u8> {
-        let mut list = QList::default();
-
-        let curve = self.gpu_hysteresis_curve_wmi2;
-        list.extend([curve.n1, curve.n2, curve.n3, curve.n4, curve.n5, curve.n6]);
-
-        list
+    fn get_gpu_hysteresis_curve_wmi2(&self) -> QByteArray {
+        let curve: [u8; 6] = self.gpu_hysteresis_curve_wmi2.into();
+        QByteArray::from(&curve)
     }
 
-    fn set_gpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: QList<u8>) {
+    fn set_gpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
         let len = curve.len();
         if len != 6 {
             q_warning!("gpu_hysteresis_curve_wmi2: need array of len 6, instead got len {len}");
             return;
         }
 
-        let curve = Curve6 {
-            n1: curve.get(0).copied().unwrap(),
-            n2: curve.get(1).copied().unwrap(),
-            n3: curve.get(2).copied().unwrap(),
-            n4: curve.get(3).copied().unwrap(),
-            n5: curve.get(4).copied().unwrap(),
-            n6: curve.get(5).copied().unwrap(),
-        };
+        let data: [u8; 6] = curve.as_slice().try_into().unwrap();
+        let curve = Curve6::from(data);
 
         self.as_mut().call(
             Method::SetGpuHysteresisCurveWmi2 { curve },

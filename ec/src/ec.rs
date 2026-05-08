@@ -1637,7 +1637,7 @@ impl Ec {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Method<'a> {
     pub name: Cow<'a, str>,
     pub method: Cow<'a, str>,

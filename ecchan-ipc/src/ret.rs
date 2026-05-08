@@ -45,7 +45,7 @@ enum _Ret<'a> {
     Err(String),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(transparent)]
 pub struct Bin(#[serde(with = "BigArray")] pub [u8; 256]);
 
