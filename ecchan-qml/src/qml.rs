@@ -324,8 +324,11 @@ pub mod qobject {
 
         #[qinvokable]
         fn update_cpu_rt_fan_speed(self: Pin<&mut Self>);
+        #[qinvokable]
         fn update_cpu_rt_temp(self: Pin<&mut Self>);
+        #[qinvokable]
         fn update_gpu_rt_fan_speed(self: Pin<&mut Self>);
+        #[qinvokable]
         fn update_gpu_rt_temp(self: Pin<&mut Self>);
 
         #[qinvokable]
