@@ -155,3 +155,87 @@ pub enum Method<'a> {
         data: MethodData,
     },
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum MethodTy {
+    // Utils
+    FanCount,
+    FanMax,
+    HasDGpu,
+    WmiVer,
+
+    // Firmware
+    FwVersion,
+    FwDate,
+    FwTime,
+
+    // Shift Modes
+    ShiftModes,
+    ShiftMode,
+    ShiftModeSupported,
+
+    // Battery
+    BatteryChargeMode,
+    BatteryChargeModeSupported,
+
+    SuperBattery,
+    SuperBatterySupported,
+
+    // Fan
+    Fan1Rpm,
+    Fan2Rpm,
+    Fan3Rpm,
+    Fan4Rpm,
+
+    Fan1Supported,
+    Fan2Supported,
+    Fan3Supported,
+    Fan4Supported,
+
+    FanModes,
+    FanMode,
+    FanModeSupported,
+
+    // Webcam
+    Webcam,
+    WebcamBlock,
+    WebcamSupported,
+    WebcamBlockSupported,
+
+    // Cooler Boost
+    CoolerBoost,
+    CoolerBoostSupported,
+
+    // Swap Keys
+    FnKey,
+    WinKey,
+    FnWinSwapSupported,
+
+    // Mute LEDs
+    MicMuteLed,
+    MuteLed,
+    MicMuteLedSupported,
+    MuteLedSupported,
+
+    // Realtime Stats
+    CpuRtFanSpeed,
+    CpuRtTemp,
+    GpuRtFanSpeed,
+    GpuRtTemp,
+
+    // Curves
+    CpuFanCurveWmi2,
+    CpuTempCurveWmi2,
+    CpuHysteresisCurveWmi2,
+    GpuFanCurveWmi2,
+    GpuTempCurveWmi2,
+    GpuHysteresisCurveWmi2,
+
+    // Ec
+    EcDumpRaw,
+    EcDumpPretty,
+
+    // Methods
+    MethodList,
+    Methods,
+}

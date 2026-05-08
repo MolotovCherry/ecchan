@@ -20,9 +20,9 @@ use cxx_qt_lib::{
     QStringList, QVariant, QVariantValue,
 };
 use ecchan_ipc::{
-    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, Method,
-    MethodData, MethodOp, ShiftMode, SuperBattery, Webcam, WmiVer,
-    method::Method as MethodCall,
+    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led,
+    Method as CustomMethod, MethodData, MethodOp, ShiftMode, SuperBattery, Webcam, WmiVer,
+    method::{Method, MethodTy},
     ret::{Bin, RetVal},
 };
 
@@ -454,7 +454,7 @@ pub struct EcchanClientRust {
     gpu_temp_curve_wmi2: Curve7,
     gpu_hysteresis_curve_wmi2: Curve6,
 
-    method_list: Vec<Method<'static>>,
+    method_list: Vec<CustomMethod<'static>>,
     methods: Methods,
 
     ec_dump: Box<Bin>,
@@ -582,14 +582,14 @@ impl qobject::EcchanClient {
 
     fn call(
         mut self: Pin<&mut Self>,
-        method: MethodCall<'static>,
+        method: Method<'static>,
         cb: impl FnOnce(Pin<&mut qobject::EcchanClient>, Result<RetVal<'static>, ClientError>)
         + Send
         + 'static,
     ) {
         let mut this = self.as_mut().rust_mut();
         let Some(client) = this.client.as_mut() else {
-            if !matches!(method, MethodCall::Ping) {
+            if !matches!(method, Method::Ping) {
                 q_warning!("not connected; cannot call {method:?}");
             }
 
@@ -618,7 +618,7 @@ impl qobject::EcchanClient {
                         q_critical!("{e}");
                     }
 
-                    if matches!(method, MethodCall::Ping) {
+                    if matches!(method, Method::Ping) {
                         q_warning!("heartbeat failed; disconnecting");
                     }
 
@@ -630,10 +630,10 @@ impl qobject::EcchanClient {
         });
     }
 
-    fn _update(mut self: Pin<&mut Self>, name: &str) {
-        match name {
-            "fanCount" => {
-                self.as_mut().call(MethodCall::FanCount, |mut ctx, res| {
+    fn _update(mut self: Pin<&mut Self>, method: MethodTy) {
+        match method {
+            MethodTy::FanCount => {
+                self.as_mut().call(Method::FanCount, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -643,8 +643,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fanMax" => {
-                self.as_mut().call(MethodCall::FanMax, |mut ctx, res| {
+            MethodTy::FanMax => {
+                self.as_mut().call(Method::FanMax, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -654,8 +654,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "hasDGpu" => {
-                self.as_mut().call(MethodCall::HasDGpu, |mut ctx, res| {
+            MethodTy::HasDGpu => {
+                self.as_mut().call(Method::HasDGpu, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -665,8 +665,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "wmiVer" => {
-                self.as_mut().call(MethodCall::WmiVer, |mut ctx, res| {
+            MethodTy::WmiVer => {
+                self.as_mut().call(Method::WmiVer, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -675,8 +675,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fwVersion" => {
-                self.as_mut().call(MethodCall::FwVersion, |mut ctx, res| {
+            MethodTy::FwVersion => {
+                self.as_mut().call(Method::FwVersion, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -686,8 +686,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fwDate" => {
-                self.as_mut().call(MethodCall::FwDate, |mut ctx, res| {
+            MethodTy::FwDate => {
+                self.as_mut().call(Method::FwDate, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -697,8 +697,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fwTime" => {
-                self.as_mut().call(MethodCall::FwTime, |mut ctx, res| {
+            MethodTy::FwTime => {
+                self.as_mut().call(Method::FwTime, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -707,8 +707,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "shiftModes" => {
-                self.as_mut().call(MethodCall::ShiftModes, |mut ctx, res| {
+            MethodTy::ShiftModes => {
+                self.as_mut().call(Method::ShiftModes, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -718,8 +718,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "shiftMode" => {
-                self.as_mut().call(MethodCall::ShiftMode, |mut ctx, res| {
+            MethodTy::ShiftMode => {
+                self.as_mut().call(Method::ShiftMode, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -729,9 +729,9 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "shiftModeSupported" => {
+            MethodTy::ShiftModeSupported => {
                 self.as_mut()
-                    .call(MethodCall::ShiftModeSupported, |mut ctx, res| {
+                    .call(Method::ShiftModeSupported, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -741,9 +741,9 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "batteryChargeMode" => {
+            MethodTy::BatteryChargeMode => {
                 self.as_mut()
-                    .call(MethodCall::BatteryChargeMode, |mut ctx, res| {
+                    .call(Method::BatteryChargeMode, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -754,9 +754,9 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "batteryChargeModeSupported" => {
+            MethodTy::BatteryChargeModeSupported => {
                 self.as_mut()
-                    .call(MethodCall::BatteryChargeModeSupported, |mut ctx, res| {
+                    .call(Method::BatteryChargeModeSupported, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -767,21 +767,20 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "superBattery" => {
-                self.as_mut()
-                    .call(MethodCall::SuperBattery, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::SuperBattery => {
+                self.as_mut().call(Method::SuperBattery, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().super_battery = res.super_battery().unwrap();
-                        ctx.super_battery_changed();
-                    });
+                    ctx.as_mut().rust_mut().super_battery = res.super_battery().unwrap();
+                    ctx.super_battery_changed();
+                });
             }
 
-            "superBatterySupported" => {
+            MethodTy::SuperBatterySupported => {
                 self.as_mut()
-                    .call(MethodCall::SuperBatterySupported, |mut ctx, res| {
+                    .call(Method::SuperBatterySupported, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -791,8 +790,8 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "fan1Rpm" => {
-                self.as_mut().call(MethodCall::Fan1Rpm, |mut ctx, res| {
+            MethodTy::Fan1Rpm => {
+                self.as_mut().call(Method::Fan1Rpm, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -802,8 +801,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fan2Rpm" => {
-                self.as_mut().call(MethodCall::Fan2Rpm, |mut ctx, res| {
+            MethodTy::Fan2Rpm => {
+                self.as_mut().call(Method::Fan2Rpm, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -813,8 +812,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fan3Rpm" => {
-                self.as_mut().call(MethodCall::Fan3Rpm, |mut ctx, res| {
+            MethodTy::Fan3Rpm => {
+                self.as_mut().call(Method::Fan3Rpm, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -824,8 +823,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fan4Rpm" => {
-                self.as_mut().call(MethodCall::Fan4Rpm, |mut ctx, res| {
+            MethodTy::Fan4Rpm => {
+                self.as_mut().call(Method::Fan4Rpm, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -835,56 +834,52 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fan1Supported" => {
-                self.as_mut()
-                    .call(MethodCall::Fan1Supported, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::Fan1Supported => {
+                self.as_mut().call(Method::Fan1Supported, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().fan1_supported = res.state().unwrap();
-                        ctx.fan1_supported_changed();
-                    });
+                    ctx.as_mut().rust_mut().fan1_supported = res.state().unwrap();
+                    ctx.fan1_supported_changed();
+                });
             }
 
-            "fan2Supported" => {
-                self.as_mut()
-                    .call(MethodCall::Fan2Supported, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::Fan2Supported => {
+                self.as_mut().call(Method::Fan2Supported, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().fan2_supported = res.state().unwrap();
-                        ctx.fan2_supported_changed();
-                    });
+                    ctx.as_mut().rust_mut().fan2_supported = res.state().unwrap();
+                    ctx.fan2_supported_changed();
+                });
             }
 
-            "fan3Supported" => {
-                self.as_mut()
-                    .call(MethodCall::Fan3Supported, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::Fan3Supported => {
+                self.as_mut().call(Method::Fan3Supported, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().fan3_supported = res.state().unwrap();
-                        ctx.fan3_supported_changed();
-                    });
+                    ctx.as_mut().rust_mut().fan3_supported = res.state().unwrap();
+                    ctx.fan3_supported_changed();
+                });
             }
 
-            "fan4Supported" => {
-                self.as_mut()
-                    .call(MethodCall::Fan4Supported, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::Fan4Supported => {
+                self.as_mut().call(Method::Fan4Supported, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().fan4_supported = res.state().unwrap();
-                        ctx.fan4_supported_changed();
-                    });
+                    ctx.as_mut().rust_mut().fan4_supported = res.state().unwrap();
+                    ctx.fan4_supported_changed();
+                });
             }
 
-            "fanModes" => {
-                self.as_mut().call(MethodCall::FanModes, |mut ctx, res| {
+            MethodTy::FanModes => {
+                self.as_mut().call(Method::FanModes, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -894,8 +889,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fanMode" => {
-                self.as_mut().call(MethodCall::FanMode, |mut ctx, res| {
+            MethodTy::FanMode => {
+                self.as_mut().call(Method::FanMode, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -905,9 +900,9 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fanModeSupported" => {
+            MethodTy::FanModeSupported => {
                 self.as_mut()
-                    .call(MethodCall::FanModeSupported, |mut ctx, res| {
+                    .call(Method::FanModeSupported, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -917,8 +912,8 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "webcam" => {
-                self.as_mut().call(MethodCall::Webcam, |mut ctx, res| {
+            MethodTy::Webcam => {
+                self.as_mut().call(Method::Webcam, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -928,8 +923,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "webcamBlock" => {
-                self.as_mut().call(MethodCall::WebcamBlock, |mut ctx, res| {
+            MethodTy::WebcamBlock => {
+                self.as_mut().call(Method::WebcamBlock, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -939,21 +934,20 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "webcamSupported" => {
-                self.as_mut()
-                    .call(MethodCall::WebcamSupported, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::WebcamSupported => {
+                self.as_mut().call(Method::WebcamSupported, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().webcam_supported = res.state().unwrap();
-                        ctx.webcam_supported_changed();
-                    });
+                    ctx.as_mut().rust_mut().webcam_supported = res.state().unwrap();
+                    ctx.webcam_supported_changed();
+                });
             }
 
-            "webcamBlockSupported" => {
+            MethodTy::WebcamBlockSupported => {
                 self.as_mut()
-                    .call(MethodCall::WebcamBlockSupported, |mut ctx, res| {
+                    .call(Method::WebcamBlockSupported, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -963,8 +957,8 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "coolerBoost" => {
-                self.as_mut().call(MethodCall::CoolerBoost, |mut ctx, res| {
+            MethodTy::CoolerBoost => {
+                self.as_mut().call(Method::CoolerBoost, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -974,9 +968,9 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "coolerBoostSupported" => {
+            MethodTy::CoolerBoostSupported => {
                 self.as_mut()
-                    .call(MethodCall::CoolerBoostSupported, |mut ctx, res| {
+                    .call(Method::CoolerBoostSupported, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -986,8 +980,8 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "fnKey" => {
-                self.as_mut().call(MethodCall::FnKey, |mut ctx, res| {
+            MethodTy::FnKey => {
+                self.as_mut().call(Method::FnKey, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -997,8 +991,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "winKey" => {
-                self.as_mut().call(MethodCall::WinKey, |mut ctx, res| {
+            MethodTy::WinKey => {
+                self.as_mut().call(Method::WinKey, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -1008,9 +1002,9 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "fnWinSwapSupported" => {
+            MethodTy::FnWinSwapSupported => {
                 self.as_mut()
-                    .call(MethodCall::FnWinSwapSupported, |mut ctx, res| {
+                    .call(Method::FnWinSwapSupported, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -1020,8 +1014,8 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "micMuteLed" => {
-                self.as_mut().call(MethodCall::MicMuteLed, |mut ctx, res| {
+            MethodTy::MicMuteLed => {
+                self.as_mut().call(Method::MicMuteLed, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -1031,8 +1025,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "muteLed" => {
-                self.as_mut().call(MethodCall::MuteLed, |mut ctx, res| {
+            MethodTy::MuteLed => {
+                self.as_mut().call(Method::MuteLed, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -1042,9 +1036,9 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "micMuteLedSupported" => {
+            MethodTy::MicMuteLedSupported => {
                 self.as_mut()
-                    .call(MethodCall::MicMuteLedSupported, |mut ctx, res| {
+                    .call(Method::MicMuteLedSupported, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -1054,9 +1048,9 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "muteLedSupported" => {
+            MethodTy::MuteLedSupported => {
                 self.as_mut()
-                    .call(MethodCall::MuteLedSupported, |mut ctx, res| {
+                    .call(Method::MuteLedSupported, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -1066,20 +1060,19 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "cpuRtFanSpeed" => {
-                self.as_mut()
-                    .call(MethodCall::CpuRtFanSpeed, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::CpuRtFanSpeed => {
+                self.as_mut().call(Method::CpuRtFanSpeed, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().cpu_rt_fan_speed = res.byte().unwrap();
-                        ctx.cpu_rt_fan_speed_changed();
-                    });
+                    ctx.as_mut().rust_mut().cpu_rt_fan_speed = res.byte().unwrap();
+                    ctx.cpu_rt_fan_speed_changed();
+                });
             }
 
-            "cpuRtTemp" => {
-                self.as_mut().call(MethodCall::CpuRtTemp, |mut ctx, res| {
+            MethodTy::CpuRtTemp => {
+                self.as_mut().call(Method::CpuRtTemp, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -1089,8 +1082,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "gpuRtTemp" => {
-                self.as_mut().call(MethodCall::GpuRtTemp, |mut ctx, res| {
+            MethodTy::GpuRtTemp => {
+                self.as_mut().call(Method::GpuRtTemp, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -1100,33 +1093,31 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "gpuRtFanSpeed" => {
-                self.as_mut()
-                    .call(MethodCall::GpuRtFanSpeed, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::GpuRtFanSpeed => {
+                self.as_mut().call(Method::GpuRtFanSpeed, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().gpu_rt_fan_speed = res.byte().unwrap();
-                        ctx.gpu_rt_fan_speed_changed();
-                    });
+                    ctx.as_mut().rust_mut().gpu_rt_fan_speed = res.byte().unwrap();
+                    ctx.gpu_rt_fan_speed_changed();
+                });
             }
 
-            "cpuFanCurveWmi2" => {
-                self.as_mut()
-                    .call(MethodCall::CpuFanCurveWmi2, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::CpuFanCurveWmi2 => {
+                self.as_mut().call(Method::CpuFanCurveWmi2, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().cpu_fan_curve_wmi2 = res.curve7().unwrap();
-                        ctx.cpu_fan_curve_wmi2_changed();
-                    });
+                    ctx.as_mut().rust_mut().cpu_fan_curve_wmi2 = res.curve7().unwrap();
+                    ctx.cpu_fan_curve_wmi2_changed();
+                });
             }
 
-            "cpuTempCurveWmi2" => {
+            MethodTy::CpuTempCurveWmi2 => {
                 self.as_mut()
-                    .call(MethodCall::CpuTempCurveWmi2, |mut ctx, res| {
+                    .call(Method::CpuTempCurveWmi2, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -1136,9 +1127,9 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "cpuHysteresisCurveWmi2" => {
+            MethodTy::CpuHysteresisCurveWmi2 => {
                 self.as_mut()
-                    .call(MethodCall::CpuHysteresisCurveWmi2, |mut ctx, res| {
+                    .call(Method::CpuHysteresisCurveWmi2, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -1148,21 +1139,20 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "gpuFanCurveWmi2" => {
-                self.as_mut()
-                    .call(MethodCall::GpuFanCurveWmi2, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::GpuFanCurveWmi2 => {
+                self.as_mut().call(Method::GpuFanCurveWmi2, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().gpu_fan_curve_wmi2 = res.curve7().unwrap();
-                        ctx.gpu_fan_curve_wmi2_changed();
-                    });
+                    ctx.as_mut().rust_mut().gpu_fan_curve_wmi2 = res.curve7().unwrap();
+                    ctx.gpu_fan_curve_wmi2_changed();
+                });
             }
 
-            "gpuTempCurveWmi2" => {
+            MethodTy::GpuTempCurveWmi2 => {
                 self.as_mut()
-                    .call(MethodCall::GpuTempCurveWmi2, |mut ctx, res| {
+                    .call(Method::GpuTempCurveWmi2, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -1172,9 +1162,9 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "gpuHysteresisCurveWmi2" => {
+            MethodTy::GpuHysteresisCurveWmi2 => {
                 self.as_mut()
-                    .call(MethodCall::GpuHysteresisCurveWmi2, |mut ctx, res| {
+                    .call(Method::GpuHysteresisCurveWmi2, |mut ctx, res| {
                         let Ok(res) = res else {
                             return;
                         };
@@ -1184,21 +1174,20 @@ impl qobject::EcchanClient {
                     });
             }
 
-            "methodList" => {
-                self.as_mut()
-                    .call(MethodCall::MethodList, move |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::MethodList => {
+                self.as_mut().call(Method::MethodList, move |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        let method_list = res.into_methods().unwrap();
+                    let method_list = res.into_methods().unwrap();
 
-                        ctx.as_mut().rust_mut().method_list = method_list;
-                        ctx.as_mut().method_list_changed();
-                    });
+                    ctx.as_mut().rust_mut().method_list = method_list;
+                    ctx.as_mut().method_list_changed();
+                });
             }
 
-            "methods" => {
+            MethodTy::Methods => {
                 // this is queued because it is called after methodList, and is expected to work in order
                 self.as_mut().queued_call(|mut ctx| {
                     // > 1 because objectName property is added by default
@@ -1223,7 +1212,7 @@ impl qobject::EcchanClient {
                             };
 
                             let _method = method.method.clone().into_owned();
-                            ctx.as_mut().call(MethodCall::MethodRead { method: method.method, op: *read }, {
+                            ctx.as_mut().call(Method::MethodRead { method: method.method, op: *read }, {
                                 let updated = updated.clone();
                                 move |mut ctx, res| {
                                 let Ok(ret) = res else {
@@ -1343,7 +1332,7 @@ impl qobject::EcchanClient {
                                             _ = qthread.queue({
                                                 let method: Cow<str> = Cow::Owned(method.clone());
                                                 move |mut ctx| {
-                                                    ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Bit(state) }, move |mut ctx, res| {
+                                                    ctx.as_mut().call(Method::MethodWrite { method: method.clone(), op, data: MethodData::Bit(state) }, move |mut ctx, res| {
                                                         if res.is_err() {
                                                             // get previous value; don't update the cache since it failed
                                                             let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
@@ -1369,7 +1358,7 @@ impl qobject::EcchanClient {
                                             _ = qthread.queue({
                                                 let method: Cow<str> = Cow::Owned(method.clone());
                                                 move |mut ctx| {
-                                                ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Byte(byte) }, move |mut ctx, res| {
+                                                ctx.as_mut().call(Method::MethodWrite { method: method.clone(), op, data: MethodData::Byte(byte) }, move |mut ctx, res| {
                                                         if res.is_err() {
                                                             // get previous value; don't update the cache since it failed
                                                             let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
@@ -1396,7 +1385,7 @@ impl qobject::EcchanClient {
                                             _ = qthread.queue({
                                                 let method: Cow<str> = Cow::Owned(method.clone());
                                                 move |mut ctx| {
-                                                ctx.as_mut().call(MethodCall::MethodWrite { method: method.clone(), op, data: MethodData::Range(bytes.clone()) }, move |mut ctx, res| {
+                                                ctx.as_mut().call(Method::MethodWrite { method: method.clone(), op, data: MethodData::Range(bytes.clone()) }, move |mut ctx, res| {
                                                         if res.is_err() {
                                                             // get previous value; don't update the cache since it failed
                                                             let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
@@ -1468,7 +1457,7 @@ impl qobject::EcchanClient {
                                 let _method = method.method.clone().into_owned();
 
                                 ctx.as_mut().call(
-                                    MethodCall::MethodRead {
+                                    Method::MethodRead {
                                         method: method.method.clone(),
                                         op,
                                     },
@@ -1524,8 +1513,8 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "ecDump" => {
-                self.as_mut().call(MethodCall::EcDumpRaw, |mut ctx, res| {
+            MethodTy::EcDumpRaw => {
+                self.as_mut().call(Method::EcDumpRaw, |mut ctx, res| {
                     let Ok(res) = res else {
                         return;
                     };
@@ -1535,19 +1524,16 @@ impl qobject::EcchanClient {
                 });
             }
 
-            "ecDumpPretty" => {
-                self.as_mut()
-                    .call(MethodCall::EcDumpPretty, |mut ctx, res| {
-                        let Ok(res) = res else {
-                            return;
-                        };
+            MethodTy::EcDumpPretty => {
+                self.as_mut().call(Method::EcDumpPretty, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
 
-                        ctx.as_mut().rust_mut().ec_dump_pretty = res.str().unwrap().into();
-                        ctx.ec_dump_pretty_changed();
-                    });
+                    ctx.as_mut().rust_mut().ec_dump_pretty = res.str().unwrap().into();
+                    ctx.ec_dump_pretty_changed();
+                });
             }
-
-            _ => q_warning!("{name} is not a valid update property"),
         }
     }
 }
@@ -1556,7 +1542,7 @@ macro_rules! update_fns {
     ($($fn_name:ident, $update_name:ident),*) => {
         $(
             fn $fn_name(self: Pin<&mut Self>) {
-                self._update(stringify!($update_name));
+                self._update(MethodTy::$update_name);
             }
         )*
     };
@@ -1568,56 +1554,58 @@ impl qobject::EcchanClient {
         self.as_mut().init_state_changed(true);
 
         let names = [
-            "fanCount",
-            "fanMax",
-            "hasDGpu",
-            "wmiVer",
-            "fwVersion",
-            "fwDate",
-            "fwTime",
-            "shiftModes",
-            "shiftMode",
-            "shiftModeSupported",
-            "batteryChargeMode",
-            "batteryChargeModeSupported",
-            "superBattery",
-            "superBatterySupported",
-            "fan1Rpm",
-            "fan2Rpm",
-            "fan3Rpm",
-            "fan4Rpm",
-            "fan1Supported",
-            "fan2Supported",
-            "fan3Supported",
-            "fan4Supported",
-            "fanModes",
-            "fanMode",
-            "fanModeSupported",
-            "webcam",
-            "webcamBlock",
-            "webcamSupported",
-            "webcamBlockSupported",
-            "coolerBoost",
-            "coolerBoostSupported",
-            "fnKey",
-            "winKey",
-            "fnWinSwapSupported",
-            "micMuteLed",
-            "muteLed",
-            "micMuteLedSupported",
-            "muteLedSupported",
-            "cpuRtFanSpeed",
-            "cpuRtTemp",
-            "gpuRtFanSpeed",
-            "gpuRtTemp",
-            "cpuFanCurveWmi2",
-            "cpuTempCurveWmi2",
-            "cpuHysteresisCurveWmi2",
-            "gpuFanCurveWmi2",
-            "gpuTempCurveWmi2",
-            "gpuHysteresisCurveWmi2",
-            "methodList",
-            "methods",
+            MethodTy::FanCount,
+            MethodTy::FanMax,
+            MethodTy::HasDGpu,
+            MethodTy::WmiVer,
+            MethodTy::FwVersion,
+            MethodTy::FwDate,
+            MethodTy::FwTime,
+            MethodTy::ShiftModes,
+            MethodTy::ShiftMode,
+            MethodTy::ShiftModeSupported,
+            MethodTy::BatteryChargeMode,
+            MethodTy::BatteryChargeModeSupported,
+            MethodTy::SuperBattery,
+            MethodTy::SuperBatterySupported,
+            MethodTy::Fan1Rpm,
+            MethodTy::Fan2Rpm,
+            MethodTy::Fan3Rpm,
+            MethodTy::Fan4Rpm,
+            MethodTy::Fan1Supported,
+            MethodTy::Fan2Supported,
+            MethodTy::Fan3Supported,
+            MethodTy::Fan4Supported,
+            MethodTy::FanModes,
+            MethodTy::FanMode,
+            MethodTy::FanModeSupported,
+            MethodTy::Webcam,
+            MethodTy::WebcamBlock,
+            MethodTy::WebcamSupported,
+            MethodTy::WebcamBlockSupported,
+            MethodTy::CoolerBoost,
+            MethodTy::CoolerBoostSupported,
+            MethodTy::FnKey,
+            MethodTy::WinKey,
+            MethodTy::FnWinSwapSupported,
+            MethodTy::MicMuteLed,
+            MethodTy::MuteLed,
+            MethodTy::MicMuteLedSupported,
+            MethodTy::MuteLedSupported,
+            MethodTy::CpuRtFanSpeed,
+            MethodTy::CpuRtTemp,
+            MethodTy::GpuRtFanSpeed,
+            MethodTy::GpuRtTemp,
+            MethodTy::CpuFanCurveWmi2,
+            MethodTy::CpuTempCurveWmi2,
+            MethodTy::CpuHysteresisCurveWmi2,
+            MethodTy::GpuFanCurveWmi2,
+            MethodTy::GpuTempCurveWmi2,
+            MethodTy::GpuHysteresisCurveWmi2,
+            MethodTy::EcDumpRaw,
+            MethodTy::EcDumpPretty,
+            MethodTy::MethodList,
+            MethodTy::Methods,
         ];
 
         for name in names {
@@ -1630,72 +1618,72 @@ impl qobject::EcchanClient {
     }
 
     update_fns! {
-        fan_count, fanCount,
-        fan_max, fanMax,
-        has_dgpu, hasDGpu,
-        wmi_ver, wmiVer,
+        fan_count, FanCount,
+        fan_max, FanMax,
+        has_dgpu, HasDGpu,
+        wmi_ver, WmiVer,
 
-        fw_version, fwVersion,
-        fw_date, fwDate,
-        fw_time, fwTime,
+        fw_version, FwVersion,
+        fw_date, FwDate,
+        fw_time, FwTime,
 
-        shift_modes, shiftModes,
-        shift_mode, shiftMode,
-        shift_mode_supported, shiftModeSupported,
+        shift_modes, ShiftModes,
+        shift_mode, ShiftMode,
+        shift_mode_supported, ShiftModeSupported,
 
-        battery_charge_mode, batteryChargeMode,
-        battery_charge_mode_supported, batteryChargeModeSupported,
+        battery_charge_mode, BatteryChargeMode,
+        battery_charge_mode_supported, BatteryChargeModeSupported,
 
-        super_battery, superBattery,
-        super_battery_supported, superBatterySupported,
+        super_battery, SuperBattery,
+        super_battery_supported, SuperBatterySupported,
 
-        fan1_rpm, fan1Rpm,
-        fan2_rpm, fan2Rpm,
-        fan3_rpm, fan3Rpm,
-        fan4_rpm, fan4Rpm,
-        fan1_supported, fan1Supported,
-        fan2_supported, fan2Supported,
-        fan3_supported, fan3Supported,
-        fan4_supported, fan4Supported,
+        fan1_rpm, Fan1Rpm,
+        fan2_rpm, Fan2Rpm,
+        fan3_rpm, Fan3Rpm,
+        fan4_rpm, Fan4Rpm,
+        fan1_supported, Fan1Supported,
+        fan2_supported, Fan2Supported,
+        fan3_supported, Fan3Supported,
+        fan4_supported, Fan4Supported,
 
-        fan_modes, fanModes,
-        fan_mode, fanMode,
-        fan_mode_supported, fanModeSupported,
+        fan_modes, FanModes,
+        fan_mode, FanMode,
+        fan_mode_supported, FanModeSupported,
 
-        webcam, webcam,
-        webcam_block, webcamBlock,
-        webcam_supported, webcamSupported,
-        webcam_block_supported, webcamBlockSupported,
+        webcam, Webcam,
+        webcam_block, WebcamBlock,
+        webcam_supported, WebcamSupported,
+        webcam_block_supported, WebcamBlockSupported,
 
-        cooler_boost, coolerBoost,
-        cooler_boost_supported, coolerBoostSupported,
+        cooler_boost, CoolerBoost,
+        cooler_boost_supported, CoolerBoostSupported,
 
-        fn_key, fnKey,
-        win_key, winKey,
-        fn_win_swap_supported, fnWinSwapSupported,
+        fn_key, FnKey,
+        win_key, WinKey,
+        fn_win_swap_supported, FnWinSwapSupported,
 
-        mic_mute_led, micMuteLed,
-        mute_led, muteLed,
-        mic_mute_led_supported, micMuteLedSupported,
-        mute_led_supported, muteLedSupported,
+        mic_mute_led, MicMuteLed,
+        mute_led, MuteLed,
+        mic_mute_led_supported, MicMuteLedSupported,
+        mute_led_supported, MuteLedSupported,
 
-        cpu_rt_fan_speed, cpuRtFanSpeed,
-        cpu_rt_temp, cpuRtTemp,
-        gpu_rt_fan_speed, gpuRtFanSpeed,
-        gpu_rt_temp, gpuRtTemp,
+        cpu_rt_fan_speed, CpuRtFanSpeed,
+        cpu_rt_temp, CpuRtTemp,
+        gpu_rt_fan_speed, GpuRtFanSpeed,
+        gpu_rt_temp, GpuRtTemp,
 
-        cpu_fan_curve_wmi2, cpuFanCurveWmi2,
-        cpu_temp_curve_wmi2, cpuTempCurveWmi2,
-        cpu_hysteresis_curve_wmi2, cpuHysteresisCurveWmi2,
-        gpu_fan_curve_wmi2, gpuFanCurveWmi2,
-        gpu_temp_curve_wmi2, gpuTempCurveWmi2,
-        gpu_hysteresis_curve_wmi2, gpuHysteresisCurveWmi2,
+        cpu_fan_curve_wmi2, CpuFanCurveWmi2,
+        cpu_temp_curve_wmi2, CpuTempCurveWmi2,
+        cpu_hysteresis_curve_wmi2, CpuHysteresisCurveWmi2,
+        gpu_fan_curve_wmi2, GpuFanCurveWmi2,
+        gpu_temp_curve_wmi2, GpuTempCurveWmi2,
+        gpu_hysteresis_curve_wmi2, GpuHysteresisCurveWmi2,
 
-        method_list, methodList,
-        methods, methods,
+        method_list, MethodList,
+        methods, Methods,
 
-        ec_dump, ecDump,
-        ec_dump_pretty, ecDumpPretty
+        ec_dump, EcDumpRaw,
+        ec_dump_pretty, EcDumpPretty
     }
 }
 
@@ -1743,7 +1731,7 @@ impl qobject::EcchanClient {
 
                     let should_exit = should_exit.clone();
                     let res = qthread.queue(move |ctx| {
-                        ctx.call(MethodCall::Ping, move |_, res| match res {
+                        ctx.call(Method::Ping, move |_, res| match res {
                             Ok(_) => (),
                             Err(e) => match e {
                                 ClientError::Call { .. } | ClientError::Json { .. } => (),
@@ -1827,7 +1815,7 @@ impl qobject::EcchanClient {
         };
 
         self.as_mut()
-            .call(MethodCall::SetShiftMode { mode }, move |mut ctx, res| {
+            .call(Method::SetShiftMode { mode }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
@@ -1862,7 +1850,7 @@ impl qobject::EcchanClient {
             };
 
             self.as_mut().call(
-                MethodCall::SetBatteryChargeMode { mode },
+                Method::SetBatteryChargeMode { mode },
                 move |mut ctx, res| {
                     if res.is_err() {
                         return;
@@ -1882,7 +1870,7 @@ impl qobject::EcchanClient {
             };
 
             self.as_mut().call(
-                MethodCall::SetBatteryChargeMode { mode },
+                Method::SetBatteryChargeMode { mode },
                 move |mut ctx, res| {
                     if res.is_err() {
                         return;
@@ -1908,17 +1896,15 @@ impl qobject::EcchanClient {
     fn set_super_battery(mut self: Pin<&mut Self>, state: bool) {
         let state = SuperBattery::from(state);
 
-        self.as_mut().call(
-            MethodCall::SetSuperBattery { state },
-            move |mut ctx, res| {
+        self.as_mut()
+            .call(Method::SetSuperBattery { state }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
 
                 ctx.as_mut().rust_mut().super_battery = state;
                 ctx.super_battery_changed();
-            },
-        );
+            });
     }
 
     fn get_super_battery_supported(&self) -> bool {
@@ -1981,7 +1967,7 @@ impl qobject::EcchanClient {
         };
 
         self.as_mut()
-            .call(MethodCall::SetFanMode { mode }, move |mut ctx, res| {
+            .call(Method::SetFanMode { mode }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
@@ -2007,7 +1993,7 @@ impl qobject::EcchanClient {
         let state = Webcam::from(state);
 
         self.as_mut()
-            .call(MethodCall::SetWebcam { state }, move |mut ctx, res| {
+            .call(Method::SetWebcam { state }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
@@ -2021,7 +2007,7 @@ impl qobject::EcchanClient {
         let state = Webcam::from(state);
 
         self.as_mut()
-            .call(MethodCall::SetWebcamBlock { state }, move |mut ctx, res| {
+            .call(Method::SetWebcamBlock { state }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
@@ -2047,7 +2033,7 @@ impl qobject::EcchanClient {
         let state = CoolerBoost::from(state);
 
         self.as_mut()
-            .call(MethodCall::SetCoolerBoost { state }, move |mut ctx, res| {
+            .call(Method::SetCoolerBoost { state }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
@@ -2079,7 +2065,7 @@ impl qobject::EcchanClient {
         };
 
         self.as_mut()
-            .call(MethodCall::SetFnKey { state }, move |mut ctx, res| {
+            .call(Method::SetFnKey { state }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
@@ -2099,7 +2085,7 @@ impl qobject::EcchanClient {
         };
 
         self.as_mut()
-            .call(MethodCall::SetWinKey { state }, move |mut ctx, res| {
+            .call(Method::SetWinKey { state }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
@@ -2125,7 +2111,7 @@ impl qobject::EcchanClient {
         let state = Led::from(state);
 
         self.as_mut()
-            .call(MethodCall::SetMicMuteLed { state }, move |mut ctx, res| {
+            .call(Method::SetMicMuteLed { state }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
@@ -2139,7 +2125,7 @@ impl qobject::EcchanClient {
         let state = Led::from(state);
 
         self.as_mut()
-            .call(MethodCall::SetMuteLed { state }, move |mut ctx, res| {
+            .call(Method::SetMuteLed { state }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
@@ -2201,17 +2187,15 @@ impl qobject::EcchanClient {
             n7: curve.get(6).copied().unwrap(),
         };
 
-        self.as_mut().call(
-            MethodCall::SetCpuFanCurveWmi2 { curve },
-            move |mut ctx, res| {
+        self.as_mut()
+            .call(Method::SetCpuFanCurveWmi2 { curve }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
 
                 ctx.as_mut().rust_mut().cpu_fan_curve_wmi2 = curve;
                 ctx.cpu_fan_curve_wmi2_changed();
-            },
-        );
+            });
     }
 
     fn get_cpu_temp_curve_wmi2(&self) -> QList<u8> {
@@ -2243,7 +2227,7 @@ impl qobject::EcchanClient {
         };
 
         self.as_mut().call(
-            MethodCall::SetCpuTempCurveWmi2 { curve },
+            Method::SetCpuTempCurveWmi2 { curve },
             move |mut ctx, res| {
                 if res.is_err() {
                     return;
@@ -2281,7 +2265,7 @@ impl qobject::EcchanClient {
         };
 
         self.as_mut().call(
-            MethodCall::SetCpuHysteresisCurveWmi2 { curve },
+            Method::SetCpuHysteresisCurveWmi2 { curve },
             move |mut ctx, res| {
                 if res.is_err() {
                     return;
@@ -2321,17 +2305,15 @@ impl qobject::EcchanClient {
             n7: curve.get(6).copied().unwrap(),
         };
 
-        self.as_mut().call(
-            MethodCall::SetGpuFanCurveWmi2 { curve },
-            move |mut ctx, res| {
+        self.as_mut()
+            .call(Method::SetGpuFanCurveWmi2 { curve }, move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
 
                 ctx.as_mut().rust_mut().gpu_fan_curve_wmi2 = curve;
                 ctx.gpu_fan_curve_wmi2_changed();
-            },
-        );
+            });
     }
 
     fn get_gpu_temp_curve_wmi2(&self) -> QList<u8> {
@@ -2363,7 +2345,7 @@ impl qobject::EcchanClient {
         };
 
         self.as_mut().call(
-            MethodCall::SetGpuTempCurveWmi2 { curve },
+            Method::SetGpuTempCurveWmi2 { curve },
             move |mut ctx, res| {
                 if res.is_err() {
                     return;
@@ -2401,7 +2383,7 @@ impl qobject::EcchanClient {
         };
 
         self.as_mut().call(
-            MethodCall::SetGpuHysteresisCurveWmi2 { curve },
+            Method::SetGpuHysteresisCurveWmi2 { curve },
             move |mut ctx, res| {
                 if res.is_err() {
                     return;
