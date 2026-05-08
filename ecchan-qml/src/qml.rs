@@ -350,6 +350,97 @@ pub mod qobject {
         fn update_ec_dump(self: Pin<&mut Self>);
         #[qinvokable]
         fn update_ec_dump_pretty(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn update(self: Pin<&mut Self>, method: Method);
+    }
+
+    #[qml_element]
+    qnamespace!("Method");
+
+    #[qenum]
+    #[namespace = "Method"]
+    enum Method {
+        // Utils
+        FanCount,
+        FanMax,
+        HasDGpu,
+        WmiVer,
+
+        // Firmware
+        FwVersion,
+        FwDate,
+        FwTime,
+
+        // Shift Modes
+        ShiftModes,
+        ShiftMode,
+        ShiftModeSupported,
+
+        // Battery
+        BatteryChargeMode,
+        BatteryChargeModeSupported,
+
+        SuperBattery,
+        SuperBatterySupported,
+
+        // Fan
+        Fan1Rpm,
+        Fan2Rpm,
+        Fan3Rpm,
+        Fan4Rpm,
+
+        Fan1Supported,
+        Fan2Supported,
+        Fan3Supported,
+        Fan4Supported,
+
+        FanModes,
+        FanMode,
+        FanModeSupported,
+
+        // Webcam
+        Webcam,
+        WebcamBlock,
+        WebcamSupported,
+        WebcamBlockSupported,
+
+        // Cooler Boost
+        CoolerBoost,
+        CoolerBoostSupported,
+
+        // Swap Keys
+        FnKey,
+        WinKey,
+        FnWinSwapSupported,
+
+        // Mute LEDs
+        MicMuteLed,
+        MuteLed,
+        MicMuteLedSupported,
+        MuteLedSupported,
+
+        // Realtime Stats
+        CpuRtFanSpeed,
+        CpuRtTemp,
+        GpuRtFanSpeed,
+        GpuRtTemp,
+
+        // Curves
+        CpuFanCurveWmi2,
+        CpuTempCurveWmi2,
+        CpuHysteresisCurveWmi2,
+        GpuFanCurveWmi2,
+        GpuTempCurveWmi2,
+        GpuHysteresisCurveWmi2,
+
+        // Ec
+        EcDumpRaw,
+        EcDumpPretty,
+
+        // Methods
+        MethodList,
+        Methods,
     }
 }
 
@@ -382,6 +473,66 @@ impl Constructor<()> for qobject::EcchanClient {
             }
         })
         .release();
+    }
+}
+
+impl From<qobject::Method> for MethodTy {
+    fn from(value: qobject::Method) -> Self {
+        match value.repr {
+            0 => MethodTy::FanCount,
+            1 => MethodTy::FanMax,
+            2 => MethodTy::HasDGpu,
+            3 => MethodTy::WmiVer,
+            4 => MethodTy::FwVersion,
+            5 => MethodTy::FwDate,
+            6 => MethodTy::FwTime,
+            7 => MethodTy::ShiftModes,
+            8 => MethodTy::ShiftMode,
+            9 => MethodTy::ShiftModeSupported,
+            10 => MethodTy::BatteryChargeMode,
+            11 => MethodTy::BatteryChargeModeSupported,
+            12 => MethodTy::SuperBattery,
+            13 => MethodTy::SuperBatterySupported,
+            14 => MethodTy::Fan1Rpm,
+            15 => MethodTy::Fan2Rpm,
+            16 => MethodTy::Fan3Rpm,
+            17 => MethodTy::Fan4Rpm,
+            18 => MethodTy::Fan1Supported,
+            19 => MethodTy::Fan2Supported,
+            20 => MethodTy::Fan3Supported,
+            21 => MethodTy::Fan4Supported,
+            22 => MethodTy::FanModes,
+            23 => MethodTy::FanMode,
+            24 => MethodTy::FanModeSupported,
+            25 => MethodTy::Webcam,
+            26 => MethodTy::WebcamBlock,
+            27 => MethodTy::WebcamSupported,
+            28 => MethodTy::WebcamBlockSupported,
+            29 => MethodTy::CoolerBoost,
+            30 => MethodTy::CoolerBoostSupported,
+            31 => MethodTy::FnKey,
+            32 => MethodTy::WinKey,
+            33 => MethodTy::FnWinSwapSupported,
+            34 => MethodTy::MicMuteLed,
+            35 => MethodTy::MuteLed,
+            36 => MethodTy::MicMuteLedSupported,
+            37 => MethodTy::MuteLedSupported,
+            38 => MethodTy::CpuRtFanSpeed,
+            39 => MethodTy::CpuRtTemp,
+            40 => MethodTy::GpuRtFanSpeed,
+            41 => MethodTy::GpuRtTemp,
+            42 => MethodTy::CpuFanCurveWmi2,
+            43 => MethodTy::CpuTempCurveWmi2,
+            44 => MethodTy::CpuHysteresisCurveWmi2,
+            45 => MethodTy::GpuFanCurveWmi2,
+            46 => MethodTy::GpuTempCurveWmi2,
+            47 => MethodTy::GpuHysteresisCurveWmi2,
+            48 => MethodTy::EcDumpRaw,
+            49 => MethodTy::EcDumpPretty,
+            50 => MethodTy::MethodList,
+            51 => MethodTy::Methods,
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -1613,6 +1764,10 @@ impl qobject::EcchanClient {
         self.queued_call(|ctx| {
             ctx.init_state_changed(false);
         });
+    }
+
+    fn update(self: Pin<&mut Self>, method: qobject::Method) {
+        self._update(method.into());
     }
 
     update_fns! {
