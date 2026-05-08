@@ -1059,9 +1059,73 @@ impl qobject::EcchanClient {
                 // this is queued because it is called after methodList, and is expected to work in order
                 self.as_mut().queued_call(|mut ctx| {
                     // > 1 because objectName property is added by default
-                    if ctx.method_list.is_empty() || ctx.methods.map.size() > 1 {
+                    if ctx.method_list.is_empty() {
                         return;
                     }
+
+                    // fast path
+
+                    // we already initialized, so just query values and update the relevant maps
+                    if ctx.method_list.len() > 1 {
+                        let method_list = ctx.method_list.clone();
+
+                        let updated: Arc<AtomicBool> = Arc::default();
+                        for method in method_list.iter().cloned() {
+                            let read = method.ops.iter().find(|o| {
+                                matches!(o, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)
+                            });
+
+                            let Some(read) = read else {
+                                continue;
+                            };
+
+                            let _method = method.method.clone().into_owned();
+                            ctx.as_mut().call(MethodCall::MethodRead { method: method.method, op: *read }, {
+                                let updated = updated.clone();
+                                move |mut ctx, res| {
+                                let Ok(ret) = res else {
+                                    return;
+                                };
+
+                                let data = ret.method_data().unwrap();
+                                ctx.as_mut().rust_mut().methods.cache.entry(_method.clone()).and_modify({
+                                    let data = data.clone();
+                                    |v| {
+                                    if data != *v {
+                                        *v = data;
+                                        updated.store(true, Ordering::Relaxed);
+                                    }
+                                }}).or_insert_with(|| data.clone());
+
+                                // data changed; we should update the actual map
+                                if updated.load(Ordering::Relaxed) {
+                                    let mut this = ctx.as_mut().rust_mut();
+                                    let m = this.methods.children.get_mut(&_method).unwrap();
+
+                                    let variant = match data {
+                                        MethodData::Bit(b) => QVariant::from(&b),
+                                        MethodData::Byte(b) => QVariant::from(&b),
+                                        MethodData::Range(items) => {
+                                            let arr = QByteArray::from(&*items);
+                                            QVariant::from(&arr)
+                                        }
+                                    };
+
+                                    m.pin_mut().insert(&"value".into(), &variant);
+                                }
+                            }});
+                        }
+
+                        ctx.queued_call(move |ctx| {
+                            if updated.load(Ordering::Relaxed) {
+                                ctx.methods_changed();
+                            }
+                        });
+
+                        return;
+                    }
+
+                    // cold path
 
                     let method_list = ctx.method_list.clone();
                     let mut list = Vec::with_capacity(ctx.method_list.len());
