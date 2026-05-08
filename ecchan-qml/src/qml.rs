@@ -236,120 +236,120 @@ pub mod qobject {
         fn init_state(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn fan_count(self: Pin<&mut Self>);
+        fn update_fan_count(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan_max(self: Pin<&mut Self>);
+        fn update_fan_max(self: Pin<&mut Self>);
         #[qinvokable]
-        fn has_dgpu(self: Pin<&mut Self>);
+        fn update_has_dgpu(self: Pin<&mut Self>);
         #[qinvokable]
-        fn wmi_ver(self: Pin<&mut Self>);
+        fn update_wmi_ver(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn fw_version(self: Pin<&mut Self>);
+        fn update_fw_version(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fw_date(self: Pin<&mut Self>);
+        fn update_fw_date(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fw_time(self: Pin<&mut Self>);
+        fn update_fw_time(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn shift_modes(self: Pin<&mut Self>);
+        fn update_shift_modes(self: Pin<&mut Self>);
         #[qinvokable]
-        fn shift_mode(self: Pin<&mut Self>);
+        fn update_shift_mode(self: Pin<&mut Self>);
         #[qinvokable]
-        fn shift_mode_supported(self: Pin<&mut Self>);
+        fn update_shift_mode_supported(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn battery_charge_mode(self: Pin<&mut Self>);
+        fn update_battery_charge_mode(self: Pin<&mut Self>);
         #[qinvokable]
-        fn battery_charge_mode_supported(self: Pin<&mut Self>);
+        fn update_battery_charge_mode_supported(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn super_battery(self: Pin<&mut Self>);
+        fn update_super_battery(self: Pin<&mut Self>);
         #[qinvokable]
-        fn super_battery_supported(self: Pin<&mut Self>);
+        fn update_super_battery_supported(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn fan1_rpm(self: Pin<&mut Self>);
+        fn update_fan1_rpm(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan2_rpm(self: Pin<&mut Self>);
+        fn update_fan2_rpm(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan3_rpm(self: Pin<&mut Self>);
+        fn update_fan3_rpm(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan4_rpm(self: Pin<&mut Self>);
+        fn update_fan4_rpm(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan1_supported(self: Pin<&mut Self>);
+        fn update_fan1_supported(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan2_supported(self: Pin<&mut Self>);
+        fn update_fan2_supported(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan3_supported(self: Pin<&mut Self>);
+        fn update_fan3_supported(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan4_supported(self: Pin<&mut Self>);
+        fn update_fan4_supported(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn fan_modes(self: Pin<&mut Self>);
+        fn update_fan_modes(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan_mode(self: Pin<&mut Self>);
+        fn update_fan_mode(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fan_mode_supported(self: Pin<&mut Self>);
+        fn update_fan_mode_supported(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn webcam(self: Pin<&mut Self>);
+        fn update_webcam(self: Pin<&mut Self>);
         #[qinvokable]
-        fn webcam_block(self: Pin<&mut Self>);
+        fn update_webcam_block(self: Pin<&mut Self>);
         #[qinvokable]
-        fn webcam_supported(self: Pin<&mut Self>);
+        fn update_webcam_supported(self: Pin<&mut Self>);
         #[qinvokable]
-        fn webcam_block_supported(self: Pin<&mut Self>);
+        fn update_webcam_block_supported(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn cooler_boost(self: Pin<&mut Self>);
+        fn update_cooler_boost(self: Pin<&mut Self>);
         #[qinvokable]
-        fn cooler_boost_supported(self: Pin<&mut Self>);
+        fn update_cooler_boost_supported(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn fn_key(self: Pin<&mut Self>);
+        fn update_fn_key(self: Pin<&mut Self>);
         #[qinvokable]
-        fn win_key(self: Pin<&mut Self>);
+        fn update_win_key(self: Pin<&mut Self>);
         #[qinvokable]
-        fn fn_win_swap_supported(self: Pin<&mut Self>);
+        fn update_fn_win_swap_supported(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn mic_mute_led(self: Pin<&mut Self>);
+        fn update_mic_mute_led(self: Pin<&mut Self>);
         #[qinvokable]
-        fn mute_led(self: Pin<&mut Self>);
+        fn update_mute_led(self: Pin<&mut Self>);
         #[qinvokable]
-        fn mic_mute_led_supported(self: Pin<&mut Self>);
+        fn update_mic_mute_led_supported(self: Pin<&mut Self>);
         #[qinvokable]
-        fn mute_led_supported(self: Pin<&mut Self>);
+        fn update_mute_led_supported(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn cpu_rt_fan_speed(self: Pin<&mut Self>);
-        fn cpu_rt_temp(self: Pin<&mut Self>);
-        fn gpu_rt_fan_speed(self: Pin<&mut Self>);
-        fn gpu_rt_temp(self: Pin<&mut Self>);
+        fn update_cpu_rt_fan_speed(self: Pin<&mut Self>);
+        fn update_cpu_rt_temp(self: Pin<&mut Self>);
+        fn update_gpu_rt_fan_speed(self: Pin<&mut Self>);
+        fn update_gpu_rt_temp(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn cpu_fan_curve_wmi2(self: Pin<&mut Self>);
+        fn update_cpu_fan_curve_wmi2(self: Pin<&mut Self>);
         #[qinvokable]
-        fn cpu_temp_curve_wmi2(self: Pin<&mut Self>);
+        fn update_cpu_temp_curve_wmi2(self: Pin<&mut Self>);
         #[qinvokable]
-        fn cpu_hysteresis_curve_wmi2(self: Pin<&mut Self>);
+        fn update_cpu_hysteresis_curve_wmi2(self: Pin<&mut Self>);
         #[qinvokable]
-        fn gpu_fan_curve_wmi2(self: Pin<&mut Self>);
+        fn update_gpu_fan_curve_wmi2(self: Pin<&mut Self>);
         #[qinvokable]
-        fn gpu_temp_curve_wmi2(self: Pin<&mut Self>);
+        fn update_gpu_temp_curve_wmi2(self: Pin<&mut Self>);
         #[qinvokable]
-        fn gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>);
+        fn update_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn method_list(self: Pin<&mut Self>);
+        fn update_method_list(self: Pin<&mut Self>);
         #[qinvokable]
-        fn methods(self: Pin<&mut Self>);
+        fn update_methods(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn ec_dump(self: Pin<&mut Self>);
+        fn update_ec_dump(self: Pin<&mut Self>);
         #[qinvokable]
-        fn ec_dump_pretty(self: Pin<&mut Self>);
+        fn update_ec_dump_pretty(self: Pin<&mut Self>);
     }
 }
 
@@ -1616,72 +1616,72 @@ impl qobject::EcchanClient {
     }
 
     update_fns! {
-        fan_count, FanCount,
-        fan_max, FanMax,
-        has_dgpu, HasDGpu,
-        wmi_ver, WmiVer,
+        update_fan_count, FanCount,
+        update_fan_max, FanMax,
+        update_has_dgpu, HasDGpu,
+        update_wmi_ver, WmiVer,
 
-        fw_version, FwVersion,
-        fw_date, FwDate,
-        fw_time, FwTime,
+        update_fw_version, FwVersion,
+        update_fw_date, FwDate,
+        update_fw_time, FwTime,
 
-        shift_modes, ShiftModes,
-        shift_mode, ShiftMode,
-        shift_mode_supported, ShiftModeSupported,
+        update_shift_modes, ShiftModes,
+        update_shift_mode, ShiftMode,
+        update_shift_mode_supported, ShiftModeSupported,
 
-        battery_charge_mode, BatteryChargeMode,
-        battery_charge_mode_supported, BatteryChargeModeSupported,
+        update_battery_charge_mode, BatteryChargeMode,
+        update_battery_charge_mode_supported, BatteryChargeModeSupported,
 
-        super_battery, SuperBattery,
-        super_battery_supported, SuperBatterySupported,
+        update_super_battery, SuperBattery,
+        update_super_battery_supported, SuperBatterySupported,
 
-        fan1_rpm, Fan1Rpm,
-        fan2_rpm, Fan2Rpm,
-        fan3_rpm, Fan3Rpm,
-        fan4_rpm, Fan4Rpm,
-        fan1_supported, Fan1Supported,
-        fan2_supported, Fan2Supported,
-        fan3_supported, Fan3Supported,
-        fan4_supported, Fan4Supported,
+        update_fan1_rpm, Fan1Rpm,
+        update_fan2_rpm, Fan2Rpm,
+        update_fan3_rpm, Fan3Rpm,
+        update_fan4_rpm, Fan4Rpm,
+        update_fan1_supported, Fan1Supported,
+        update_fan2_supported, Fan2Supported,
+        update_fan3_supported, Fan3Supported,
+        update_fan4_supported, Fan4Supported,
 
-        fan_modes, FanModes,
-        fan_mode, FanMode,
-        fan_mode_supported, FanModeSupported,
+        update_fan_modes, FanModes,
+        update_fan_mode, FanMode,
+        update_fan_mode_supported, FanModeSupported,
 
-        webcam, Webcam,
-        webcam_block, WebcamBlock,
-        webcam_supported, WebcamSupported,
-        webcam_block_supported, WebcamBlockSupported,
+        update_webcam, Webcam,
+        update_webcam_block, WebcamBlock,
+        update_webcam_supported, WebcamSupported,
+        update_webcam_block_supported, WebcamBlockSupported,
 
-        cooler_boost, CoolerBoost,
-        cooler_boost_supported, CoolerBoostSupported,
+        update_cooler_boost, CoolerBoost,
+        update_cooler_boost_supported, CoolerBoostSupported,
 
-        fn_key, FnKey,
-        win_key, WinKey,
-        fn_win_swap_supported, FnWinSwapSupported,
+        update_fn_key, FnKey,
+        update_win_key, WinKey,
+        update_fn_win_swap_supported, FnWinSwapSupported,
 
-        mic_mute_led, MicMuteLed,
-        mute_led, MuteLed,
-        mic_mute_led_supported, MicMuteLedSupported,
-        mute_led_supported, MuteLedSupported,
+        update_mic_mute_led, MicMuteLed,
+        update_mute_led, MuteLed,
+        update_mic_mute_led_supported, MicMuteLedSupported,
+        update_mute_led_supported, MuteLedSupported,
 
-        cpu_rt_fan_speed, CpuRtFanSpeed,
-        cpu_rt_temp, CpuRtTemp,
-        gpu_rt_fan_speed, GpuRtFanSpeed,
-        gpu_rt_temp, GpuRtTemp,
+        update_cpu_rt_fan_speed, CpuRtFanSpeed,
+        update_cpu_rt_temp, CpuRtTemp,
+        update_gpu_rt_fan_speed, GpuRtFanSpeed,
+        update_gpu_rt_temp, GpuRtTemp,
 
-        cpu_fan_curve_wmi2, CpuFanCurveWmi2,
-        cpu_temp_curve_wmi2, CpuTempCurveWmi2,
-        cpu_hysteresis_curve_wmi2, CpuHysteresisCurveWmi2,
-        gpu_fan_curve_wmi2, GpuFanCurveWmi2,
-        gpu_temp_curve_wmi2, GpuTempCurveWmi2,
-        gpu_hysteresis_curve_wmi2, GpuHysteresisCurveWmi2,
+        update_cpu_fan_curve_wmi2, CpuFanCurveWmi2,
+        update_cpu_temp_curve_wmi2, CpuTempCurveWmi2,
+        update_cpu_hysteresis_curve_wmi2, CpuHysteresisCurveWmi2,
+        update_gpu_fan_curve_wmi2, GpuFanCurveWmi2,
+        update_gpu_temp_curve_wmi2, GpuTempCurveWmi2,
+        update_gpu_hysteresis_curve_wmi2, GpuHysteresisCurveWmi2,
 
-        method_list, MethodList,
-        methods, Methods,
+        update_method_list, MethodList,
+        update_methods, Methods,
 
-        ec_dump, EcDumpRaw,
-        ec_dump_pretty, EcDumpPretty
+        update_ec_dump, EcDumpRaw,
+        update_ec_dump_pretty, EcDumpPretty
     }
 }
 
