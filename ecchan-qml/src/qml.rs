@@ -2401,6 +2401,10 @@ impl qobject::EcchanClient {
             }
         };
 
+        if mode == self.shift_mode {
+            return;
+        }
+
         self.as_mut()
             .call(Method::SetShiftMode { mode }, move |mut ctx, res| {
                 if res.is_err() {
@@ -2436,6 +2440,10 @@ impl qobject::EcchanClient {
                 return;
             };
 
+            if mode == self.battery_charge_mode {
+                return;
+            }
+
             self.as_mut().call(
                 Method::SetBatteryChargeMode { mode },
                 move |mut ctx, res| {
@@ -2455,6 +2463,10 @@ impl qobject::EcchanClient {
                     return;
                 }
             };
+
+            if mode == self.battery_charge_mode {
+                return;
+            }
 
             self.as_mut().call(
                 Method::SetBatteryChargeMode { mode },
@@ -2482,6 +2494,10 @@ impl qobject::EcchanClient {
 
     fn set_super_battery(mut self: Pin<&mut Self>, state: bool) {
         let state = SuperBattery::from(state);
+
+        if state == self.super_battery {
+            return;
+        }
 
         self.as_mut()
             .call(Method::SetSuperBattery { state }, move |mut ctx, res| {
@@ -2553,6 +2569,10 @@ impl qobject::EcchanClient {
             }
         };
 
+        if mode == self.fan_mode {
+            return;
+        }
+
         self.as_mut()
             .call(Method::SetFanMode { mode }, move |mut ctx, res| {
                 if res.is_err() {
@@ -2579,6 +2599,10 @@ impl qobject::EcchanClient {
     fn set_webcam(mut self: Pin<&mut Self>, state: bool) {
         let state = Webcam::from(state);
 
+        if state == self.webcam {
+            return;
+        }
+
         self.as_mut()
             .call(Method::SetWebcam { state }, move |mut ctx, res| {
                 if res.is_err() {
@@ -2592,6 +2616,10 @@ impl qobject::EcchanClient {
 
     fn set_webcam_block(mut self: Pin<&mut Self>, state: bool) {
         let state = Webcam::from(state);
+
+        if state == self.webcam_block {
+            return;
+        }
 
         self.as_mut()
             .call(Method::SetWebcamBlock { state }, move |mut ctx, res| {
@@ -2618,6 +2646,10 @@ impl qobject::EcchanClient {
 
     fn set_cooler_boost(mut self: Pin<&mut Self>, state: bool) {
         let state = CoolerBoost::from(state);
+
+        if state == self.cooler_boost {
+            return;
+        }
 
         self.as_mut()
             .call(Method::SetCoolerBoost { state }, move |mut ctx, res| {
@@ -2651,6 +2683,10 @@ impl qobject::EcchanClient {
             }
         };
 
+        if state == self.fn_key {
+            return;
+        }
+
         self.as_mut()
             .call(Method::SetFnKey { state }, move |mut ctx, res| {
                 if res.is_err() {
@@ -2670,6 +2706,10 @@ impl qobject::EcchanClient {
                 return;
             }
         };
+
+        if state == self.win_key {
+            return;
+        }
 
         self.as_mut()
             .call(Method::SetWinKey { state }, move |mut ctx, res| {
@@ -2697,6 +2737,10 @@ impl qobject::EcchanClient {
     fn set_mic_mute_led(mut self: Pin<&mut Self>, state: bool) {
         let state = Led::from(state);
 
+        if state == self.mic_mute_led {
+            return;
+        }
+
         self.as_mut()
             .call(Method::SetMicMuteLed { state }, move |mut ctx, res| {
                 if res.is_err() {
@@ -2710,6 +2754,10 @@ impl qobject::EcchanClient {
 
     fn set_mute_led(mut self: Pin<&mut Self>, state: bool) {
         let state = Led::from(state);
+
+        if state == self.mute_led {
+            return;
+        }
 
         self.as_mut()
             .call(Method::SetMuteLed { state }, move |mut ctx, res| {
@@ -2761,6 +2809,10 @@ impl qobject::EcchanClient {
         let data: [u8; 7] = curve.as_slice().try_into().unwrap();
         let curve = Curve7::from(data);
 
+        if curve == self.cpu_fan_curve_wmi2 {
+            return;
+        }
+
         self.as_mut()
             .call(Method::SetCpuFanCurveWmi2 { curve }, move |mut ctx, res| {
                 if res.is_err() {
@@ -2786,6 +2838,10 @@ impl qobject::EcchanClient {
 
         let data: [u8; 7] = curve.as_slice().try_into().unwrap();
         let curve = Curve7::from(data);
+
+        if curve == self.cpu_temp_curve_wmi2 {
+            return;
+        }
 
         self.as_mut().call(
             Method::SetCpuTempCurveWmi2 { curve },
@@ -2815,6 +2871,10 @@ impl qobject::EcchanClient {
         let data: [u8; 6] = curve.as_slice().try_into().unwrap();
         let curve = Curve6::from(data);
 
+        if curve == self.cpu_hysteresis_curve_wmi2 {
+            return;
+        }
+
         self.as_mut().call(
             Method::SetCpuHysteresisCurveWmi2 { curve },
             move |mut ctx, res| {
@@ -2843,6 +2903,10 @@ impl qobject::EcchanClient {
         let data: [u8; 7] = curve.as_slice().try_into().unwrap();
         let curve = Curve7::from(data);
 
+        if curve == self.gpu_fan_curve_wmi2 {
+            return;
+        }
+
         self.as_mut()
             .call(Method::SetGpuFanCurveWmi2 { curve }, move |mut ctx, res| {
                 if res.is_err() {
@@ -2868,6 +2932,10 @@ impl qobject::EcchanClient {
 
         let data: [u8; 7] = curve.as_slice().try_into().unwrap();
         let curve = Curve7::from(data);
+
+        if curve == self.gpu_temp_curve_wmi2 {
+            return;
+        }
 
         self.as_mut().call(
             Method::SetGpuTempCurveWmi2 { curve },
@@ -2896,6 +2964,10 @@ impl qobject::EcchanClient {
 
         let data: [u8; 6] = curve.as_slice().try_into().unwrap();
         let curve = Curve6::from(data);
+
+        if curve == self.gpu_hysteresis_curve_wmi2 {
+            return;
+        }
 
         self.as_mut().call(
             Method::SetGpuHysteresisCurveWmi2 { curve },
