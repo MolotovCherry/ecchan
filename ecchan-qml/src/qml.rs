@@ -67,58 +67,58 @@ pub mod qobject {
         #[qproperty(QString, path, READ, WRITE, NOTIFY)]
         // utils
         #[qproperty(u8, fan_count, READ = get_fan_count, NOTIFY)]
-        #[qproperty(u8, fan_max, READ, NOTIFY)]
-        #[qproperty(bool, has_dgpu, READ, NOTIFY)]
+        #[qproperty(u8, fan_max, READ = get_fan_max, NOTIFY)]
+        #[qproperty(bool, has_dgpu, READ = get_has_dgpu, NOTIFY)]
         #[qproperty(u8, wmi_ver, READ = get_wmi_ver, NOTIFY)]
         // fw
-        #[qproperty(QString, fw_version, READ, NOTIFY)]
-        #[qproperty(QString, fw_date, READ, NOTIFY)]
-        #[qproperty(QString, fw_time, READ, NOTIFY)]
+        #[qproperty(QString, fw_version, READ = get_fw_version, NOTIFY)]
+        #[qproperty(QString, fw_date, READ = get_fw_date, NOTIFY)]
+        #[qproperty(QString, fw_time, READ = get_fw_time, NOTIFY)]
         // shift mode
         #[qproperty(QList_QString, shift_modes, READ = get_shift_modes, NOTIFY)]
         #[qproperty(QString, shift_mode, READ = get_shift_mode, WRITE = set_shift_mode, NOTIFY)]
-        #[qproperty(bool, shift_mode_supported, READ, NOTIFY)]
+        #[qproperty(bool, shift_mode_supported, READ = get_shift_mode_supported, NOTIFY)]
         // battery charge mode
         #[qproperty(QVariant, battery_charge_mode, READ = get_battery_charge_mode, WRITE = set_battery_charge_mode, NOTIFY)]
-        #[qproperty(bool, battery_charge_mode_supported, READ, NOTIFY)]
+        #[qproperty(bool, battery_charge_mode_supported, READ = get_battery_charge_mode_supported, NOTIFY)]
         // super battery
         #[qproperty(bool, super_battery, READ = get_super_battery, WRITE = set_super_battery, NOTIFY)]
-        #[qproperty(bool, super_battery_supported, READ, NOTIFY)]
+        #[qproperty(bool, super_battery_supported, READ = get_super_battery_supported, NOTIFY)]
         // fan rpm
-        #[qproperty(u16, fan1_rpm, READ, NOTIFY)]
-        #[qproperty(u16, fan2_rpm, READ, NOTIFY)]
-        #[qproperty(u16, fan3_rpm, READ, NOTIFY)]
-        #[qproperty(u16, fan4_rpm, READ, NOTIFY)]
-        #[qproperty(bool, fan1_supported, READ, NOTIFY)]
-        #[qproperty(bool, fan2_supported, READ, NOTIFY)]
-        #[qproperty(bool, fan3_supported, READ, NOTIFY)]
-        #[qproperty(bool, fan4_supported, READ, NOTIFY)]
+        #[qproperty(u16, fan1_rpm, READ = get_fan1_rpm, NOTIFY)]
+        #[qproperty(u16, fan2_rpm, READ = get_fan2_rpm, NOTIFY)]
+        #[qproperty(u16, fan3_rpm, READ = get_fan3_rpm, NOTIFY)]
+        #[qproperty(u16, fan4_rpm, READ = get_fan4_rpm, NOTIFY)]
+        #[qproperty(bool, fan1_supported, READ = get_fan1_supported, NOTIFY)]
+        #[qproperty(bool, fan2_supported, READ = get_fan2_supported, NOTIFY)]
+        #[qproperty(bool, fan3_supported, READ = get_fan3_supported, NOTIFY)]
+        #[qproperty(bool, fan4_supported, READ = get_fan4_supported, NOTIFY)]
         // fan modes
         #[qproperty(QList_QString, fan_modes, READ = get_fan_modes, NOTIFY)]
         #[qproperty(QString, fan_mode, READ = get_fan_mode, WRITE = set_fan_mode, NOTIFY)]
-        #[qproperty(bool, fan_mode_supported, READ, NOTIFY)]
+        #[qproperty(bool, fan_mode_supported, READ = get_fan_mode_supported, NOTIFY)]
         // webcam
         #[qproperty(bool, webcam, READ = get_webcam, WRITE = set_webcam, NOTIFY)]
         #[qproperty(bool, webcam_block, READ = get_webcam_block, WRITE = set_webcam_block, NOTIFY)]
-        #[qproperty(bool, webcam_supported, READ, NOTIFY)]
-        #[qproperty(bool, webcam_block_supported, READ, NOTIFY)]
+        #[qproperty(bool, webcam_supported, READ = get_webcam_supported, NOTIFY)]
+        #[qproperty(bool, webcam_block_supported, READ = get_webcam_block_supported, NOTIFY)]
         // cooler boost
         #[qproperty(bool, cooler_boost, READ = get_cooler_boost, WRITE = set_cooler_boost, NOTIFY)]
-        #[qproperty(bool, cooler_boost_supported, READ, NOTIFY)]
+        #[qproperty(bool, cooler_boost_supported, READ = get_cooler_boost_supported, NOTIFY)]
         // fn/win key swap
         #[qproperty(QString, fn_key, READ = get_fn_key, WRITE = set_fn_key, NOTIFY)]
         #[qproperty(QString, win_key, READ = get_win_key, WRITE = set_win_key, NOTIFY)]
-        #[qproperty(bool, fn_win_swap_supported, READ, NOTIFY)]
+        #[qproperty(bool, fn_win_swap_supported, READ = get_fn_win_swap_supported, NOTIFY)]
         // mute leds
         #[qproperty(bool, mic_mute_led, READ = get_mic_mute_led, WRITE = set_mic_mute_led, NOTIFY)]
         #[qproperty(bool, mute_led, READ = get_mute_led, WRITE = set_mute_led, NOTIFY)]
-        #[qproperty(bool, mic_mute_led_supported, READ, NOTIFY)]
-        #[qproperty(bool, mute_led_supported, READ, NOTIFY)]
+        #[qproperty(bool, mic_mute_led_supported, READ = get_mic_mute_led_supported, NOTIFY)]
+        #[qproperty(bool, mute_led_supported, READ = get_mute_led_supported, NOTIFY)]
         // rt sensors
-        #[qproperty(u8, cpu_rt_fan_speed, READ, NOTIFY)]
-        #[qproperty(u8, cpu_rt_temp, READ, NOTIFY)]
-        #[qproperty(u8, gpu_rt_fan_speed, READ, NOTIFY)]
-        #[qproperty(u8, gpu_rt_temp, READ, NOTIFY)]
+        #[qproperty(u8, cpu_rt_fan_speed, READ = get_cpu_rt_fan_speed, NOTIFY)]
+        #[qproperty(u8, cpu_rt_temp, READ = get_cpu_rt_temp, NOTIFY)]
+        #[qproperty(u8, gpu_rt_fan_speed, READ = get_gpu_rt_fan_speed, NOTIFY)]
+        #[qproperty(u8, gpu_rt_temp, READ = get_gpu_rt_temp, NOTIFY)]
         // curves
         #[qproperty(QList_u8, cpu_fan_curve_wmi2, READ = get_cpu_fan_curve_wmi2, WRITE = set_cpu_fan_curve_wmi2, NOTIFY)]
         #[qproperty(QList_u8, cpu_temp_curve_wmi2, READ = get_cpu_temp_curve_wmi2, WRITE = set_cpu_temp_curve_wmi2, NOTIFY)]
@@ -131,45 +131,76 @@ pub mod qobject {
         #[qproperty(*mut QQmlPropertyMap, methods, READ = get_methods, NOTIFY)]
         // dump
         #[qproperty(QByteArray, ec_dump, READ = get_ec_dump, NOTIFY)]
-        #[qproperty(QString, ec_dump_pretty, READ, NOTIFY)]
+        #[qproperty(QString, ec_dump_pretty, READ = get_ec_dump_pretty, NOTIFY)]
         #[namespace = "ecchan_client"]
         type EcchanClient = super::EcchanClientRust;
 
         fn set_connected(self: Pin<&mut Self>, connected: bool);
+
+        fn get_has_dgpu(&self) -> bool;
+        fn get_fan_max(&self) -> u8;
         fn get_fan_count(&self) -> u8;
         fn get_wmi_ver(&self) -> u8;
+
+        fn get_fw_version(&self) -> &QString;
+        fn get_fw_date(&self) -> &QString;
+        fn get_fw_time(&self) -> &QString;
 
         fn get_shift_modes(&self) -> QList_QString;
         fn get_shift_mode(&self) -> QString;
         fn set_shift_mode(self: Pin<&mut Self>, mode: &QString);
+        fn get_shift_mode_supported(&self) -> bool;
 
         fn get_battery_charge_mode(&self) -> QVariant;
         fn set_battery_charge_mode(self: Pin<&mut Self>, mode: QVariant);
+        fn get_battery_charge_mode_supported(&self) -> bool;
 
         fn get_super_battery(&self) -> bool;
         fn set_super_battery(self: Pin<&mut Self>, state: bool);
+        fn get_super_battery_supported(&self) -> bool;
+
+        fn get_fan1_rpm(&self) -> u16;
+        fn get_fan2_rpm(&self) -> u16;
+        fn get_fan3_rpm(&self) -> u16;
+        fn get_fan4_rpm(&self) -> u16;
+        fn get_fan1_supported(&self) -> bool;
+        fn get_fan2_supported(&self) -> bool;
+        fn get_fan3_supported(&self) -> bool;
+        fn get_fan4_supported(&self) -> bool;
 
         fn get_fan_modes(&self) -> QList_QString;
         fn get_fan_mode(&self) -> QString;
         fn set_fan_mode(self: Pin<&mut Self>, mode: &QString);
+        fn get_fan_mode_supported(&self) -> bool;
 
         fn get_webcam(&self) -> bool;
         fn get_webcam_block(&self) -> bool;
         fn set_webcam(self: Pin<&mut Self>, state: bool);
         fn set_webcam_block(self: Pin<&mut Self>, state: bool);
+        fn get_webcam_supported(&self) -> bool;
+        fn get_webcam_block_supported(&self) -> bool;
 
         fn get_cooler_boost(&self) -> bool;
         fn set_cooler_boost(self: Pin<&mut Self>, state: bool);
+        fn get_cooler_boost_supported(&self) -> bool;
 
         fn get_fn_key(&self) -> QString;
         fn get_win_key(&self) -> QString;
         fn set_fn_key(self: Pin<&mut Self>, dir: &QString);
         fn set_win_key(self: Pin<&mut Self>, dir: &QString);
+        fn get_fn_win_swap_supported(&self) -> bool;
 
         fn get_mic_mute_led(&self) -> bool;
         fn get_mute_led(&self) -> bool;
         fn set_mic_mute_led(self: Pin<&mut Self>, state: bool);
         fn set_mute_led(self: Pin<&mut Self>, state: bool);
+        fn get_mic_mute_led_supported(&self) -> bool;
+        fn get_mute_led_supported(&self) -> bool;
+
+        fn get_cpu_rt_fan_speed(&self) -> u8;
+        fn get_cpu_rt_temp(&self) -> u8;
+        fn get_gpu_rt_fan_speed(&self) -> u8;
+        fn get_gpu_rt_temp(&self) -> u8;
 
         fn get_cpu_fan_curve_wmi2(&self) -> QList_u8;
         fn set_cpu_fan_curve_wmi2(self: Pin<&mut Self>, curve: QList_u8);
@@ -188,20 +219,137 @@ pub mod qobject {
         fn get_methods(&self) -> *mut QQmlPropertyMap;
 
         fn get_ec_dump(&self) -> QByteArray;
+        fn get_ec_dump_pretty(&self) -> &QString;
+
+        //
+        // Signals
+        //
 
         #[qsignal]
         fn init_state_changed(self: Pin<&mut Self>, running: bool);
 
+        //
+        // Invokables
+        //
+
         #[qinvokable]
         fn init_state(self: Pin<&mut Self>);
 
-        // #[qinvokable]
-        // #[cxx_name = "incrementNumber"]
-        // fn increment_number(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan_count(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan_max(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn has_dgpu(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn wmi_ver(self: Pin<&mut Self>);
 
-        // #[qinvokable]
-        // #[cxx_name = "sayHi"]
-        // fn say_hi(&self, string: &QString, number: i32);
+        #[qinvokable]
+        fn fw_version(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fw_date(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fw_time(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn shift_modes(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn shift_mode(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn shift_mode_supported(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn battery_charge_mode(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn battery_charge_mode_supported(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn super_battery(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn super_battery_supported(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn fan1_rpm(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan2_rpm(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan3_rpm(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan4_rpm(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan1_supported(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan2_supported(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan3_supported(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan4_supported(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn fan_modes(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan_mode(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fan_mode_supported(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn webcam(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn webcam_block(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn webcam_supported(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn webcam_block_supported(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn cooler_boost(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn cooler_boost_supported(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn fn_key(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn win_key(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn fn_win_swap_supported(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn mic_mute_led(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn mute_led(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn mic_mute_led_supported(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn mute_led_supported(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn cpu_rt_fan_speed(self: Pin<&mut Self>);
+        fn cpu_rt_temp(self: Pin<&mut Self>);
+        fn gpu_rt_fan_speed(self: Pin<&mut Self>);
+        fn gpu_rt_temp(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn cpu_fan_curve_wmi2(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn cpu_temp_curve_wmi2(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn cpu_hysteresis_curve_wmi2(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn gpu_fan_curve_wmi2(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn gpu_temp_curve_wmi2(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn method_list(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn methods(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn ec_dump(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn ec_dump_pretty(self: Pin<&mut Self>);
     }
 }
 
@@ -1376,9 +1524,42 @@ impl qobject::EcchanClient {
                 });
             }
 
+            "ecDump" => {
+                self.as_mut().call(MethodCall::EcDumpRaw, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    ctx.as_mut().rust_mut().ec_dump = res.ec_dump().unwrap();
+                    ctx.ec_dump_changed();
+                });
+            }
+
+            "ecDumpPretty" => {
+                self.as_mut()
+                    .call(MethodCall::EcDumpPretty, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        ctx.as_mut().rust_mut().ec_dump_pretty = res.str().unwrap().into();
+                        ctx.ec_dump_pretty_changed();
+                    });
+            }
+
             _ => q_warning!("{name} is not a valid update property"),
         }
     }
+}
+
+macro_rules! set_fns {
+    ($($fn_name:ident, $update_name:ident),*) => {
+        $(
+            fn $fn_name(self: Pin<&mut Self>) {
+                self._update(stringify!($update_name));
+            }
+        )*
+    };
 }
 
 // Invokables
@@ -1446,6 +1627,75 @@ impl qobject::EcchanClient {
         self.queued_call(|ctx| {
             ctx.init_state_changed(false);
         });
+    }
+
+    set_fns! {
+        fan_count, fanCount,
+        fan_max, fanMax,
+        has_dgpu, hasDGpu,
+        wmi_ver, wmiVer,
+
+        fw_version, fwVersion,
+        fw_date, fwDate,
+        fw_time, fwTime,
+
+        shift_modes, shiftModes,
+        shift_mode, shiftMode,
+        shift_mode_supported, shiftModeSupported,
+
+        battery_charge_mode, batteryChargeMode,
+        battery_charge_mode_supported, batteryChargeModeSupported,
+
+        super_battery, superBattery,
+        super_battery_supported, superBatterySupported,
+
+        fan1_rpm, fan1Rpm,
+        fan2_rpm, fan2Rpm,
+        fan3_rpm, fan3Rpm,
+        fan4_rpm, fan4Rpm,
+        fan1_supported, fan1Supported,
+        fan2_supported, fan2Supported,
+        fan3_supported, fan3Supported,
+        fan4_supported, fan4Supported,
+
+        fan_modes, fanModes,
+        fan_mode, fanMode,
+        fan_mode_supported, fanModeSupported,
+
+        webcam, webcam,
+        webcam_block, webcamBlock,
+        webcam_supported, webcamSupported,
+        webcam_block_supported, webcamBlockSupported,
+
+        cooler_boost, coolerBoost,
+        cooler_boost_supported, coolerBoostSupported,
+
+        fn_key, fnKey,
+        win_key, winKey,
+        fn_win_swap_supported, fnWinSwapSupported,
+
+        mic_mute_led, micMuteLed,
+        mute_led, muteLed,
+        mic_mute_led_supported, micMuteLedSupported,
+        mute_led_supported, muteLedSupported,
+
+        cpu_rt_fan_speed, cpuRtFanSpeed,
+        cpu_rt_temp, cpuRtTemp,
+        gpu_rt_fan_speed, gpuRtFanSpeed,
+        gpu_rt_temp, gpuRtTemp,
+
+        cpu_fan_curve_wmi2, cpuFanCurveWmi2,
+        cpu_temp_curve_wmi2, cpuTempCurveWmi2,
+        cpu_hysteresis_curve_wmi2, cpuHysteresisCurveWmi2,
+        gpu_fan_curve_wmi2, gpuFanCurveWmi2,
+        gpu_temp_curve_wmi2, gpuTempCurveWmi2,
+        gpu_hysteresis_curve_wmi2, gpuHysteresisCurveWmi2,
+
+        method_list, methodList,
+        methods, methods,
+
+        ec_dump, ecDump,
+        ec_dump_pretty, ecDumpPretty
     }
 }
 
@@ -1517,11 +1767,31 @@ impl qobject::EcchanClient {
         }
     }
 
+    fn get_has_dgpu(&self) -> bool {
+        self.has_dgpu
+    }
+
+    fn get_fan_max(&self) -> u8 {
+        self.fan_max
+    }
+
     fn get_wmi_ver(&self) -> u8 {
         match self.wmi_ver {
             WmiVer::Wmi1 => 1,
             WmiVer::Wmi2 => 2,
         }
+    }
+
+    fn get_fw_version(&self) -> &QString {
+        &self.fw_version
+    }
+
+    fn get_fw_date(&self) -> &QString {
+        &self.fw_date
+    }
+
+    fn get_fw_time(&self) -> &QString {
+        &self.fw_time
     }
 
     fn get_fan_count(&self) -> u8 {
@@ -1565,6 +1835,10 @@ impl qobject::EcchanClient {
                 ctx.as_mut().rust_mut().shift_mode = mode;
                 ctx.shift_mode_changed();
             });
+    }
+
+    fn get_shift_mode_supported(&self) -> bool {
+        self.shift_mode_supported
     }
 
     fn get_battery_charge_mode(&self) -> QVariant {
@@ -1623,6 +1897,10 @@ impl qobject::EcchanClient {
         }
     }
 
+    fn get_battery_charge_mode_supported(&self) -> bool {
+        self.battery_charge_mode_supported
+    }
+
     fn get_super_battery(&self) -> bool {
         self.super_battery.enabled()
     }
@@ -1641,6 +1919,42 @@ impl qobject::EcchanClient {
                 ctx.super_battery_changed();
             },
         );
+    }
+
+    fn get_super_battery_supported(&self) -> bool {
+        self.super_battery_supported
+    }
+
+    fn get_fan1_rpm(&self) -> u16 {
+        self.fan1_rpm
+    }
+
+    fn get_fan2_rpm(&self) -> u16 {
+        self.fan2_rpm
+    }
+
+    fn get_fan3_rpm(&self) -> u16 {
+        self.fan3_rpm
+    }
+
+    fn get_fan4_rpm(&self) -> u16 {
+        self.fan4_rpm
+    }
+
+    fn get_fan1_supported(&self) -> bool {
+        self.fan1_supported
+    }
+
+    fn get_fan2_supported(&self) -> bool {
+        self.fan2_supported
+    }
+
+    fn get_fan3_supported(&self) -> bool {
+        self.fan3_supported
+    }
+
+    fn get_fan4_supported(&self) -> bool {
+        self.fan4_supported
     }
 
     fn get_fan_modes(&self) -> QList<QString> {
@@ -1675,6 +1989,10 @@ impl qobject::EcchanClient {
                 ctx.as_mut().rust_mut().fan_mode = mode;
                 ctx.fan_mode_changed();
             });
+    }
+
+    fn get_fan_mode_supported(&self) -> bool {
+        self.fan_mode_supported
     }
 
     fn get_webcam(&self) -> bool {
@@ -1713,6 +2031,14 @@ impl qobject::EcchanClient {
             });
     }
 
+    fn get_webcam_supported(&self) -> bool {
+        self.webcam_supported
+    }
+
+    fn get_webcam_block_supported(&self) -> bool {
+        self.webcam_block_supported
+    }
+
     fn get_cooler_boost(&self) -> bool {
         self.cooler_boost.enabled()
     }
@@ -1729,6 +2055,10 @@ impl qobject::EcchanClient {
                 ctx.as_mut().rust_mut().cooler_boost = state;
                 ctx.cooler_boost_changed();
             });
+    }
+
+    fn get_cooler_boost_supported(&self) -> bool {
+        self.cooler_boost_supported
     }
 
     fn get_fn_key(&self) -> QString {
@@ -1779,6 +2109,10 @@ impl qobject::EcchanClient {
             });
     }
 
+    fn get_fn_win_swap_supported(&self) -> bool {
+        self.fn_win_swap_supported
+    }
+
     fn get_mic_mute_led(&self) -> bool {
         self.mic_mute_led.enabled()
     }
@@ -1813,6 +2147,30 @@ impl qobject::EcchanClient {
                 ctx.as_mut().rust_mut().mute_led = state;
                 ctx.mute_led_changed();
             });
+    }
+
+    fn get_mic_mute_led_supported(&self) -> bool {
+        self.mic_mute_led_supported
+    }
+
+    fn get_mute_led_supported(&self) -> bool {
+        self.mute_led_supported
+    }
+
+    fn get_cpu_rt_fan_speed(&self) -> u8 {
+        self.cpu_rt_fan_speed
+    }
+
+    fn get_cpu_rt_temp(&self) -> u8 {
+        self.cpu_rt_temp
+    }
+
+    fn get_gpu_rt_fan_speed(&self) -> u8 {
+        self.gpu_rt_fan_speed
+    }
+
+    fn get_gpu_rt_temp(&self) -> u8 {
+        self.gpu_rt_temp
     }
 
     fn get_cpu_fan_curve_wmi2(&self) -> QList<u8> {
@@ -2089,5 +2447,9 @@ impl qobject::EcchanClient {
 
     fn get_ec_dump(&self) -> QByteArray {
         QByteArray::from(&self.ec_dump.0)
+    }
+
+    fn get_ec_dump_pretty(&self) -> &QString {
+        &self.ec_dump_pretty
     }
 }
