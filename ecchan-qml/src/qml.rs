@@ -233,12 +233,17 @@ pub mod qobject {
         #[qsignal]
         fn state_changed(self: Pin<&mut Self>, prop: QString);
 
+        #[qsignal]
+        fn task_finished(self: Pin<&mut Self>, id: usize);
+
         //
         // Invokables
         //
 
         #[qinvokable]
         fn init_state(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn submit_task(self: Pin<&mut Self>, id: usize);
 
         #[qinvokable]
         fn update_fan_count(self: Pin<&mut Self>);
@@ -2128,6 +2133,12 @@ impl qobject::EcchanClient {
 
         self.queued_call(|ctx| {
             ctx.init_state_changed(false);
+        });
+    }
+
+    fn submit_task(self: Pin<&mut Self>, id: usize) {
+        self.queued_call(move |ctx| {
+            ctx.task_finished(id);
         });
     }
 
