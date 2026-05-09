@@ -99,7 +99,7 @@ macro_rules! q_debug {
             None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
-        $crate::qtlogging::q_debug(
+        $crate::cpp::qtlogging::q_debug(
             unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(concat!(file!(), "\0").as_bytes()) },
             line!() as i32,
             &val
@@ -129,7 +129,7 @@ macro_rules! q_info {
             None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
-        $crate::qtlogging::q_info(
+        $crate::cpp::qtlogging::q_info(
             unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(concat!(file!(), "\0").as_bytes()) },
             line!() as i32,
             &val
@@ -160,7 +160,7 @@ macro_rules! q_warning {
             None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
-        $crate::qtlogging::q_warning(
+        $crate::cpp::qtlogging::q_warning(
             unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(concat!(file!(), "\0").as_bytes()) },
             line!() as i32,
             &val
@@ -192,7 +192,7 @@ macro_rules! q_critical {
             None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
-        $crate::qtlogging::q_critical(
+        $crate::cpp::qtlogging::q_critical(
             unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(concat!(file!(), "\0").as_bytes()) },
             line!() as i32,
             &val
@@ -225,7 +225,7 @@ macro_rules! q_fatal {
             None => cxx_qt_lib::QString::from(&args.to_string()),
         };
 
-        $crate::qtlogging::q_fatal(
+        $crate::cpp::qtlogging::q_fatal(
             unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(concat!(file!(), "\0").as_bytes()) },
             line!() as i32,
             &val

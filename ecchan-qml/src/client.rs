@@ -14,7 +14,7 @@ use ecchan_ipc::{
 use serde::Deserialize;
 use snafu::{ResultExt as _, Snafu};
 
-use crate::{q_warning, qml::qobject::EcchanClient};
+use crate::{cpp::EcchanClient, q_warning};
 
 #[derive(Debug, Snafu)]
 pub enum ClientError {

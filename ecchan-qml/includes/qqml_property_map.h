@@ -8,23 +8,11 @@ using namespace std;
 namespace ecchan {
 namespace qvariant {
 
-inline QVariant qvariantConstructQQmlPropertyMap(const unique_ptr<QQmlPropertyMap>& value) noexcept
-{
-    return QVariant::fromValue(value.get());
-}
+QVariant qvariantConstructQQmlPropertyMap(const unique_ptr<QQmlPropertyMap>& value);
 
-inline bool qvariantCanConvertQQmlPropertyMap(const QVariant& variant) noexcept
-{
-    return variant.canConvert<QQmlPropertyMap*>();
-}
+bool qvariantCanConvertQQmlPropertyMap(const QVariant& variant);
 
-inline QQmlPropertyMap* qvariantValueOrDefaultQQmlPropertyMap(QVariant& variant) noexcept
-{
-    if (variant.canConvert<QQmlPropertyMap*>()) {
-        return variant.value<QQmlPropertyMap*>();
-    }
-    return nullptr;
-}
+QQmlPropertyMap* qvariantValueOrDefaultQQmlPropertyMap(QVariant& variant);
 
 }
 }

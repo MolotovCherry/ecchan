@@ -8,8 +8,21 @@ fn main() {
     let builder = CxxQtBuilder::new_qml_module(
         QmlModule::new("ecchan_client").plugin_type(PluginType::Dynamic),
     )
-    .files(["src/qml.rs", "src/qtlogging.rs", "src/qqml_property_map.rs"])
+    .files([
+        "src/cpp/ecchan.rs",
+        "src/cpp/qjsengine.rs",
+        "src/cpp/qtlogging.rs",
+        "src/cpp/qjsvalueiterator.rs",
+        "src/cpp/qjsvaluelist.rs",
+        "src/cpp/qqml_property_map.rs",
+        "src/cpp/qjsvalue.rs",
+    ])
+    .cpp_file("src/cpp/qqml_property_map.cpp")
+    .cpp_file("src/cpp/qjsengine.cpp")
+    .cpp_file("src/cpp/qjsvalueiterator.cpp")
+    .cpp_file("src/cpp/qjsvaluelist.cpp")
     .cpp_file("src/cpp/qtlogging.cpp")
+    .cpp_file("src/cpp/qjsvalue.cpp")
     .include_dir(manifest_dir.join("includes/"));
 
     let builder = unsafe {

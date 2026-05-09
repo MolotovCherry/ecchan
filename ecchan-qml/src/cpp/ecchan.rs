@@ -29,10 +29,11 @@ use strum::IntoEnumIterator as _;
 
 use crate::{
     client::{Client, ClientError},
+    cpp::QQmlPropertyMap,
     q_critical, q_warning,
-    qqml_property_map::QQmlPropertyMap,
     setup::setup,
 };
+pub use qobject::EcchanClient;
 
 #[cxx_qt::bridge]
 pub mod qobject {
@@ -55,7 +56,7 @@ pub mod qobject {
 
     unsafe extern "C++" {
         include!("ecchan-client/qqml_property_map.h");
-        type QQmlPropertyMap = crate::qqml_property_map::QQmlPropertyMap;
+        type QQmlPropertyMap = crate::cpp::QQmlPropertyMap;
     }
 
     impl cxx_qt::Threading for EcchanClient {}
