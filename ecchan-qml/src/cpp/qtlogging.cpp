@@ -10,49 +10,47 @@
 #include <QtCore/qlogging.h>
 
 namespace rust {
-namespace cxxqtlib1 {
+    namespace cxxqtlib1 {
+        inline void
+        log(QtMsgType type,
+            const char* fileName,
+            int lineNumber,
+            const QString& message)
+        {
+        qt_message_output(
+            type,
+            QMessageLogContext(fileName, lineNumber, nullptr, "EcchanClient"),
+            message);
+        }
 
-inline void
-log(QtMsgType type,
-    const char* fileName,
-    int lineNumber,
-    const QString& message)
-{
-  qt_message_output(
-    type,
-    QMessageLogContext(fileName, lineNumber, nullptr, "EcchanClient"),
-    message);
-}
+        void
+        q_debug(const char* fileName, int lineNumber, const QString& message)
+        {
+        log(QtMsgType::QtDebugMsg, fileName, lineNumber, message);
+        }
 
-void
-q_debug(const char* fileName, int lineNumber, const QString& message)
-{
-  log(QtMsgType::QtDebugMsg, fileName, lineNumber, message);
-}
+        void
+        q_info(const char* fileName, int lineNumber, const QString& message)
+        {
+        log(QtMsgType::QtInfoMsg, fileName, lineNumber, message);
+        }
 
-void
-q_info(const char* fileName, int lineNumber, const QString& message)
-{
-  log(QtMsgType::QtInfoMsg, fileName, lineNumber, message);
-}
+        void
+        q_warning(const char* fileName, int lineNumber, const QString& message)
+        {
+        log(QtMsgType::QtWarningMsg, fileName, lineNumber, message);
+        }
 
-void
-q_warning(const char* fileName, int lineNumber, const QString& message)
-{
-  log(QtMsgType::QtWarningMsg, fileName, lineNumber, message);
-}
+        void
+        q_critical(const char* fileName, int lineNumber, const QString& message)
+        {
+        log(QtMsgType::QtCriticalMsg, fileName, lineNumber, message);
+        }
 
-void
-q_critical(const char* fileName, int lineNumber, const QString& message)
-{
-  log(QtMsgType::QtCriticalMsg, fileName, lineNumber, message);
-}
-
-void
-q_fatal(const char* fileName, int lineNumber, const QString& message)
-{
-  log(QtMsgType::QtFatalMsg, fileName, lineNumber, message);
-}
-
-}
+        void
+        q_fatal(const char* fileName, int lineNumber, const QString& message)
+        {
+        log(QtMsgType::QtFatalMsg, fileName, lineNumber, message);
+        }
+    }
 }
