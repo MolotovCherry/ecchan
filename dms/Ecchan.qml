@@ -8,9 +8,8 @@ import qs.Widgets
 import qs.Modules.Plugins
 import qs.Services
 
-import "./Services"
+import "./EcchanClient"
 import "./Widgets"
-import "./Common"
 
 PluginComponent {
     id: root
@@ -19,39 +18,14 @@ PluginComponent {
 
     onPluginDataChanged: {
         const socket = pluginData.socket;
-        if (typeof (socket) === "string" && !EcSocket.connected) {
-            EcSocket.init(socket);
+        if (typeof (socket) === "string" && !EcchanClient.connected) {
+            EcchanClient.path = socket;
+            EcchanClient.connect();
         }
     }
 
-    property var profileTimer: profileWriteTimer
-    Component.onCompleted: {
-        SocketHandler.addGlobal("profileSaver", (id, method, payload, isErr) => {
-            if (isErr) {
-                return;
-            }
-
-            if (root._blockUpdate) {
-                root.profileTimer.stop();
-                return;
-            }
-
-            // state is changed on every onDataReady firing; but that doesn't mean crucial properties changed!
-
-            const updateFor = ["shiftMode", "batteryChargeMode", "superBattery", "fanMode", "webcam", "webcamBlock", "coolerBoost", "fnKey", "winKey", "micMuteLed", "muteLed", "cpuFanCurveWmi2", "cpuTempCurveWmi2", "cpuHysteresisCurveWmi2", "gpuFanCurveWmi2", "gpuTempCurveWmi2", "gpuHysteresisCurveWmi2", "methods"];
-
-            const shouldSave = updateFor.includes(method) || method.startsWith("set");
-
-            // avoid useless writes to disk ; acts as a debouncer
-            if (shouldSave) {
-                root.profileTimer.restart();
-            }
-        });
-    }
-
     Component.onDestruction: {
-        EcSocket.shutdown();
-        SocketHandler.removeGlobal("profileSaver");
+        EcchanClient.disconnect();
     }
 
     horizontalBarPill: Component {
@@ -86,11 +60,11 @@ PluginComponent {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (!EcSocket.state.hasDGpu) {
+            if (!EcchanClient.hasDgpu) {
                 gpuUpdate.stop();
             }
 
-            EcSocket.gpuRtTemp();
+            EcchanClient.updateGpuRtTemp();
         }
     }
 
@@ -99,7 +73,7 @@ PluginComponent {
         interval: 1000
         repeat: true
         triggeredOnStart: true
-        onTriggered: EcSocket.cpuRtTemp()
+        onTriggered: EcchanClient.updateCpuRtTemp()
     }
 
     Timer {
@@ -110,16 +84,16 @@ PluginComponent {
         // qmlformat off
         onTriggered: {
             // qmllint disable unterminated-case
-            switch (EcSocket.state.fanCount) {
+            switch (EcchanClient.fanCount) {
                 case 4:
-                    EcSocket.fan4Rpm();
+                    EcchanClient.updateFan4Rpm();
                 case 3:
-                    EcSocket.fan3Rpm();
+                    EcchanClient.updateFan3Rpm();
                 case 2:
-                    EcSocket.fan2Rpm();
+                    EcchanClient.updateFan2Rpm();
                 case 1:
                 default:
-                    EcSocket.fan1Rpm();
+                    EcchanClient.updateFan1Rpm();
             }
         }
         // qmlformat on
@@ -128,27 +102,35 @@ PluginComponent {
     property var profilesModel: []
     property int selectedProfile: 0
     property var profiles: []
-    property bool _blockUpdate: false
 
     Connections {
-        target: EcSocket
+        target: EcchanClient
 
-        function onInitStarted() {
-            root._blockUpdate = true;
-        }
+        property bool blocked: true
 
         function onInitFinished() {
-            const state = EcSocket.state.deserialize(root.profiles[root.selectedProfile].state);
-            EcSocket.applyState(state);
+            EcchanClient.apply(root.profiles[root.selectedProfile].state);
+            EcchanClient.submitTask(0);
         }
 
-        function onApplyStarted() {
+        function onTaskFinished(id) {
+            if (id === 0) {
+                blocked = false;
+
+                profileWriteTimer.restart();
+            }
         }
 
-        function onApplyFinished() {
-            root._blockUpdate = false;
-            root.profiles[root.selectedProfile].state = EcSocket.state.serialize();
-            root.profilesChanged();
+        function onStateChanged(key) {
+            if (blocked) {
+                return;
+            }
+
+            if (!EcchanClient.profileProps.contains(key)) {
+                return;
+            }
+
+            profileWriteTimer.restart();
         }
     }
 
@@ -158,7 +140,7 @@ PluginComponent {
         repeat: false
         triggeredOnStart: false
         onTriggered: {
-            const state = EcSocket.state.serialize();
+            const state = EcchanClient.serialize();
             root.profiles[root.selectedProfile].state = state;
             root.profilesChanged();
         }
@@ -175,7 +157,7 @@ PluginComponent {
         profiles = _loadPluginData("profiles", [
             {
                 "name": "Default",
-                "state": EcSocket.state.serialize()
+                "state": EcchanClient.serialize()
             }
         ]);
         profilesChanged();
@@ -290,14 +272,14 @@ PluginComponent {
                             backgroundColor: "transparent"
                             enableRipple: false
 
-                            onClicked: EcSocket.connected ? EcSocket.shutdown() : EcSocket.reconnect()
+                            onClicked: EcchanClient.connected ? EcchanClient.disconnect() : EcchanClient.connect()
 
                             DankIcon {
                                 anchors.centerIn: parent
                                 name: "circle"
                                 filled: true
                                 grade: 700
-                                color: EcSocket.connected ? Theme.primary : Theme.surfaceText
+                                color: EcchanClient.connected ? Theme.primary : Theme.surfaceText
                                 size: Theme.iconSize - 6
                             }
                         }
@@ -328,8 +310,7 @@ PluginComponent {
                                     return;
                                 }
 
-                                const state = EcSocket.state.deserialize(root.profiles[idx].state);
-                                EcSocket.applyState(state);
+                                EcchanClient.apply(root.profiles[idx].state);
                             }
 
                             onValueAdded: (idx, name) => {
@@ -337,7 +318,7 @@ PluginComponent {
                                 root.profiles = [...root.profiles,
                                     {
                                         "name": name,
-                                        "state": EcSocket.state.serialize()
+                                        "state": EcchanClient.serialize()
                                     }
                                 ];
 
@@ -462,7 +443,7 @@ PluginComponent {
 
                                 flow: Flow.TopToBottom
 
-                                leftPadding: EcSocket.state.hasDGpu && DgopService.dgopAvailable ? 0 : (width - 180) / 2
+                                leftPadding: EcchanClient.hasDgpu && DgopService.dgopAvailable ? 0 : (width - 180) / 2
 
                                 Item {
                                     id: cpuGauge
@@ -491,16 +472,16 @@ PluginComponent {
                                             return Theme.primary;
                                         }
 
-                                        value: DgopService.dgopAvailable ? (DgopService.cpuUsage / 100) : Math.min(1, EcSocket.state.cpuRtTemp / 100)
-                                        label: DgopService.dgopAvailable ? (DgopService.cpuUsage.toFixed(1) + "%") : (EcSocket.state.cpuRtTemp + "°C")
-                                        detail: DgopService.dgopAvailable ? (EcSocket.state.cpuRtTemp > 0 ? (EcSocket.state.cpuRtTemp + "°C") : "") : ""
+                                        value: DgopService.dgopAvailable ? (DgopService.cpuUsage / 100) : Math.min(1, EcchanClient.cpuRtTemp / 100)
+                                        label: DgopService.dgopAvailable ? (DgopService.cpuUsage.toFixed(1) + "%") : (EcchanClient.cpuRtTemp + "°C")
+                                        detail: DgopService.dgopAvailable ? (EcchanClient.cpuRtTemp > 0 ? (EcchanClient.cpuRtTemp + "°C") : "") : ""
                                         sublabel: "CPU"
                                         accentColor: {
                                             const dgop = DgopService.cpuUsage > 80 ? Theme.error : (DgopService.cpuUsage > 50 ? Theme.warning : Theme.primary);
-                                            const cpu = EcSocket.state.cpuRtTemp > 85 ? Theme.error : (EcSocket.state.cpuRtTemp > 70 ? Theme.warning : Theme.primary);
+                                            const cpu = EcchanClient.cpuRtTemp > 85 ? Theme.error : (EcchanClient.cpuRtTemp > 70 ? Theme.warning : Theme.primary);
                                             return DgopService.dgopAvailable ? dgop : cpu;
                                         }
-                                        detailColor: EcSocket.state.cpuRtTemp > 85 ? Theme.error : (EcSocket.state.cpuRtTemp > 70 ? Theme.warning : Theme.surfaceVariantText)
+                                        detailColor: EcchanClient.cpuRtTemp > 85 ? Theme.error : (EcchanClient.cpuRtTemp > 70 ? Theme.warning : Theme.surfaceVariantText)
                                     }
                                 }
 
@@ -510,7 +491,7 @@ PluginComponent {
                                     implicitHeight: 180
                                     implicitWidth: 180
 
-                                    visible: EcSocket.state.hasDGpu
+                                    visible: EcchanClient.hasDgpu
 
                                     Connections {
                                         target: page1
@@ -531,11 +512,11 @@ PluginComponent {
                                             return Theme.success;
                                         }
 
-                                        value: Math.min(1, EcSocket.state.gpuRtTemp / 100)
-                                        label: EcSocket.state.gpuRtTemp > 0 ? (EcSocket.state.gpuRtTemp + "°C") : "--"
+                                        value: Math.min(1, EcchanClient.gpuRtTemp / 100)
+                                        label: EcchanClient.gpuRtTemp > 0 ? (EcchanClient.gpuRtTemp + "°C") : "--"
                                         sublabel: "GPU"
                                         accentColor: {
-                                            const temp = EcSocket.state.gpuRtTemp;
+                                            const temp = EcchanClient.gpuRtTemp;
                                             if (temp > 85)
                                                 return Theme.error;
                                             if (temp > 70)
@@ -547,7 +528,7 @@ PluginComponent {
 
                                 Item {
                                     width: 180
-                                    height: EcSocket.state.hasDGpu ? 180 * 2 : 180
+                                    height: EcchanClient.hasDgpu ? 180 * 2 : 180
                                     Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignCenter
 
@@ -564,7 +545,7 @@ PluginComponent {
 
                                     CircleGauge {
                                         visible: DgopService.dgopAvailable
-                                        anchors.centerIn: EcSocket.state.hasDGpu ? parent : undefined
+                                        anchors.centerIn: EcchanClient.hasDgpu ? parent : undefined
                                         width: 180
                                         height: 180
                                         value: DgopService.memoryUsage / 100
@@ -651,23 +632,23 @@ PluginComponent {
 
                                                 model: [
                                                     {
-                                                        "rpm": EcSocket.state.fan1Rpm
+                                                        "rpm": EcchanClient.fan1Rpm
                                                     },
                                                     {
-                                                        "rpm": EcSocket.state.fan2Rpm
+                                                        "rpm": EcchanClient.fan2Rpm
                                                     },
                                                     {
-                                                        "rpm": EcSocket.state.fan3Rpm
+                                                        "rpm": EcchanClient.fan3Rpm
                                                     },
                                                     {
-                                                        "rpm": EcSocket.state.fan4Rpm
+                                                        "rpm": EcchanClient.fan4Rpm
                                                     }
                                                 ]
 
                                                 ColumnLayout {
                                                     id: fanRow
                                                     spacing: Theme.spacingL
-                                                    visible: EcSocket.state.fanCount > index
+                                                    visible: EcchanClient.fanCount > index
 
                                                     required property int index
                                                     required property string rpm
@@ -733,7 +714,7 @@ PluginComponent {
                                     rowSpacing: 0
                                     columnSpacing: 0
 
-                                    property var methodList: EcSocket.state.methodList.map(item => {
+                                    property var methodList: EcchanClient.methodList.map(item => {
                                         // qmlformat off
                                         const ops = [
                                             { suffix: "Range", type: "range", op: "WriteRange" },
@@ -749,7 +730,7 @@ PluginComponent {
                                             return;
                                         }
 
-                                        const state = EcSocket.state.methods[item.method];
+                                        const state = EcchanClient.methods[item.method];
                                         if (state == null) {
                                             return;
                                         }
@@ -760,7 +741,7 @@ PluginComponent {
                                             "description": null,
                                             "supported": true,
                                             "value": null,
-                                            "set": value => EcSocket.methodWrite(item.method, found.op, value),
+                                            "set": value => EcchanClient.methodWrite(item.method, found.op, value),
                                             "type": "method",
                                             "variation": found.type,
                                             "methodKey": item.method
@@ -772,9 +753,9 @@ PluginComponent {
                                             "name": "Webcam",
                                             "icon": "camera_video",
                                             "description": "Enable the integrated webcam (as if by a keyboard button)",
-                                            "supported": EcSocket.state.webcamSupported,
-                                            "value": EcSocket.state.webcam,
-                                            "set": state => EcSocket.setWebcam(state),
+                                            "supported": EcchanClient.webcamSupported,
+                                            "value": EcchanClient.webcam,
+                                            "set": state => EcchanClient.webcam = state,
                                             "type": "toggle",
                                             "variation": null,
                                             "methodKey": null
@@ -783,9 +764,9 @@ PluginComponent {
                                             "name": "Webcam Block",
                                             "icon": "camera_video",
                                             "description": "Block the integrated webcam (can't be enabled by a keyboard button)",
-                                            "supported": EcSocket.state.webcamBlockSupported,
-                                            "value": EcSocket.state.webcamBlock,
-                                            "set": state => EcSocket.setWebcamBlock(state),
+                                            "supported": EcchanClient.webcamBlockSupported,
+                                            "value": EcchanClient.webcamBlock,
+                                            "set": state => EcchanClient.webcamBlock = state,
                                             "type": "toggle",
                                             "variation": null,
                                             "methodKey": null
@@ -794,9 +775,9 @@ PluginComponent {
                                             "name": "Swap Win/Fn",
                                             "icon": null,
                                             "description": "Swap the Fn / Windows key positions",
-                                            "supported": EcSocket.state.fnWinSwapSupported,
-                                            "value": EcSocket.state.fnKey,
-                                            "set": state => EcSocket.setFnKey(state),
+                                            "supported": EcchanClient.fnWinSwapSupported,
+                                            "value": EcchanClient.fnKey,
+                                            "set": state => EcchanClient.fnKey = state,
                                             "type": "swapKey",
                                             "variation": null,
                                             "methodKey": null
@@ -805,9 +786,9 @@ PluginComponent {
                                             "name": "Mic Mute Light",
                                             "icon": "backlight_high",
                                             "description": "Toggle the mic mute keyboard indicator light",
-                                            "supported": EcSocket.state.micMuteLedSupported,
-                                            "value": EcSocket.state.micMuteLed,
-                                            "set": state => EcSocket.setMicMuteLed(state),
+                                            "supported": EcchanClient.micMuteLedSupported,
+                                            "value": EcchanClient.micMuteLed,
+                                            "set": state => EcchanClient.micMuteLed = state,
                                             "type": "toggle",
                                             "variation": null,
                                             "methodKey": null
@@ -816,9 +797,9 @@ PluginComponent {
                                             "name": "Mute Light",
                                             "icon": "backlight_high",
                                             "description": "Toggle the audio mute keyboard indicator light",
-                                            "supported": EcSocket.state.muteLedSupported,
-                                            "value": EcSocket.state.muteLed,
-                                            "set": state => EcSocket.setMuteLed(state),
+                                            "supported": EcchanClient.muteLedSupported,
+                                            "value": EcchanClient.muteLed,
+                                            "set": state => EcchanClient.muteLed = state,
                                             "type": "toggle",
                                             "variation": null,
                                             "methodKey": null
@@ -893,7 +874,7 @@ PluginComponent {
                                                         color: Theme.primary
 
                                                         StyledText {
-                                                            text: EcSocket.state.winKey === "Left" ? "Win" : "Fn"
+                                                            text: EcchanClient.winKey === "Left" ? "Win" : "Fn"
                                                             color: Theme.primaryText
                                                             anchors.centerIn: parent
                                                             font.weight: Font.Bold
@@ -901,7 +882,7 @@ PluginComponent {
 
                                                         MouseArea {
                                                             anchors.fill: parent
-                                                            onClicked: set(EcSocket.state.fnKey === "Left" ? "Right" : "Left")
+                                                            onClicked: set(EcchanClient.fnKey === "Left" ? "Right" : "Left")
                                                         }
                                                     }
 
@@ -912,7 +893,7 @@ PluginComponent {
                                                         color: Theme.primary
 
                                                         StyledText {
-                                                            text: EcSocket.state.fnKey === "Right" ? "Fn" : "Win"
+                                                            text: EcchanClient.fnKey === "Right" ? "Fn" : "Win"
                                                             color: Theme.primaryText
                                                             anchors.centerIn: parent
                                                             font.weight: Font.Bold
@@ -920,7 +901,7 @@ PluginComponent {
 
                                                         MouseArea {
                                                             anchors.fill: parent
-                                                            onClicked: set(EcSocket.state.fnKey === "Left" ? "Right" : "Left")
+                                                            onClicked: set(EcchanClient.fnKey === "Left" ? "Right" : "Left")
                                                         }
                                                     }
 
@@ -936,7 +917,7 @@ PluginComponent {
                                                 visible: type === "method" && variation === "bit"
 
                                                 iconName: "switch_access"
-                                                checked: EcSocket.state.methods[methodKey] ?? false
+                                                checked: EcchanClient.methods[methodKey] ?? false
                                                 iconSize: Theme.iconSizeLarge
                                                 buttonHeight: 70
                                                 buttonWidth: 130
@@ -1052,12 +1033,12 @@ PluginComponent {
                                                 "name": "Turbo",
                                                 "id": "Turbo",
                                                 "icon": "rocket_launch",
-                                                "supported": EcSocket.state.shiftModes.includes("Turbo"),
+                                                "supported": EcchanClient.shiftModes.includes("Turbo"),
                                                 "setMode": () => {
-                                                    EcSocket.setShiftMode("Turbo");
+                                                    EcchanClient.shiftMode = "Turbo";
 
-                                                    if (EcSocket.state.superBatterySupported && EcSocket.state.superBattery) {
-                                                        EcSocket.setSuperBattery(false);
+                                                    if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
+                                                        EcchanClient.superBattery = false;
                                                     }
                                                 }
                                             },
@@ -1065,12 +1046,12 @@ PluginComponent {
                                                 "name": "Extreme Performance",
                                                 "id": "Extreme Performance",
                                                 "icon": "speed",
-                                                "supported": EcSocket.state.shiftModes.includes("Extreme Performance"),
+                                                "supported": EcchanClient.shiftModes.includes("Extreme Performance"),
                                                 "setMode": () => {
-                                                    EcSocket.setShiftMode("Extreme Performance");
+                                                    EcchanClient.shiftMode = "Extreme Performance";
 
-                                                    if (EcSocket.state.superBatterySupported && EcSocket.state.superBattery) {
-                                                        EcSocket.setSuperBattery(false);
+                                                    if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
+                                                        EcchanClient.superBattery = false;
                                                     }
                                                 }
                                             },
@@ -1078,12 +1059,12 @@ PluginComponent {
                                                 "name": "Balanced",
                                                 "id": "Balanced",
                                                 "icon": "balance",
-                                                "supported": EcSocket.state.shiftModes.includes("Balanced"),
+                                                "supported": EcchanClient.shiftModes.includes("Balanced"),
                                                 "setMode": () => {
-                                                    EcSocket.setShiftMode("Balanced");
+                                                    EcchanClient.shiftMode = "Balanced";
 
-                                                    if (EcSocket.state.superBatterySupported && EcSocket.state.superBattery) {
-                                                        EcSocket.setSuperBattery(false);
+                                                    if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
+                                                        EcchanClient.superBattery = false;
                                                     }
                                                 }
                                             },
@@ -1091,8 +1072,8 @@ PluginComponent {
                                                 "name": "Eco",
                                                 "id": "Super Battery",
                                                 "icon": "psychiatry",
-                                                "supported": EcSocket.state.shiftModes.includes("Super Battery"),
-                                                "setMode": () => EcSocket.setShiftMode("Super Battery")
+                                                "supported": EcchanClient.shiftModes.includes("Super Battery"),
+                                                "setMode": () => EcchanClient.shiftMode = "Super Battery"
                                             },
                                         ]
 
@@ -1114,7 +1095,7 @@ PluginComponent {
                                             // toggles
                                             ToggleActionButton {
                                                 iconName: icon
-                                                checked: EcSocket.state.shiftMode === id
+                                                checked: EcchanClient.shiftMode === id
                                                 iconSize: Theme.iconSizeLarge + 16
                                                 buttonHeight: 110
                                                 buttonWidth: 140
@@ -1141,7 +1122,7 @@ PluginComponent {
 
                                             RowLayout {
                                                 id: superBatteryRow
-                                                visible: id === "Super Battery" && EcSocket.state.superBatterySupported
+                                                visible: id === "Super Battery" && EcchanClient.superBatterySupported
                                                 spacing: 0
 
                                                 StyledText {
@@ -1156,10 +1137,10 @@ PluginComponent {
 
                                                 DankToggle {
                                                     id: toggleItem
-                                                    enabled: EcSocket.state.shiftMode === id
+                                                    enabled: EcchanClient.shiftMode === id
                                                     description: "Eco"
-                                                    checked: EcSocket.state.superBattery
-                                                    onClicked: EcSocket.setSuperBattery(!checked)
+                                                    checked: EcchanClient.superBattery
+                                                    onClicked: EcchanClient.superBattery = !checked
                                                     Layout.leftMargin: -5
                                                     scale: 0.6
                                                 }
@@ -1169,6 +1150,111 @@ PluginComponent {
                                 }
                             }
                         }
+
+                        // Fans
+                        // ColumnLayout {
+                        //     id: page4
+
+                        //     visible: popout.currentTab === 3
+                        //     Layout.fillWidth: true
+                        //     Layout.fillHeight: true
+
+                        //     StyledRect {
+                        //         Layout.fillWidth: true
+                        //         Layout.fillHeight: true
+
+                        //         radius: Theme.cornerRadius
+                        //         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+
+                        //         GridLayout {
+                        //             columns: 4
+
+                        //             anchors.top: parent.top
+                        //             anchors.left: parent.left
+                        //             anchors.right: parent.right
+                        //             anchors.margins: Theme.spacingM
+
+                        //             rowSpacing: Theme.spacingM
+                        //             columnSpacing: Theme.spacingM
+
+                        //             Repeater {
+                        //                 model: [
+                        //                     {
+                        //                         "name": "Advanced",
+                        //                         "icon": "rocket_launch",
+                        //                         "supported": EcchanClient.shiftModes.includes("Turbo"),
+                        //                         "setMode": () => {
+                        //                             EcchanClient.setShiftMode("Turbo");
+
+                        //                             if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
+                        //                                 EcchanClient.setSuperBattery(false);
+                        //                             }
+                        //                         }
+                        //                     },
+                        //                     {
+                        //                         "name": "Silent",
+                        //                         "icon": "airwave",
+                        //                         "supported": EcchanClient.fanModes.includes("Silent"),
+                        //                         "setMode": () => EcchanClient.setFanMode("Silent")
+                        //                     },
+                        //                     {
+                        //                         "name": "Auto",
+                        //                         "icon": "airwave",
+                        //                         "supported": EcchanClient.fanModes.includes("Silent"),
+                        //                         "setMode": () => EcchanClient.setFanMode("Silent")
+                        //                     },
+                        //                 ]
+
+                        //                 ColumnLayout {
+                        //                     id: page3Column
+                        //                     Layout.preferredWidth: actionBtn.width
+                        //                     Layout.preferredHeight: page2Column.implicitHeight + Theme.spacingL
+                        //                     Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
+
+                        //                     required property string name
+                        //                     required property string icon
+                        //                     required property bool supported
+                        //                     required property var setMode
+
+                        //                     spacing: Theme.spacingS
+
+                        //                     // toggles
+                        //                     ToggleActionButton {
+                        //                         id: actionBtn3
+
+                        //                         iconName: icon
+                        //                         checked: EcchanClient.shiftMode === name
+                        //                         iconSize: Theme.iconSizeLarge + 16
+                        //                         buttonHeight: 100
+                        //                         buttonWidth: 140
+
+                        //                         onClicked: setMode()
+                        //                     }
+
+                        //                     // name
+                        //                     RowLayout {
+                        //                         id: row3Layout
+                        //                         Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
+                        //                         spacing: Theme.spacingXS
+                        //                         Layout.fillWidth: true
+
+                        //                         StyledText {
+                        //                             Layout.maximumWidth: actionBtn3.width
+
+                        //                             text: name
+                        //                             font.pixelSize: Theme.fontSizeSmall
+                        //                             font.weight: Font.Medium
+                        //                             color: Theme.surfaceText
+
+                        //                             horizontalAlignment: Text.AlignCenter
+                        //                             wrapMode: Text.WordWrap
+                        //                         }
+                        //                     }
+                        //                 }
+                        //             }
+                        //         }
+                        //     }
+                        // }
 
                         // EcMem page
                         ColumnLayout {
@@ -1202,14 +1288,14 @@ PluginComponent {
 
                                     anchors.centerIn: parent
 
-                                    text: EcSocket.state.ecDumpPretty
+                                    text: EcchanClient.ecDumpPretty
 
                                     Timer {
                                         id: memTimer
                                         interval: 1000
                                         repeat: true
                                         triggeredOnStart: true
-                                        onTriggered: EcSocket.ecDumpPretty()
+                                        onTriggered: EcchanClient.updateEcDumpPretty()
                                     }
                                 }
                             }

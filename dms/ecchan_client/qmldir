@@ -1,0 +1,5 @@
+module ecchan_client
+optional plugin ecchan_client
+classname ecchan_client_plugin
+typeinfo plugin.qmltypes
+prefer :/qt/qml/ecchan_client/

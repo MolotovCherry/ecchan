@@ -1,0 +1,3 @@
+module EcchanClient
+
+singleton EcchanClient 1.0 EcchanClient.qml
