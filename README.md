@@ -47,7 +47,7 @@ You may add support for model specific features that are unavailable under fw in
 
 This project has a hard ban on AI usage.
 
-No AI was used in the making of this library (whether by programming or using it to understand things). It is entirely human produced.
+No AI was used in the programming of this library. It is entirely human produced.
 
 # Contributions
 
