@@ -18,7 +18,6 @@ namespace rust
 {
     namespace cxxqtlib1
     {
-
         class QJSValueList : public QList<QJSValue>
         {
         public:

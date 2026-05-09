@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ecchan-client/qjsvaluelist.h"
 #include <QtQml/QJSValue>
 #include <QtCore/QVariant>
 
@@ -31,5 +32,7 @@ namespace rust
 
         bool qvariantCanConvertQJSValue(const QVariant &variant);
         ::std::unique_ptr<QJSValue> qjsvalueFromQVariant(const QVariant &variant) noexcept;
+
+        ::std::unique_ptr<QJSValue> qjsvalue_call(const QJSValue &value, const QJSValueList &args) noexcept;
     }
 }

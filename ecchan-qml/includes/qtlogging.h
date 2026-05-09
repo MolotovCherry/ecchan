@@ -12,21 +12,20 @@
 // Define namespace otherwise we hit a GCC bug
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=56480
 namespace rust {
-namespace cxxqtlib1 {
-void
-q_debug(const char* fileName, int lineNumber, const QString& message);
-
-void
-q_info(const char* fileName, int lineNumber, const QString& message);
-
-void
-q_warning(const char* fileName, int lineNumber, const QString& message);
-
-void
-q_critical(const char* fileName, int lineNumber, const QString& message);
-
-void
-q_fatal(const char* fileName, int lineNumber, const QString& message);
-
-}
+    namespace cxxqtlib1 {
+        void
+        q_debug(const char* fileName, int lineNumber, const QString& message);
+        
+        void
+        q_info(const char* fileName, int lineNumber, const QString& message);
+        
+        void
+        q_warning(const char* fileName, int lineNumber, const QString& message);
+        
+        void
+        q_critical(const char* fileName, int lineNumber, const QString& message);
+        
+        void
+        q_fatal(const char* fileName, int lineNumber, const QString& message);
+    }
 } // namespace rust

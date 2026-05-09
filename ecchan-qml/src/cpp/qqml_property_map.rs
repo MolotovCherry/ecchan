@@ -59,7 +59,7 @@ mod qobject {
         fn value(self: &QQmlPropertyMap, key: &QString) -> QVariant;
     }
 
-    #[namespace = "ecchan::qvariant"]
+    #[namespace = "rust::cxxqtlib1"]
     unsafe extern "C++" {
         #[rust_name = "can_convert_QQmlPropertyMap"]
         fn qvariantCanConvertQQmlPropertyMap(variant: &QVariant) -> bool;

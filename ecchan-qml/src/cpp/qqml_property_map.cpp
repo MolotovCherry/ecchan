@@ -2,26 +2,26 @@
 
 using namespace std;
 
-namespace ecchan {
-namespace qvariant {
-
-QVariant qvariantConstructQQmlPropertyMap(const unique_ptr<QQmlPropertyMap>& value)
+namespace rust
 {
-    return QVariant::fromValue(value.get());
-}
+    namespace cxxqtlib1
+    {
+        QVariant qvariantConstructQQmlPropertyMap(const unique_ptr<QQmlPropertyMap>& value)
+        {
+            return QVariant::fromValue(value.get());
+        }
 
-bool qvariantCanConvertQQmlPropertyMap(const QVariant& variant)
-{
-    return variant.canConvert<QQmlPropertyMap*>();
-}
+        bool qvariantCanConvertQQmlPropertyMap(const QVariant& variant)
+        {
+            return variant.canConvert<QQmlPropertyMap*>();
+        }
 
-QQmlPropertyMap* qvariantValueOrDefaultQQmlPropertyMap(QVariant& variant)
-{
-    if (variant.canConvert<QQmlPropertyMap*>()) {
-        return variant.value<QQmlPropertyMap*>();
+        QQmlPropertyMap* qvariantValueOrDefaultQQmlPropertyMap(QVariant& variant)
+        {
+            if (variant.canConvert<QQmlPropertyMap*>()) {
+                return variant.value<QQmlPropertyMap*>();
+            }
+            return nullptr;
+        }
     }
-    return nullptr;
-}
-
-}
 }

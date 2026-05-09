@@ -6,7 +6,7 @@ use cxx::UniquePtr;
 use cxx_qt_lib::{QString, QVariant};
 use serde::de::DeserializeOwned;
 
-use super::{JSEngineDeserializer, QJSEngine};
+use super::{JSEngineDeserializer, QJSEngine, QJSValueList};
 
 #[cxx_qt::bridge]
 mod qobject {
@@ -18,11 +18,13 @@ mod qobject {
 
         include!("ecchan-client/qjsvalue.h");
         type QJSValue;
-
     }
 
     #[namespace = "rust::cxxqtlib1"]
     unsafe extern "C++" {
+        include!("ecchan-client/qjsvaluelist.h");
+        type QJSValueList = super::QJSValueList;
+
         fn qjsvalue_new() -> UniquePtr<QJSValue>;
         fn qjsvalue_new_null() -> UniquePtr<QJSValue>;
         fn qjsvalue_new_bool(val: bool) -> UniquePtr<QJSValue>;
@@ -39,6 +41,8 @@ mod qobject {
         fn qjsvalue_element(value: &QJSValue, index: u32) -> UniquePtr<QJSValue>;
 
         fn qjsvalue_to_qvariant(value: &QJSValue) -> QVariant;
+
+        fn qjsvalue_call(value: &QJSValue, args: &QJSValueList) -> UniquePtr<QJSValue>;
 
         #[rust_name = "can_convert_qjsvalue"]
         fn qvariantCanConvertQJSValue(variant: &QVariant) -> bool;
@@ -194,6 +198,10 @@ impl QJSValue {
         } else {
             None
         }
+    }
+
+    pub fn call(&self, args: &QJSValueList) -> UniquePtr<Self> {
+        qobject::qjsvalue_call(self, args)
     }
 }
 

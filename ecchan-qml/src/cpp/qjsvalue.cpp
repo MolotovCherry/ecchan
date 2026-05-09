@@ -1,4 +1,5 @@
 #include "ecchan-client/qjsvalue.h"
+#include <QtCore/QList>
 
 namespace rust
 {
@@ -72,8 +73,6 @@ namespace rust
         QString qjsvalue_to_string(const QJSValue &value)
         {
             return value.toString();
-            // auto ptr = std::make_unique<QString>(value.toString());
-            // return ptr;
         }
 
         ::std::unique_ptr<QJSValue> qjsvalue_property(
@@ -117,6 +116,12 @@ namespace rust
             Q_ASSERT(ptr != nullptr);
 
             return ptr;
+        }
+
+        ::std::unique_ptr<QJSValue> qjsvalue_call(const QJSValue &value, const QJSValueList &args) noexcept
+        {
+            const QList<QJSValue> &qtArgs = static_cast<const QList<QJSValue>&>(args);
+            return ::std::make_unique<QJSValue>(value.call(qtArgs));
         }
     }
 }

@@ -5,14 +5,14 @@
 
 using namespace std;
 
-namespace ecchan {
-namespace qvariant {
+namespace rust
+{
+    namespace cxxqtlib1
+    {
+        QVariant qvariantConstructQQmlPropertyMap(const unique_ptr<QQmlPropertyMap>& value);
 
-QVariant qvariantConstructQQmlPropertyMap(const unique_ptr<QQmlPropertyMap>& value);
+        bool qvariantCanConvertQQmlPropertyMap(const QVariant& variant);
 
-bool qvariantCanConvertQQmlPropertyMap(const QVariant& variant);
-
-QQmlPropertyMap* qvariantValueOrDefaultQQmlPropertyMap(QVariant& variant);
-
-}
+        QQmlPropertyMap* qvariantValueOrDefaultQQmlPropertyMap(QVariant& variant);
+    }
 }

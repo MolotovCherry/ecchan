@@ -25,11 +25,12 @@ use ecchan_ipc::{
     method::{Method, MethodTy},
     ret::{Bin, RetVal},
 };
+use sayuri::sync::Sendable;
 use strum::IntoEnumIterator as _;
 
 use crate::{
     client::{Client, ClientError},
-    cpp::QQmlPropertyMap,
+    cpp::{QJSValue, QJSValueList, QQmlPropertyMap},
     q_critical, q_warning,
     setup::setup,
 };
@@ -57,6 +58,9 @@ pub mod qobject {
     unsafe extern "C++" {
         include!("ecchan-client/qqml_property_map.h");
         type QQmlPropertyMap = crate::cpp::QQmlPropertyMap;
+
+        include!("ecchan-client/qjsvalue.h");
+        type QJSValue = crate::cpp::QJSValue;
     }
 
     impl cxx_qt::Threading for EcchanClient {}
@@ -234,9 +238,6 @@ pub mod qobject {
         #[qsignal]
         fn state_changed(self: Pin<&mut Self>, prop: QString);
 
-        #[qsignal]
-        fn task_finished(self: Pin<&mut Self>, id: usize);
-
         //
         // Invokables
         //
@@ -244,7 +245,7 @@ pub mod qobject {
         #[qinvokable]
         fn init_state(self: Pin<&mut Self>);
         #[qinvokable]
-        fn submit_task(self: Pin<&mut Self>, id: usize);
+        fn queue(self: Pin<&mut Self>, cb: &QJSValue);
 
         #[qinvokable]
         fn update_fan_count(self: Pin<&mut Self>);
@@ -2176,9 +2177,18 @@ impl qobject::EcchanClient {
         });
     }
 
-    fn submit_task(self: Pin<&mut Self>, id: usize) {
-        self.queued_call(move |ctx| {
-            ctx.task_finished(id);
+    fn queue(self: Pin<&mut Self>, cb: &QJSValue) {
+        if !cb.is_callable() {
+            q_warning!("queue: passed in value is not a callable");
+            return;
+        }
+
+        let cb = Sendable::new(cb.clone());
+        self.queued_call(move |_| {
+            // SAFETY: this is the exact same qt thread as above
+            let cb = unsafe { cb.into_inner() };
+            let value_list = QJSValueList::new();
+            cb.call(&value_list);
         });
     }
 
