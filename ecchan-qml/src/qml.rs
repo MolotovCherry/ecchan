@@ -30,7 +30,7 @@ use strum::IntoEnumIterator as _;
 use crate::{
     client::{Client, ClientError},
     q_critical, q_warning,
-    qqml_property_map::{QQmlPropertyMap, QVariantConvertQQmlPropertyMap},
+    qqml_property_map::QQmlPropertyMap,
     setup::setup,
 };
 
@@ -1959,7 +1959,7 @@ impl qobject::EcchanClient {
                             })
                             .release();
 
-                        let variant = unsafe { map.as_qvariant() };
+                        let variant = unsafe { QQmlPropertyMap::as_qvariant(&map) };
                         ctx.as_mut()
                             .rust_mut()
                             .methods

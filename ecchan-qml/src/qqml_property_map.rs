@@ -76,34 +76,23 @@ impl qobject::QQmlPropertyMap {
     pub fn new() -> UniquePtr<Self> {
         qobject::new()
     }
-}
 
-pub trait QVariantConvertQQmlPropertyMap
-where
-    Self: Sized,
-{
-    unsafe fn as_qvariant(&self) -> QVariant;
-    fn can_convert(variant: &QVariant) -> bool;
-    fn as_mut(variant: Pin<&mut QVariant>) -> Option<&mut qobject::QQmlPropertyMap>;
-}
-
-impl QVariantConvertQQmlPropertyMap for UniquePtr<qobject::QQmlPropertyMap> {
-    /// Self MUST live at least as long as the QVariant
-    unsafe fn as_qvariant(&self) -> QVariant {
-        // this is a shallow copy! you must keep the UniquePtr around!
-        qobject::construct_QQmlPropertyMap(self)
-    }
-
-    fn can_convert(variant: &QVariant) -> bool {
-        qobject::can_convert_QQmlPropertyMap(variant)
-    }
-
-    fn as_mut(variant: Pin<&mut QVariant>) -> Option<&mut qobject::QQmlPropertyMap> {
+    pub fn get_mut(variant: Pin<&mut QVariant>) -> Option<&mut qobject::QQmlPropertyMap> {
         let raw = qobject::value_or_default_QQmlPropertyMap(variant);
         if raw.is_null() {
             None
         } else {
             Some(unsafe { &mut *raw })
         }
+    }
+
+    pub fn can_convert(variant: &QVariant) -> bool {
+        qobject::can_convert_QQmlPropertyMap(variant)
+    }
+
+    /// Self MUST live at least as long as the QVariant
+    pub unsafe fn as_qvariant(this: &UniquePtr<Self>) -> QVariant {
+        // this is a shallow copy! you must keep the UniquePtr around!
+        qobject::construct_QQmlPropertyMap(this)
     }
 }
