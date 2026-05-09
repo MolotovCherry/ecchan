@@ -2128,6 +2128,10 @@ impl qobject::EcchanClient {
         self.as_mut().init_state_changed(true);
 
         for name in MethodTy::iter() {
+            if matches!(name, MethodTy::EcDumpRaw | MethodTy::EcDumpPretty) {
+                continue;
+            }
+
             self.as_mut()._update(name);
         }
 
