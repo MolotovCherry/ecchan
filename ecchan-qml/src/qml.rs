@@ -549,6 +549,37 @@ impl From<qobject::Method> for MethodTy {
     }
 }
 
+#[derive(PartialEq)]
+struct SwapKey {
+    fn_key: KeyDirection,
+}
+
+impl SwapKey {
+    fn from_fn(dir: KeyDirection) -> Self {
+        Self { fn_key: dir }
+    }
+
+    fn from_win(dir: KeyDirection) -> Self {
+        let dir = match dir {
+            KeyDirection::Left => KeyDirection::Right,
+            KeyDirection::Right => KeyDirection::Left,
+        };
+
+        Self { fn_key: dir }
+    }
+
+    fn get_fn(&self) -> KeyDirection {
+        self.fn_key
+    }
+
+    fn get_win(&self) -> KeyDirection {
+        match self.fn_key {
+            KeyDirection::Left => KeyDirection::Right,
+            KeyDirection::Right => KeyDirection::Left,
+        }
+    }
+}
+
 pub struct EcchanClientRust {
     client: Option<Client>,
     // cancellation token
@@ -597,8 +628,7 @@ pub struct EcchanClientRust {
     cooler_boost: CoolerBoost,
     cooler_boost_supported: bool,
 
-    fn_key: KeyDirection,
-    win_key: KeyDirection,
+    swap_key: SwapKey,
     fn_win_swap_supported: bool,
 
     mic_mute_led: Led,
@@ -681,8 +711,7 @@ impl Default for EcchanClientRust {
             cooler_boost: CoolerBoost::Off,
             cooler_boost_supported: false,
 
-            fn_key: KeyDirection::Left,
-            win_key: KeyDirection::Right,
+            swap_key: SwapKey::from_fn(KeyDirection::Left),
             fn_win_swap_supported: false,
 
             mic_mute_led: Led::Off,
@@ -1399,15 +1428,18 @@ impl qobject::EcchanClient {
                     };
 
                     let val = res.key_direction().unwrap();
+                    let val = SwapKey::from_fn(val);
 
-                    if val == ctx.fn_key {
+                    if val == ctx.swap_key {
                         return;
                     }
 
-                    ctx.as_mut().rust_mut().fn_key = val;
+                    ctx.as_mut().rust_mut().swap_key = val;
                     ctx.as_mut().fn_key_changed();
+                    ctx.as_mut().win_key_changed();
 
-                    ctx.state_changed("fnKey".into());
+                    ctx.as_mut().state_changed("fnKey".into());
+                    ctx.state_changed("winKey".into());
                 });
             }
 
@@ -1418,14 +1450,17 @@ impl qobject::EcchanClient {
                     };
 
                     let val = res.key_direction().unwrap();
+                    let val = SwapKey::from_win(val);
 
-                    if val == ctx.win_key {
+                    if val == ctx.swap_key {
                         return;
                     }
 
-                    ctx.as_mut().rust_mut().win_key = val;
+                    ctx.as_mut().rust_mut().swap_key = val;
+                    ctx.as_mut().fn_key_changed();
                     ctx.as_mut().win_key_changed();
 
+                    ctx.as_mut().state_changed("fnKey".into());
                     ctx.state_changed("winKey".into());
                 });
             }
@@ -2629,11 +2664,11 @@ impl qobject::EcchanClient {
     }
 
     fn get_fn_key(&self) -> QString {
-        self.fn_key.to_string().into()
+        self.swap_key.get_fn().to_string().into()
     }
 
     fn get_win_key(&self) -> QString {
-        self.win_key.to_string().into()
+        self.swap_key.get_win().to_string().into()
     }
 
     fn set_fn_key(mut self: Pin<&mut Self>, dir: &QString) {
@@ -2645,21 +2680,29 @@ impl qobject::EcchanClient {
             }
         };
 
-        if state == self.fn_key {
+        let state = SwapKey::from_fn(state);
+
+        if state == self.swap_key {
             return;
         }
 
-        self.as_mut()
-            .call(Method::SetFnKey { state }, move |mut ctx, res| {
+        self.as_mut().call(
+            Method::SetFnKey {
+                state: state.get_fn(),
+            },
+            move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
 
-                ctx.as_mut().rust_mut().fn_key = state;
+                ctx.as_mut().rust_mut().swap_key = state;
                 ctx.as_mut().fn_key_changed();
+                ctx.as_mut().win_key_changed();
 
-                ctx.state_changed("fnKey".into());
-            });
+                ctx.as_mut().state_changed("fnKey".into());
+                ctx.state_changed("winKey".into());
+            },
+        );
     }
 
     fn set_win_key(mut self: Pin<&mut Self>, dir: &QString) {
@@ -2671,21 +2714,29 @@ impl qobject::EcchanClient {
             }
         };
 
-        if state == self.win_key {
+        let state = SwapKey::from_win(state);
+
+        if state == self.swap_key {
             return;
         }
 
-        self.as_mut()
-            .call(Method::SetWinKey { state }, move |mut ctx, res| {
+        self.as_mut().call(
+            Method::SetWinKey {
+                state: state.get_win(),
+            },
+            move |mut ctx, res| {
                 if res.is_err() {
                     return;
                 }
 
-                ctx.as_mut().rust_mut().win_key = state;
+                ctx.as_mut().rust_mut().swap_key = state;
+                ctx.as_mut().fn_key_changed();
                 ctx.as_mut().win_key_changed();
 
+                ctx.as_mut().state_changed("fnKey".into());
                 ctx.state_changed("winKey".into());
-            });
+            },
+        );
     }
 
     fn get_fn_win_swap_supported(&self) -> bool {
