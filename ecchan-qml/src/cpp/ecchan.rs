@@ -13,7 +13,7 @@ use std::{
 };
 
 use cxx_qt::{Constructor, CxxQtType, Threading};
-use cxx_qt_lib::{QByteArray, QQmlEngine, QString, QStringList, QVariant};
+use cxx_qt_lib::{QByteArray, QMetaTypeType, QQmlEngine, QString, QStringList, QVariant};
 use ecchan_ipc::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MethodData,
     MethodOp, ShiftMode, SuperBattery, Webcam, WmiVer,
@@ -2460,58 +2460,60 @@ impl qobject::EcchanClient {
     }
 
     fn set_battery_charge_mode(mut self: Pin<&mut Self>, mode: QVariant) {
-        if let Some(mode) = mode.value::<u8>() {
+        let mode = if matches!(
+            mode.type_id(),
+            // anything number like, but not float
+            QMetaTypeType::Int
+                | QMetaTypeType::UInt
+                | QMetaTypeType::LongLong
+                | QMetaTypeType::ULongLong
+                | QMetaTypeType::Long
+                | QMetaTypeType::Short
+                | QMetaTypeType::Char
+                | QMetaTypeType::ULong
+                | QMetaTypeType::UShort
+                | QMetaTypeType::UChar
+                | QMetaTypeType::SChar
+        ) && let Some(mode) = mode.value::<u8>()
+        {
             let Some(mode) = BatteryChargeMode::from_end(mode) else {
                 q_warning!("battery_charge_mode: {mode} out of range; only accept 10..=100");
                 return;
             };
 
-            if mode == self.battery_charge_mode {
-                return;
-            }
-
-            self.as_mut().call(
-                Method::SetBatteryChargeMode { mode },
-                move |mut ctx, res| {
-                    if res.is_err() {
-                        return;
-                    }
-
-                    ctx.as_mut().rust_mut().battery_charge_mode = mode;
-                    ctx.as_mut().battery_charge_mode_changed();
-
-                    ctx.state_changed("batteryChargeMode".into());
-                },
-            );
-        } else if let Some(mode) = mode.value::<QString>() {
-            let mode = match BatteryChargeMode::from_str(&mode.to_string()) {
+            mode
+        } else if mode.type_id() == QMetaTypeType::QString
+            && let Some(mode) = mode.value::<QString>()
+        {
+            match BatteryChargeMode::from_str(&mode.to_string()) {
                 Ok(m) => m,
                 Err(e) => {
                     q_warning!("battery_charge_mode: {e}");
                     return;
                 }
-            };
-
-            if mode == self.battery_charge_mode {
-                return;
             }
-
-            self.as_mut().call(
-                Method::SetBatteryChargeMode { mode },
-                move |mut ctx, res| {
-                    if res.is_err() {
-                        return;
-                    }
-
-                    ctx.as_mut().rust_mut().battery_charge_mode = mode;
-                    ctx.as_mut().battery_charge_mode_changed();
-
-                    ctx.state_changed("batteryChargeMode".into());
-                },
-            );
         } else {
             q_warning!("battery_charge_mode: only string and number are supported");
+            return;
+        };
+
+        if mode == self.battery_charge_mode {
+            return;
         }
+
+        self.as_mut().call(
+            Method::SetBatteryChargeMode { mode },
+            move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
+
+                ctx.as_mut().rust_mut().battery_charge_mode = mode;
+                ctx.as_mut().battery_charge_mode_changed();
+
+                ctx.state_changed("batteryChargeMode".into());
+            },
+        );
     }
 
     fn get_battery_charge_mode_supported(&self) -> bool {
