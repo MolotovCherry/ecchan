@@ -1,5 +1,4 @@
 use std::{
-    borrow::Cow,
     collections::HashMap,
     io,
     pin::Pin,
@@ -13,15 +12,11 @@ use std::{
     time::Duration,
 };
 
-use cxx::UniquePtr;
 use cxx_qt::{Constructor, CxxQtType, Threading};
-use cxx_qt_lib::{
-    QByteArray, QList, QMapPair as _, QMapPair_QString_QVariant, QObjectExt, QQmlEngine, QString,
-    QStringList, QVariant,
-};
+use cxx_qt_lib::{QByteArray, QQmlEngine, QString, QStringList, QVariant};
 use ecchan_ipc::{
-    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led,
-    Method as CustomMethod, MethodData, MethodOp, ShiftMode, SuperBattery, Webcam, WmiVer,
+    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MethodData,
+    ShiftMode, SuperBattery, Webcam, WmiVer,
     method::{Method, MethodTy},
     ret::{Bin, RetVal},
 };
@@ -30,7 +25,7 @@ use strum::IntoEnumIterator as _;
 
 use crate::{
     client::{Client, ClientError},
-    cpp::{QJSValue, QJSValueList, QQmlPropertyMap, qqmlengine::QQmlEngineExt as _},
+    cpp::{QJSValue, QJSValueList, qqmlengine::QQmlEngineExt as _},
     q_critical, q_warning,
     setup::setup,
 };
@@ -127,15 +122,14 @@ pub mod qobject {
         #[qproperty(u8, gpu_rt_fan_speed, READ = get_gpu_rt_fan_speed, NOTIFY, FINAL)]
         #[qproperty(u8, gpu_rt_temp, READ = get_gpu_rt_temp, NOTIFY, FINAL)]
         // curves
-        #[qproperty(QByteArray, cpu_fan_curve_wmi2, READ = get_cpu_fan_curve_wmi2, WRITE = set_cpu_fan_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QByteArray, cpu_temp_curve_wmi2, READ = get_cpu_temp_curve_wmi2, WRITE = set_cpu_temp_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QByteArray, cpu_hysteresis_curve_wmi2, READ = get_cpu_hysteresis_curve_wmi2, WRITE = set_cpu_hysteresis_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QByteArray, gpu_fan_curve_wmi2, READ = get_gpu_fan_curve_wmi2, WRITE = set_gpu_fan_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QByteArray, gpu_temp_curve_wmi2, READ = get_gpu_temp_curve_wmi2, WRITE = set_gpu_temp_curve_wmi2, NOTIFY, FINAL)]
-        #[qproperty(QByteArray, gpu_hysteresis_curve_wmi2, READ = get_gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QVariant, cpu_fan_curve_wmi2, READ = get_cpu_fan_curve_wmi2, WRITE = set_cpu_fan_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QVariant, cpu_temp_curve_wmi2, READ = get_cpu_temp_curve_wmi2, WRITE = set_cpu_temp_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QVariant, cpu_hysteresis_curve_wmi2, READ = get_cpu_hysteresis_curve_wmi2, WRITE = set_cpu_hysteresis_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QVariant, gpu_fan_curve_wmi2, READ = get_gpu_fan_curve_wmi2, WRITE = set_gpu_fan_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QVariant, gpu_temp_curve_wmi2, READ = get_gpu_temp_curve_wmi2, WRITE = set_gpu_temp_curve_wmi2, NOTIFY, FINAL)]
+        #[qproperty(QVariant, gpu_hysteresis_curve_wmi2, READ = get_gpu_hysteresis_curve_wmi2, WRITE = set_gpu_hysteresis_curve_wmi2, NOTIFY, FINAL)]
         // methods
-        #[qproperty(QList_QVariant, method_list, READ = get_method_list, NOTIFY, FINAL)]
-        #[qproperty(*mut QQmlPropertyMap, methods, READ = get_methods, NOTIFY, FINAL)]
+        #[qproperty(QVariant, methods, READ = get_methods, NOTIFY, FINAL)]
         // dump
         #[qproperty(QByteArray, ec_dump, READ = get_ec_dump, NOTIFY, FINAL)]
         #[qproperty(QString, ec_dump_pretty, READ = get_ec_dump_pretty, NOTIFY, FINAL)]
@@ -209,21 +203,20 @@ pub mod qobject {
         fn get_gpu_rt_fan_speed(&self) -> u8;
         fn get_gpu_rt_temp(&self) -> u8;
 
-        fn get_cpu_fan_curve_wmi2(&self) -> QByteArray;
-        fn set_cpu_fan_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
-        fn get_cpu_temp_curve_wmi2(&self) -> QByteArray;
-        fn set_cpu_temp_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
-        fn get_cpu_hysteresis_curve_wmi2(&self) -> QByteArray;
-        fn set_cpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
-        fn get_gpu_fan_curve_wmi2(&self) -> QByteArray;
-        fn set_gpu_fan_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
-        fn get_gpu_temp_curve_wmi2(&self) -> QByteArray;
-        fn set_gpu_temp_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
-        fn get_gpu_hysteresis_curve_wmi2(&self) -> QByteArray;
-        fn set_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: QByteArray);
+        fn get_cpu_fan_curve_wmi2(&self) -> QVariant;
+        fn set_cpu_fan_curve_wmi2(self: Pin<&mut Self>, curve: &QVariant);
+        fn get_cpu_temp_curve_wmi2(&self) -> QVariant;
+        fn set_cpu_temp_curve_wmi2(self: Pin<&mut Self>, curve: &QVariant);
+        fn get_cpu_hysteresis_curve_wmi2(&self) -> QVariant;
+        fn set_cpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: &QVariant);
+        fn get_gpu_fan_curve_wmi2(&self) -> QVariant;
+        fn set_gpu_fan_curve_wmi2(self: Pin<&mut Self>, curve: &QVariant);
+        fn get_gpu_temp_curve_wmi2(&self) -> QVariant;
+        fn set_gpu_temp_curve_wmi2(self: Pin<&mut Self>, curve: &QVariant);
+        fn get_gpu_hysteresis_curve_wmi2(&self) -> QVariant;
+        fn set_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: &QVariant);
 
-        fn get_method_list(&self) -> QList_QVariant;
-        fn get_methods(&self) -> *mut QQmlPropertyMap;
+        fn get_methods(&self) -> QVariant;
 
         fn get_ec_dump(&self) -> QByteArray;
         fn get_ec_dump_pretty(&self) -> &QString;
@@ -359,8 +352,6 @@ pub mod qobject {
         fn update_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn update_method_list(self: Pin<&mut Self>);
-        #[qinvokable]
         fn update_methods(self: Pin<&mut Self>);
 
         #[qinvokable]
@@ -456,7 +447,6 @@ pub mod qobject {
         EcDumpPretty,
 
         // Methods
-        MethodList,
         Methods,
     }
 }
@@ -652,7 +642,6 @@ pub struct EcchanClientRust {
     gpu_temp_curve_wmi2: Curve7,
     gpu_hysteresis_curve_wmi2: Curve6,
 
-    method_list: Vec<CustomMethod<'static>>,
     methods: Methods,
 
     ec_dump: Box<Bin>,
@@ -660,9 +649,7 @@ pub struct EcchanClientRust {
 }
 
 struct Methods {
-    map: UniquePtr<QQmlPropertyMap>,
-    children: HashMap<String, UniquePtr<QQmlPropertyMap>>,
-    cache: HashMap<String, MethodData>,
+    data: HashMap<String, MethodData>,
 }
 
 impl Default for EcchanClientRust {
@@ -734,11 +721,8 @@ impl Default for EcchanClientRust {
             gpu_temp_curve_wmi2: Curve7::default(),
             gpu_hysteresis_curve_wmi2: Curve6::default(),
 
-            method_list: Vec::new(),
             methods: Methods {
-                map: QQmlPropertyMap::new(),
-                children: HashMap::new(),
-                cache: HashMap::new(),
+                data: HashMap::new(),
             },
 
             ec_dump: Box::default(),
@@ -1760,341 +1744,9 @@ impl qobject::EcchanClient {
                     });
             }
 
-            MethodTy::MethodList => {
-                self.as_mut().call(Method::MethodList, move |mut ctx, res| {
-                    let Ok(res) = res else {
-                        return;
-                    };
-
-                    let val = res.into_methods().unwrap();
-
-                    if val == ctx.method_list {
-                        return;
-                    }
-
-                    ctx.as_mut().rust_mut().method_list = val;
-                    ctx.as_mut().as_mut().method_list_changed();
-
-                    ctx.state_changed("methodList".into());
-                });
-            }
-
             MethodTy::Methods => {
                 // this is queued because it is called after methodList, and is expected to work in order
-                self.as_mut().queued_call(|mut ctx| {
-                    // > 1 because objectName property is added by default
-                    if ctx.method_list.is_empty() {
-                        return;
-                    }
-
-                    // fast path
-
-                    // we already initialized, so just query values and update the relevant maps
-                    if ctx.method_list.len() > 1 {
-                        let method_list = ctx.method_list.clone();
-
-                        let updated: Arc<AtomicBool> = Arc::default();
-                        for method in method_list.iter().cloned() {
-                            let read = method.ops.iter().find(|o| {
-                                matches!(o, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)
-                            });
-
-                            let Some(read) = read else {
-                                continue;
-                            };
-
-                            let _method = method.method.clone().into_owned();
-                            ctx.as_mut().call(Method::MethodRead { method: method.method, op: *read }, {
-                                let updated = updated.clone();
-                                move |mut ctx, res| {
-                                let Ok(ret) = res else {
-                                    return;
-                                };
-
-                                let data = ret.method_data().unwrap();
-                                ctx.as_mut().rust_mut().methods.cache.entry(_method.clone()).and_modify({
-                                    let data = data.clone();
-                                    |v| {
-                                    if data != *v {
-                                        *v = data;
-                                        updated.store(true, Ordering::Relaxed);
-                                    }
-                                }}).or_insert_with(|| data.clone());
-
-                                // data changed; we should update the actual map
-                                if updated.load(Ordering::Relaxed) {
-                                    let mut this = ctx.as_mut().rust_mut();
-                                    let m = this.methods.children.get_mut(&_method).unwrap();
-
-                                    let variant = match data {
-                                        MethodData::Bit(b) => QVariant::from(&b),
-                                        MethodData::Byte(b) => QVariant::from(&b),
-                                        MethodData::Range(items) => {
-                                            let arr = QByteArray::from(&*items);
-                                            QVariant::from(&arr)
-                                        }
-                                    };
-
-                                    m.pin_mut().insert(&"value".into(), &variant);
-                                }
-                            }});
-                        }
-
-                        ctx.queued_call(move |mut ctx| {
-                            if updated.load(Ordering::Relaxed) {
-                                ctx.as_mut().methods_changed();
-                                ctx.state_changed("methods".into());
-                            }
-                        });
-
-                        return;
-                    }
-
-                    // cold path
-
-                    let method_list = ctx.method_list.clone();
-                    let mut list = Vec::with_capacity(ctx.method_list.len());
-
-                    list.resize_with(list.capacity(), || {
-                        let mut map = QQmlPropertyMap::new();
-                        map.pin_mut()
-                            .set_parent(ctx.as_mut().rust_mut().methods.map.pin_mut());
-                        map
-                    });
-
-                    let last = method_list.len().saturating_sub(1);
-                    for (i, (method, mut map)) in method_list.into_iter().zip(list).enumerate() {
-                        let is_last_iter = i == last;
-
-                        let name = QString::from(&*method.method);
-
-                        let is_write = method.ops.iter().any(|o| {
-                            matches!(
-                                o,
-                                MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange
-                            )
-                        });
-
-                        let string_op = if let Some(op) = method.ops.first() {
-                            let op = match op {
-                                MethodOp::ReadBit | MethodOp::WriteBit => "Bit",
-                                MethodOp::Read | MethodOp::Write => "Byte",
-                                MethodOp::ReadRange | MethodOp::WriteRange => "Range",
-                            };
-
-                            Some(op)
-                        } else {
-                            None
-                        };
-
-                        // set custom slot to react to value setting
-                        map.pin_mut()
-                            .on_value_changed({
-                                let qthread = ctx.qt_thread();
-                                let op = method.ops.iter().find(|op| matches!(op, MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange)).copied();
-                                let method = method.method.clone().into_owned();
-
-                                move |_, key, value| {
-                                    let key = key.to_string();
-                                    if key !=  "value" {
-                                        q_warning!("custom method {method}'s key {key} should not be set by user; setting anything else may cause unexpected failures; please only set `value`");
-                                        return;
-                                    }
-
-                                    if !is_write {
-                                        q_warning!("custom method {method} does not support writes");
-                                        return;
-                                    }
-
-                                    let Some(op) = op else {
-                                        q_warning!("no write ops were found for custom method {method}");
-                                        return;
-                                    };
-
-                                    match op {
-                                        MethodOp::WriteBit => {
-                                            let Some(state) = QVariant::value::<bool>(value) else {
-                                                q_warning!("custom method {method} received an unsupported type; please use `bool` for setting");
-                                                return;
-                                            };
-
-                                            _ = qthread.queue({
-                                                let method: Cow<str> = Cow::Owned(method.clone());
-                                                move |mut ctx| {
-                                                    ctx.as_mut().call(Method::MethodWrite { method: method.clone(), op, data: MethodData::Bit(state) }, move |mut ctx, res| {
-                                                        if res.is_err() {
-                                                            // get previous value; don't update the cache since it failed
-                                                            let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
-                                                            if let Some(prev) = prev && let Some(child) = ctx.as_mut().rust_mut().methods.children.get_mut(&*method) {
-                                                                child.pin_mut().insert(&"value".into(), &QVariant::from(&prev.as_bit()));
-                                                            }
-                                                        } else {
-                                                            // update the previous cache to new value
-                                                            ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Bit(state));
-                                                        }
-                                                    });
-
-                                                }
-                                            });
-                                        }
-
-                                        MethodOp::Write => {
-                                            let Some(byte) = QVariant::value::<u8>(value) else {
-                                                q_warning!("custom method {method} received an unsupported type; please use `number` (u8) for setting");
-                                                return;
-                                            };
-
-                                            _ = qthread.queue({
-                                                let method: Cow<str> = Cow::Owned(method.clone());
-                                                move |mut ctx| {
-                                                ctx.as_mut().call(Method::MethodWrite { method: method.clone(), op, data: MethodData::Byte(byte) }, move |mut ctx, res| {
-                                                        if res.is_err() {
-                                                            // get previous value; don't update the cache since it failed
-                                                            let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
-                                                            if let Some(prev) = prev && let Some(child) = ctx.as_mut().rust_mut().methods.children.get_mut(&*method) {
-                                                                child.pin_mut().insert(&"value".into(), &QVariant::from(&prev.as_byte()));
-                                                            }
-                                                        } else {
-                                                            // update the previous cache to new value
-                                                            ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Byte(byte));
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        }
-
-                                        MethodOp::WriteRange => {
-                                            let Some(bytes) = QVariant::value::<QByteArray>(value) else {
-                                                q_warning!("custom method {method} received an unsupported type; please use a byte array for setting");
-                                                return;
-                                            };
-
-                                            let bytes = bytes.as_slice().to_vec();
-
-                                            _ = qthread.queue({
-                                                let method: Cow<str> = Cow::Owned(method.clone());
-                                                move |mut ctx| {
-                                                ctx.as_mut().call(Method::MethodWrite { method: method.clone(), op, data: MethodData::Range(bytes.clone()) }, move |mut ctx, res| {
-                                                        if res.is_err() {
-                                                            // get previous value; don't update the cache since it failed
-                                                            let prev = ctx.as_ref().rust().methods.cache.get(&*method).cloned();
-                                                            if let Some(prev) = prev && let Some(child) = ctx.as_mut().rust_mut().methods.children.get_mut(&*method) {
-                                                                child.pin_mut().insert(&"value".into(), &QVariant::from(&QByteArray::from(prev.as_range())));
-                                                            }
-                                                        } else {
-                                                            // update the previous cache to new value
-                                                            ctx.as_mut().rust_mut().methods.cache.insert(method.into(), MethodData::Range(bytes));
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        }
-
-                                        _ => {
-                                            q_warning!("entered unreachable code");
-                                        }
-                                    }
-                                }
-                            })
-                            .release();
-
-                        let variant = unsafe { QQmlPropertyMap::as_qvariant(&map) };
-                        ctx.as_mut()
-                            .rust_mut()
-                            .methods
-                            .map
-                            .pin_mut()
-                            .insert(&name, &variant);
-
-                        // insert map as child to keep it alive for qvariant above
-                        ctx.as_mut()
-                            .rust_mut()
-                            .methods
-                            .children
-                            .insert(method.method.clone().into_owned(), map);
-
-                        let op = method.ops.into_iter().find(|o| {
-                            matches!(o, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)
-                        });
-
-                        let _method = method.method.clone().into_owned();
-                        let finish = move |mut ctx: Pin<&mut qobject::EcchanClient>| {
-                            let mut this = ctx.as_mut().rust_mut();
-                            let map = this.methods.children.get_mut(&*_method).unwrap();
-
-                            let mut pin_map = map.pin_mut();
-
-                            if let Some(op) = string_op {
-                                pin_map
-                                    .as_mut()
-                                    .insert(&"type".into(), &QVariant::from(&QString::from(op)));
-                            }
-
-                            pin_map.as_mut().freeze();
-                        };
-
-                        match op {
-                            Some(op) => {
-                                let _method = method.method.clone().into_owned();
-
-                                ctx.as_mut().call(
-                                    Method::MethodRead {
-                                        method: method.method.clone(),
-                                        op,
-                                    },
-                                    move |mut ctx, res| {
-                                        if let Ok(res) = res {
-                                            let data = res.method_data().unwrap();
-
-                                            ctx.as_mut()
-                                                .rust_mut()
-                                                .methods
-                                                .cache
-                                                .insert(_method.clone(), data.clone());
-
-                                            let variant = match data {
-                                                MethodData::Bit(b) => QVariant::from(&b),
-                                                MethodData::Byte(b) => QVariant::from(&b),
-                                                MethodData::Range(items) => {
-                                                    let arr = QByteArray::from(&*items);
-                                                    QVariant::from(&arr)
-                                                }
-                                            };
-
-                                            let mut this = ctx.as_mut().rust_mut();
-                                            let map = this.methods.children.get_mut(&*_method).unwrap();
-                                            map.pin_mut().insert(&"value".into(), &variant);
-
-                                            finish(ctx.as_mut());
-                                            if is_last_iter {
-                                                ctx.as_mut().methods_changed();
-                                                ctx.as_mut().state_changed("methods".into());
-                                            }
-                                        } else {
-                                            finish(ctx.as_mut());
-                                            if is_last_iter {
-                                                ctx.as_mut().methods_changed();
-                                                ctx.as_mut().state_changed("methods".into());
-                                            }
-                                        }
-                                    },
-                                );
-                            }
-
-                            None => {
-                                finish(ctx.as_mut());
-
-                                if is_last_iter {
-                                    ctx.as_mut().methods_changed();
-                                    ctx.as_mut().state_changed("methods".into());
-                                }
-                            }
-                        }
-                    }
-
-                    // no more changes thx
-                    ctx.as_mut().rust_mut().methods.map.pin_mut().freeze();
-                });
+                self.as_mut().queued_call(|mut ctx| {});
             }
 
             MethodTy::EcDumpRaw => {
@@ -2134,6 +1786,8 @@ impl qobject::EcchanClient {
                     ctx.state_changed("ecDumpPretty".into());
                 });
             }
+
+            x => q_warning!("Unsupported update type {x:?}"),
         }
     }
 }
@@ -2343,7 +1997,7 @@ impl qobject::EcchanClient {
         );
 
         let mut methods = engine.as_mut().new_object();
-        for (key, data) in &self.methods.cache {
+        for (key, data) in &self.methods.data {
             let val = match data {
                 MethodData::Bit(b) => QJSValue::from_bool(*b),
                 MethodData::Byte(b) => QJSValue::from_uint(*b as _),
@@ -2431,7 +2085,6 @@ impl qobject::EcchanClient {
         update_gpu_temp_curve_wmi2, GpuTempCurveWmi2,
         update_gpu_hysteresis_curve_wmi2, GpuHysteresisCurveWmi2,
 
-        update_method_list, MethodList,
         update_methods, Methods,
 
         update_ec_dump, EcDumpRaw,
@@ -2998,20 +2651,56 @@ impl qobject::EcchanClient {
         self.gpu_rt_temp
     }
 
-    fn get_cpu_fan_curve_wmi2(&self) -> QByteArray {
+    fn get_cpu_fan_curve_wmi2(&self) -> QVariant {
+        let Some(engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
         let curve: [u8; 7] = self.cpu_fan_curve_wmi2.into();
-        QByteArray::from(&curve)
+        let mut jsarray = engine.new_array(7);
+        for (i, val) in curve.iter().enumerate() {
+            jsarray
+                .pin_mut()
+                .set_element(i as u32, &QJSValue::from_uint(*val as u32));
+        }
+
+        jsarray.to_qvariant()
     }
 
-    fn set_cpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
-        let len = curve.len();
-        if len != 7 {
-            q_warning!("cpu_fan_curve_wmi2: need array of len 7, instead got len {len}");
+    fn set_cpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: &QVariant) {
+        let Some(curve) = QJSValue::from_qvariant(curve) else {
+            q_warning!("cpu_fan_curve_wmi2: only supports array[u8]");
+            return;
+        };
+
+        if !curve.is_array() {
+            q_warning!("cpu_fan_curve_wmi2: only supports array[u8]");
             return;
         }
 
-        let data: [u8; 7] = curve.as_slice().try_into().unwrap();
-        let curve = Curve7::from(data);
+        let mut pcurve = [0u8; 7];
+        for n in 0..7 {
+            let elem = curve.get_element(n);
+            if !elem.is_number() {
+                q_warning!(
+                    "cpu_fan_curve_wmi2: found non-number in array; only supports array[u8]"
+                );
+                return;
+            }
+
+            let num = elem.to_uint();
+            if num > u8::MAX as u32 {
+                q_warning!(
+                    "cpu_fan_curve_wmi2: number {num} exceeds u8 range; only supports array[u8]"
+                );
+                return;
+            }
+
+            pcurve[n as usize] = num as u8;
+        }
+
+        let curve = Curve7::from(pcurve);
 
         if curve == self.cpu_fan_curve_wmi2 {
             return;
@@ -3030,20 +2719,56 @@ impl qobject::EcchanClient {
             });
     }
 
-    fn get_cpu_temp_curve_wmi2(&self) -> QByteArray {
+    fn get_cpu_temp_curve_wmi2(&self) -> QVariant {
+        let Some(engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
         let curve: [u8; 7] = self.cpu_temp_curve_wmi2.into();
-        QByteArray::from(&curve)
+        let mut jsarray = engine.new_array(7);
+        for (i, val) in curve.iter().enumerate() {
+            jsarray
+                .pin_mut()
+                .set_element(i as u32, &QJSValue::from_uint(*val as u32));
+        }
+
+        jsarray.to_qvariant()
     }
 
-    fn set_cpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
-        let len = curve.len();
-        if len != 7 {
-            q_warning!("cpu_temp_curve_wmi2: need array of len 7, instead got len {len}");
+    fn set_cpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: &QVariant) {
+        let Some(curve) = QJSValue::from_qvariant(curve) else {
+            q_warning!("cpu_temp_curve_wmi2: only supports array[u8]");
+            return;
+        };
+
+        if !curve.is_array() {
+            q_warning!("cpu_temp_curve_wmi2: only supports array[u8]");
             return;
         }
 
-        let data: [u8; 7] = curve.as_slice().try_into().unwrap();
-        let curve = Curve7::from(data);
+        let mut pcurve = [0u8; 7];
+        for n in 0..7 {
+            let elem = curve.get_element(n);
+            if !elem.is_number() {
+                q_warning!(
+                    "cpu_temp_curve_wmi2: found non-number in array; only supports array[u8]"
+                );
+                return;
+            }
+
+            let num = elem.to_uint();
+            if num > u8::MAX as u32 {
+                q_warning!(
+                    "cpu_temp_curve_wmi2: number {num} exceeds u8 range; only supports array[u8]"
+                );
+                return;
+            }
+
+            pcurve[n as usize] = num as u8;
+        }
+
+        let curve = Curve7::from(pcurve);
 
         if curve == self.cpu_temp_curve_wmi2 {
             return;
@@ -3064,20 +2789,56 @@ impl qobject::EcchanClient {
         );
     }
 
-    fn get_cpu_hysteresis_curve_wmi2(&self) -> QByteArray {
+    fn get_cpu_hysteresis_curve_wmi2(&self) -> QVariant {
+        let Some(engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
         let curve: [u8; 6] = self.cpu_hysteresis_curve_wmi2.into();
-        QByteArray::from(&curve)
+        let mut jsarray = engine.new_array(6);
+        for (i, val) in curve.iter().enumerate() {
+            jsarray
+                .pin_mut()
+                .set_element(i as u32, &QJSValue::from_uint(*val as u32));
+        }
+
+        jsarray.to_qvariant()
     }
 
-    fn set_cpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
-        let len = curve.len();
-        if len != 6 {
-            q_warning!("cpu_hysteresis_curve_wmi2: need array of len 6, instead got len {len}");
+    fn set_cpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: &QVariant) {
+        let Some(curve) = QJSValue::from_qvariant(curve) else {
+            q_warning!("cpu_hysteresis_curve_wmi2: only supports array[u8]");
+            return;
+        };
+
+        if !curve.is_array() {
+            q_warning!("cpu_hysteresis_curve_wmi2: only supports array[u8]");
             return;
         }
 
-        let data: [u8; 6] = curve.as_slice().try_into().unwrap();
-        let curve = Curve6::from(data);
+        let mut pcurve = [0u8; 6];
+        for n in 0..6 {
+            let elem = curve.get_element(n);
+            if !elem.is_number() {
+                q_warning!(
+                    "cpu_hysteresis_curve_wmi2: found non-number in array; only supports array[u8]"
+                );
+                return;
+            }
+
+            let num = elem.to_uint();
+            if num > u8::MAX as u32 {
+                q_warning!(
+                    "cpu_hysteresis_curve_wmi2: number {num} exceeds u8 range; only supports array[u8]"
+                );
+                return;
+            }
+
+            pcurve[n as usize] = num as u8;
+        }
+
+        let curve = Curve6::from(pcurve);
 
         if curve == self.cpu_hysteresis_curve_wmi2 {
             return;
@@ -3098,20 +2859,56 @@ impl qobject::EcchanClient {
         );
     }
 
-    fn get_gpu_fan_curve_wmi2(&self) -> QByteArray {
+    fn get_gpu_fan_curve_wmi2(&self) -> QVariant {
+        let Some(engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
         let curve: [u8; 7] = self.gpu_fan_curve_wmi2.into();
-        QByteArray::from(&curve)
+        let mut jsarray = engine.new_array(7);
+        for (i, val) in curve.iter().enumerate() {
+            jsarray
+                .pin_mut()
+                .set_element(i as u32, &QJSValue::from_uint(*val as u32));
+        }
+
+        jsarray.to_qvariant()
     }
 
-    fn set_gpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
-        let len = curve.len();
-        if len != 7 {
-            q_warning!("gpu_fan_curve_wmi2: need array of len 7, instead got len {len}");
+    fn set_gpu_fan_curve_wmi2(mut self: Pin<&mut Self>, curve: &QVariant) {
+        let Some(curve) = QJSValue::from_qvariant(curve) else {
+            q_warning!("gpu_fan_curve_wmi2: only supports array[u8]");
+            return;
+        };
+
+        if !curve.is_array() {
+            q_warning!("gpu_fan_curve_wmi2: only supports array[u8]");
             return;
         }
 
-        let data: [u8; 7] = curve.as_slice().try_into().unwrap();
-        let curve = Curve7::from(data);
+        let mut pcurve = [0u8; 7];
+        for n in 0..7 {
+            let elem = curve.get_element(n);
+            if !elem.is_number() {
+                q_warning!(
+                    "gpu_fan_curve_wmi2: found non-number in array; only supports array[u8]"
+                );
+                return;
+            }
+
+            let num = elem.to_uint();
+            if num > u8::MAX as u32 {
+                q_warning!(
+                    "gpu_fan_curve_wmi2: number {num} exceeds u8 range; only supports array[u8]"
+                );
+                return;
+            }
+
+            pcurve[n as usize] = num as u8;
+        }
+
+        let curve = Curve7::from(pcurve);
 
         if curve == self.gpu_fan_curve_wmi2 {
             return;
@@ -3130,20 +2927,56 @@ impl qobject::EcchanClient {
             });
     }
 
-    fn get_gpu_temp_curve_wmi2(&self) -> QByteArray {
+    fn get_gpu_temp_curve_wmi2(&self) -> QVariant {
+        let Some(engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
         let curve: [u8; 7] = self.gpu_temp_curve_wmi2.into();
-        QByteArray::from(&curve)
+        let mut jsarray = engine.new_array(7);
+        for (i, val) in curve.iter().enumerate() {
+            jsarray
+                .pin_mut()
+                .set_element(i as u32, &QJSValue::from_uint(*val as u32));
+        }
+
+        jsarray.to_qvariant()
     }
 
-    fn set_gpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
-        let len = curve.len();
-        if len != 7 {
-            q_warning!("gpu_temp_curve_wmi2: need array of len 7, instead got len {len}");
+    fn set_gpu_temp_curve_wmi2(mut self: Pin<&mut Self>, curve: &QVariant) {
+        let Some(curve) = QJSValue::from_qvariant(curve) else {
+            q_warning!("gpu_temp_curve_wmi2: only supports array[u8]");
+            return;
+        };
+
+        if !curve.is_array() {
+            q_warning!("gpu_temp_curve_wmi2: only supports array[u8]");
             return;
         }
 
-        let data: [u8; 7] = curve.as_slice().try_into().unwrap();
-        let curve = Curve7::from(data);
+        let mut pcurve = [0u8; 7];
+        for n in 0..7 {
+            let elem = curve.get_element(n);
+            if !elem.is_number() {
+                q_warning!(
+                    "gpu_temp_curve_wmi2: found non-number in array; only supports array[u8]"
+                );
+                return;
+            }
+
+            let num = elem.to_uint();
+            if num > u8::MAX as u32 {
+                q_warning!(
+                    "gpu_temp_curve_wmi2: number {num} exceeds u8 range; only supports array[u8]"
+                );
+                return;
+            }
+
+            pcurve[n as usize] = num as u8;
+        }
+
+        let curve = Curve7::from(pcurve);
 
         if curve == self.gpu_temp_curve_wmi2 {
             return;
@@ -3164,20 +2997,56 @@ impl qobject::EcchanClient {
         );
     }
 
-    fn get_gpu_hysteresis_curve_wmi2(&self) -> QByteArray {
+    fn get_gpu_hysteresis_curve_wmi2(&self) -> QVariant {
+        let Some(engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
         let curve: [u8; 6] = self.gpu_hysteresis_curve_wmi2.into();
-        QByteArray::from(&curve)
+        let mut jsarray = engine.new_array(6);
+        for (i, val) in curve.iter().enumerate() {
+            jsarray
+                .pin_mut()
+                .set_element(i as u32, &QJSValue::from_uint(*val as u32));
+        }
+
+        jsarray.to_qvariant()
     }
 
-    fn set_gpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: QByteArray) {
-        let len = curve.len();
-        if len != 6 {
-            q_warning!("gpu_hysteresis_curve_wmi2: need array of len 6, instead got len {len}");
+    fn set_gpu_hysteresis_curve_wmi2(mut self: Pin<&mut Self>, curve: &QVariant) {
+        let Some(curve) = QJSValue::from_qvariant(curve) else {
+            q_warning!("gpu_hysteresis_curve_wmi2: only supports array[u8]");
+            return;
+        };
+
+        if !curve.is_array() {
+            q_warning!("gpu_hysteresis_curve_wmi2: only supports array[u8]");
             return;
         }
 
-        let data: [u8; 6] = curve.as_slice().try_into().unwrap();
-        let curve = Curve6::from(data);
+        let mut pcurve = [0u8; 6];
+        for n in 0..6 {
+            let elem = curve.get_element(n);
+            if !elem.is_number() {
+                q_warning!(
+                    "gpu_hysteresis_curve_wmi2: found non-number in array; only supports array[u8]"
+                );
+                return;
+            }
+
+            let num = elem.to_uint();
+            if num > u8::MAX as u32 {
+                q_warning!(
+                    "gpu_hysteresis_curve_wmi2: number {num} exceeds u8 range; only supports array[u8]"
+                );
+                return;
+            }
+
+            pcurve[n as usize] = num as u8;
+        }
+
+        let curve = Curve6::from(pcurve);
 
         if curve == self.gpu_hysteresis_curve_wmi2 {
             return;
@@ -3196,36 +3065,6 @@ impl qobject::EcchanClient {
                 ctx.state_changed("gpuHysteresisCurveWmi2".into());
             },
         );
-    }
-
-    fn get_method_list(&self) -> QList<QVariant> {
-        let mut list = QList::default();
-
-        for m in &self.method_list {
-            let mut map = QMapPair_QString_QVariant::default();
-
-            let name: QString = m.name.to_string().into();
-            let name = QVariant::from(&name);
-            let method: QString = m.method.to_string().into();
-            let method = QVariant::from(&method);
-
-            map.insert("name".into(), name);
-            map.insert("method".into(), method);
-
-            let mut ops = QStringList::default();
-            for op in &m.ops {
-                let qs = QString::from(op.to_string());
-                ops.append(qs);
-            }
-
-            let ops = QVariant::from(&ops);
-            map.insert("ops".into(), ops);
-
-            let variant = QVariant::from(&map);
-            list.append(variant);
-        }
-
-        list
     }
 
     fn get_methods(&self) -> *mut QQmlPropertyMap {
