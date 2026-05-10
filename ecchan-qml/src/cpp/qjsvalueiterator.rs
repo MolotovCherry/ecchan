@@ -16,7 +16,7 @@ mod qobject {
         include!("ecchan-client/qjsvalueiterator.h");
         type QJSValueIterator;
 
-        type QJSValue = super::super::QJSValue;
+        type QJSValue = super::QJSValue;
     }
 
     #[namespace = "rust::cxxqtlib1"]

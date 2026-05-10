@@ -55,28 +55,6 @@ EcchanClient {
     ];
     // qmlformat on
 
-    function serialize() {
-        const out = {};
-
-        for (const prop of root.profileProps) {
-            if (prop === "methods") {
-                continue;
-            }
-
-            out[prop] = root[prop];
-        }
-
-        const methods = Object.assign({}, root.methods);
-        delete methods.objectName;
-        for (const method of Object.keys(methods)) {
-            delete methods[method].objectName;
-        }
-
-        out.methods = methods;
-
-        return out;
-    }
-
     function apply(profile) {
         if (profile == null) {
             return;

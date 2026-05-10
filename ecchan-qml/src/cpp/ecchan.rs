@@ -16,8 +16,8 @@ use std::{
 use cxx::UniquePtr;
 use cxx_qt::{Constructor, CxxQtType, Threading};
 use cxx_qt_lib::{
-    QByteArray, QList, QMap, QMapPair as _, QMapPair_QString_QVariant, QObjectExt, QString,
-    QStringList, QVariant, QVariantValue,
+    QByteArray, QList, QMapPair as _, QMapPair_QString_QVariant, QObjectExt, QQmlEngine, QString,
+    QStringList, QVariant,
 };
 use ecchan_ipc::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led,
@@ -30,7 +30,7 @@ use strum::IntoEnumIterator as _;
 
 use crate::{
     client::{Client, ClientError},
-    cpp::{QJSValue, QJSValueList, QQmlPropertyMap},
+    cpp::{QJSValue, QJSValueList, QQmlPropertyMap, qqmlengine::QQmlEngineExt as _},
     q_critical, q_warning,
     setup::setup,
 };
@@ -246,6 +246,8 @@ pub mod qobject {
         fn init_state(self: Pin<&mut Self>);
         #[qinvokable]
         fn queue(self: Pin<&mut Self>, cb: &QJSValue);
+        #[qinvokable]
+        fn serialize(self: Pin<&mut Self>) -> QVariant;
 
         #[qinvokable]
         fn update_fan_count(self: Pin<&mut Self>);
@@ -666,11 +668,10 @@ struct Methods {
 impl Default for EcchanClientRust {
     fn default() -> Self {
         Self {
+            client: None,
             heartbeats: None,
 
-            client: None,
             path: QString::default(),
-
             connected: false,
 
             fan_count: Fans::One,
@@ -1867,10 +1868,6 @@ impl qobject::EcchanClient {
 
                         let name = QString::from(&*method.method);
 
-                        let is_read = method.ops.iter().any(|o| {
-                            matches!(o, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)
-                        });
-
                         let is_write = method.ops.iter().any(|o| {
                             matches!(
                                 o,
@@ -2033,14 +2030,6 @@ impl qobject::EcchanClient {
                                     .insert(&"type".into(), &QVariant::from(&QString::from(op)));
                             }
 
-                            pin_map
-                                .as_mut()
-                                .insert(&"read".into(), &QVariant::from(&is_read));
-
-                            pin_map
-                                .as_mut()
-                                .insert(&"write".into(), &QVariant::from(&is_write));
-
                             pin_map.as_mut().freeze();
                         };
 
@@ -2190,6 +2179,190 @@ impl qobject::EcchanClient {
             let value_list = QJSValueList::new();
             cb.call(&value_list);
         });
+    }
+
+    fn serialize(self: Pin<&mut Self>) -> QVariant {
+        let Some(mut engine) = QQmlEngine::js_engine(&*self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
+        let mut obj = engine.as_mut().new_object();
+        let mut pin = obj.pin_mut();
+
+        pin.as_mut().set_property(
+            &"shiftMode".into(),
+            &QJSValue::from_str(&self.shift_mode.to_string()),
+        );
+
+        let battery_mode = match self.battery_charge_mode {
+            BatteryChargeMode::Custom(threshold) => QJSValue::from_uint(threshold.as_end() as _),
+            m => QJSValue::from_str(&m.to_string()),
+        };
+
+        pin.as_mut()
+            .set_property(&"batteryChargeMode".into(), &battery_mode);
+
+        pin.as_mut().set_property(
+            &"superBattery".into(),
+            &QJSValue::from_bool(self.super_battery.enabled()),
+        );
+
+        pin.as_mut().set_property(
+            &"fanMode".into(),
+            &QJSValue::from_str(&self.fan_mode.to_string()),
+        );
+
+        pin.as_mut().set_property(
+            &"webcam".into(),
+            &QJSValue::from_bool(self.webcam.enabled()),
+        );
+
+        pin.as_mut().set_property(
+            &"webcamBlock".into(),
+            &QJSValue::from_bool(self.webcam_block.enabled()),
+        );
+
+        pin.as_mut().set_property(
+            &"coolerBoost".into(),
+            &QJSValue::from_bool(self.cooler_boost.enabled()),
+        );
+
+        pin.as_mut().set_property(
+            &"fnKey".into(),
+            &QJSValue::from_str(&self.swap_key.get_fn().to_string()),
+        );
+
+        pin.as_mut().set_property(
+            &"winKey".into(),
+            &QJSValue::from_str(&self.swap_key.get_win().to_string()),
+        );
+
+        pin.as_mut().set_property(
+            &"micMuteLed".into(),
+            &QJSValue::from_bool(self.mic_mute_led.enabled()),
+        );
+
+        pin.as_mut().set_property(
+            &"muteLed".into(),
+            &QJSValue::from_bool(self.mute_led.enabled()),
+        );
+
+        pin.as_mut().set_property(
+            &"cpuFanCurveWmi2".into(),
+            &QJSValue::from_array(
+                engine.as_mut(),
+                &[
+                    QJSValue::from_uint(self.cpu_fan_curve_wmi2.n1 as _),
+                    QJSValue::from_uint(self.cpu_fan_curve_wmi2.n2 as _),
+                    QJSValue::from_uint(self.cpu_fan_curve_wmi2.n3 as _),
+                    QJSValue::from_uint(self.cpu_fan_curve_wmi2.n4 as _),
+                    QJSValue::from_uint(self.cpu_fan_curve_wmi2.n5 as _),
+                    QJSValue::from_uint(self.cpu_fan_curve_wmi2.n6 as _),
+                    QJSValue::from_uint(self.cpu_fan_curve_wmi2.n7 as _),
+                ],
+            ),
+        );
+
+        pin.as_mut().set_property(
+            &"cpuTempCurveWmi2".into(),
+            &QJSValue::from_array(
+                engine.as_mut(),
+                &[
+                    QJSValue::from_uint(self.cpu_temp_curve_wmi2.n1 as _),
+                    QJSValue::from_uint(self.cpu_temp_curve_wmi2.n2 as _),
+                    QJSValue::from_uint(self.cpu_temp_curve_wmi2.n3 as _),
+                    QJSValue::from_uint(self.cpu_temp_curve_wmi2.n4 as _),
+                    QJSValue::from_uint(self.cpu_temp_curve_wmi2.n5 as _),
+                    QJSValue::from_uint(self.cpu_temp_curve_wmi2.n6 as _),
+                    QJSValue::from_uint(self.cpu_temp_curve_wmi2.n7 as _),
+                ],
+            ),
+        );
+
+        pin.as_mut().set_property(
+            &"cpuHysteresisCurveWmi2".into(),
+            &QJSValue::from_array(
+                engine.as_mut(),
+                &[
+                    QJSValue::from_uint(self.cpu_hysteresis_curve_wmi2.n1 as _),
+                    QJSValue::from_uint(self.cpu_hysteresis_curve_wmi2.n2 as _),
+                    QJSValue::from_uint(self.cpu_hysteresis_curve_wmi2.n3 as _),
+                    QJSValue::from_uint(self.cpu_hysteresis_curve_wmi2.n4 as _),
+                    QJSValue::from_uint(self.cpu_hysteresis_curve_wmi2.n5 as _),
+                    QJSValue::from_uint(self.cpu_hysteresis_curve_wmi2.n6 as _),
+                ],
+            ),
+        );
+
+        pin.as_mut().set_property(
+            &"gpuFanCurveWmi2".into(),
+            &QJSValue::from_array(
+                engine.as_mut(),
+                &[
+                    QJSValue::from_uint(self.gpu_fan_curve_wmi2.n1 as _),
+                    QJSValue::from_uint(self.gpu_fan_curve_wmi2.n2 as _),
+                    QJSValue::from_uint(self.gpu_fan_curve_wmi2.n3 as _),
+                    QJSValue::from_uint(self.gpu_fan_curve_wmi2.n4 as _),
+                    QJSValue::from_uint(self.gpu_fan_curve_wmi2.n5 as _),
+                    QJSValue::from_uint(self.gpu_fan_curve_wmi2.n6 as _),
+                    QJSValue::from_uint(self.gpu_fan_curve_wmi2.n7 as _),
+                ],
+            ),
+        );
+
+        pin.as_mut().set_property(
+            &"gpuTempCurveWmi2".into(),
+            &QJSValue::from_array(
+                engine.as_mut(),
+                &[
+                    QJSValue::from_uint(self.gpu_temp_curve_wmi2.n1 as _),
+                    QJSValue::from_uint(self.gpu_temp_curve_wmi2.n2 as _),
+                    QJSValue::from_uint(self.gpu_temp_curve_wmi2.n3 as _),
+                    QJSValue::from_uint(self.gpu_temp_curve_wmi2.n4 as _),
+                    QJSValue::from_uint(self.gpu_temp_curve_wmi2.n5 as _),
+                    QJSValue::from_uint(self.gpu_temp_curve_wmi2.n6 as _),
+                    QJSValue::from_uint(self.gpu_temp_curve_wmi2.n7 as _),
+                ],
+            ),
+        );
+
+        pin.as_mut().set_property(
+            &"gpuHysteresisCurveWmi2".into(),
+            &QJSValue::from_array(
+                engine.as_mut(),
+                &[
+                    QJSValue::from_uint(self.gpu_hysteresis_curve_wmi2.n1 as _),
+                    QJSValue::from_uint(self.gpu_hysteresis_curve_wmi2.n2 as _),
+                    QJSValue::from_uint(self.gpu_hysteresis_curve_wmi2.n3 as _),
+                    QJSValue::from_uint(self.gpu_hysteresis_curve_wmi2.n4 as _),
+                    QJSValue::from_uint(self.gpu_hysteresis_curve_wmi2.n5 as _),
+                    QJSValue::from_uint(self.gpu_hysteresis_curve_wmi2.n6 as _),
+                ],
+            ),
+        );
+
+        let mut methods = engine.as_mut().new_object();
+        for (key, data) in &self.methods.cache {
+            let val = match data {
+                MethodData::Bit(b) => QJSValue::from_bool(*b),
+                MethodData::Byte(b) => QJSValue::from_uint(*b as _),
+                MethodData::Range(items) => {
+                    let items = items
+                        .iter()
+                        .map(|b| QJSValue::from_uint(*b as _))
+                        .collect::<Vec<_>>();
+
+                    QJSValue::from_array(engine.as_mut(), &items)
+                }
+            };
+
+            methods.pin_mut().set_property(&key.into(), &val);
+        }
+
+        pin.as_mut().set_property(&"methods".into(), &methods);
+
+        obj.to_qvariant()
     }
 
     fn update(self: Pin<&mut Self>, method: qobject::Method) {
@@ -2419,11 +2592,10 @@ impl qobject::EcchanClient {
             BatteryChargeMode::Healthy
             | BatteryChargeMode::Balanced
             | BatteryChargeMode::Mobility => {
-                <QString as QVariantValue>::construct(&self.battery_charge_mode.to_string().into())
+                let s: QString = self.battery_charge_mode.to_string().into();
+                QVariant::from(&s)
             }
-            BatteryChargeMode::Custom(threshold) => {
-                <u8 as QVariantValue>::construct(&threshold.as_end())
-            }
+            BatteryChargeMode::Custom(threshold) => QVariant::from(&threshold.as_end()),
         }
     }
 
@@ -3032,8 +3204,10 @@ impl qobject::EcchanClient {
         for m in &self.method_list {
             let mut map = QMapPair_QString_QVariant::default();
 
-            let name = QString::construct(&(&*m.name).into());
-            let method = QString::construct(&(&*m.method).into());
+            let name: QString = m.name.to_string().into();
+            let name = QVariant::from(&name);
+            let method: QString = m.method.to_string().into();
+            let method = QVariant::from(&method);
 
             map.insert("name".into(), name);
             map.insert("method".into(), method);
@@ -3044,10 +3218,10 @@ impl qobject::EcchanClient {
                 ops.append(qs);
             }
 
-            let ops = QStringList::construct(&ops);
+            let ops = QVariant::from(&ops);
             map.insert("ops".into(), ops);
 
-            let variant = <QMap<QMapPair_QString_QVariant> as QVariantValue>::construct(&map);
+            let variant = QVariant::from(&map);
             list.append(variant);
         }
 

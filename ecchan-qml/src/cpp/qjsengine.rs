@@ -1,5 +1,3 @@
-#![expect(unused)]
-
 use core::pin::Pin;
 
 use cxx_qt_lib::QString;

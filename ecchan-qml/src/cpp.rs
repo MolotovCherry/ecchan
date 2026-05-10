@@ -6,6 +6,7 @@ mod qjsvalue;
 mod qjsvalueiterator;
 mod qjsvaluelist;
 mod qqml_property_map;
+mod qqmlengine;
 pub mod qtlogging;
 
 pub use ecchan::EcchanClient;

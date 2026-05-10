@@ -16,6 +16,7 @@ fn main() {
         "src/cpp/qjsvaluelist.rs",
         "src/cpp/qqml_property_map.rs",
         "src/cpp/qjsvalue.rs",
+        "src/cpp/qqmlengine.rs",
     ])
     .cpp_file("src/cpp/qqml_property_map.cpp")
     .cpp_file("src/cpp/qjsengine.cpp")
@@ -23,6 +24,7 @@ fn main() {
     .cpp_file("src/cpp/qjsvaluelist.cpp")
     .cpp_file("src/cpp/qtlogging.cpp")
     .cpp_file("src/cpp/qjsvalue.cpp")
+    .cpp_file("src/cpp/qqmlengine.cpp")
     .include_dir(manifest_dir.join("includes/"));
 
     let builder = unsafe {

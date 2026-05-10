@@ -7,8 +7,8 @@ import QtQuick.tooling 1.2
 
 Module {
     Component {
-        file: "qml.cxxqt.h"
-        lineNumber: 358
+        file: "ecchan.cxxqt.h"
+        lineNumber: 352
         name: "Method"
         accessSemantics: "none"
         exports: ["ecchan_client/Method 1.0", "ecchan_client/Method 1.0"]
@@ -18,7 +18,7 @@ Module {
             name: "Method"
             isScoped: true
             type: "int"
-            lineNumber: 365
+            lineNumber: 359
             values: [
                 "FanCount",
                 "FanMax",
@@ -78,7 +78,7 @@ Module {
             name: "Method"
             isScoped: true
             type: "int"
-            lineNumber: 365
+            lineNumber: 359
             values: [
                 "FanCount",
                 "FanMax",
@@ -136,8 +136,8 @@ Module {
         }
     }
     Component {
-        file: "qml.cxxqt.h"
-        lineNumber: 881
+        file: "ecchan.cxxqt.h"
+        lineNumber: 867
         name: "ecchan_client::EcchanClient"
         accessSemantics: "reference"
         prototype: "QObject"
@@ -150,7 +150,7 @@ Module {
             write: "setConnected"
             notify: "connectedChanged"
             index: 0
-            lineNumber: 887
+            lineNumber: 873
             isFinal: true
         }
         Property {
@@ -160,7 +160,7 @@ Module {
             write: "setPath"
             notify: "pathChanged"
             index: 1
-            lineNumber: 889
+            lineNumber: 875
             isFinal: true
         }
         Property {
@@ -169,7 +169,7 @@ Module {
             read: "getFanCount"
             notify: "fanCountChanged"
             index: 2
-            lineNumber: 890
+            lineNumber: 876
             isReadonly: true
             isFinal: true
         }
@@ -179,7 +179,7 @@ Module {
             read: "getFanMax"
             notify: "fanMaxChanged"
             index: 3
-            lineNumber: 892
+            lineNumber: 878
             isReadonly: true
             isFinal: true
         }
@@ -189,7 +189,7 @@ Module {
             read: "getHasDgpu"
             notify: "hasDgpuChanged"
             index: 4
-            lineNumber: 893
+            lineNumber: 879
             isReadonly: true
             isFinal: true
         }
@@ -199,7 +199,7 @@ Module {
             read: "getWmiVer"
             notify: "wmiVerChanged"
             index: 5
-            lineNumber: 894
+            lineNumber: 880
             isReadonly: true
             isFinal: true
         }
@@ -209,7 +209,7 @@ Module {
             read: "getFwVersion"
             notify: "fwVersionChanged"
             index: 6
-            lineNumber: 895
+            lineNumber: 881
             isReadonly: true
             isFinal: true
         }
@@ -219,7 +219,7 @@ Module {
             read: "getFwDate"
             notify: "fwDateChanged"
             index: 7
-            lineNumber: 896
+            lineNumber: 882
             isReadonly: true
             isFinal: true
         }
@@ -229,7 +229,7 @@ Module {
             read: "getFwTime"
             notify: "fwTimeChanged"
             index: 8
-            lineNumber: 897
+            lineNumber: 883
             isReadonly: true
             isFinal: true
         }
@@ -239,7 +239,7 @@ Module {
             read: "getShiftModes"
             notify: "shiftModesChanged"
             index: 9
-            lineNumber: 898
+            lineNumber: 884
             isReadonly: true
             isFinal: true
         }
@@ -250,7 +250,7 @@ Module {
             write: "setShiftMode"
             notify: "shiftModeChanged"
             index: 10
-            lineNumber: 900
+            lineNumber: 886
             isFinal: true
         }
         Property {
@@ -259,7 +259,7 @@ Module {
             read: "getShiftModeSupported"
             notify: "shiftModeSupportedChanged"
             index: 11
-            lineNumber: 902
+            lineNumber: 888
             isReadonly: true
             isFinal: true
         }
@@ -270,7 +270,7 @@ Module {
             write: "setBatteryChargeMode"
             notify: "batteryChargeModeChanged"
             index: 12
-            lineNumber: 904
+            lineNumber: 890
             isFinal: true
         }
         Property {
@@ -279,7 +279,7 @@ Module {
             read: "getBatteryChargeModeSupported"
             notify: "batteryChargeModeSupportedChanged"
             index: 13
-            lineNumber: 906
+            lineNumber: 892
             isReadonly: true
             isFinal: true
         }
@@ -290,7 +290,7 @@ Module {
             write: "setSuperBattery"
             notify: "superBatteryChanged"
             index: 14
-            lineNumber: 908
+            lineNumber: 894
             isFinal: true
         }
         Property {
@@ -299,7 +299,7 @@ Module {
             read: "getSuperBatterySupported"
             notify: "superBatterySupportedChanged"
             index: 15
-            lineNumber: 910
+            lineNumber: 896
             isReadonly: true
             isFinal: true
         }
@@ -309,7 +309,7 @@ Module {
             read: "getFan1Rpm"
             notify: "fan1RpmChanged"
             index: 16
-            lineNumber: 912
+            lineNumber: 898
             isReadonly: true
             isFinal: true
         }
@@ -319,7 +319,7 @@ Module {
             read: "getFan2Rpm"
             notify: "fan2RpmChanged"
             index: 17
-            lineNumber: 914
+            lineNumber: 900
             isReadonly: true
             isFinal: true
         }
@@ -329,7 +329,7 @@ Module {
             read: "getFan3Rpm"
             notify: "fan3RpmChanged"
             index: 18
-            lineNumber: 916
+            lineNumber: 902
             isReadonly: true
             isFinal: true
         }
@@ -339,7 +339,7 @@ Module {
             read: "getFan4Rpm"
             notify: "fan4RpmChanged"
             index: 19
-            lineNumber: 918
+            lineNumber: 904
             isReadonly: true
             isFinal: true
         }
@@ -349,7 +349,7 @@ Module {
             read: "getFan1Supported"
             notify: "fan1SupportedChanged"
             index: 20
-            lineNumber: 920
+            lineNumber: 906
             isReadonly: true
             isFinal: true
         }
@@ -359,7 +359,7 @@ Module {
             read: "getFan2Supported"
             notify: "fan2SupportedChanged"
             index: 21
-            lineNumber: 922
+            lineNumber: 908
             isReadonly: true
             isFinal: true
         }
@@ -369,7 +369,7 @@ Module {
             read: "getFan3Supported"
             notify: "fan3SupportedChanged"
             index: 22
-            lineNumber: 924
+            lineNumber: 910
             isReadonly: true
             isFinal: true
         }
@@ -379,7 +379,7 @@ Module {
             read: "getFan4Supported"
             notify: "fan4SupportedChanged"
             index: 23
-            lineNumber: 926
+            lineNumber: 912
             isReadonly: true
             isFinal: true
         }
@@ -389,7 +389,7 @@ Module {
             read: "getFanModes"
             notify: "fanModesChanged"
             index: 24
-            lineNumber: 928
+            lineNumber: 914
             isReadonly: true
             isFinal: true
         }
@@ -400,7 +400,7 @@ Module {
             write: "setFanMode"
             notify: "fanModeChanged"
             index: 25
-            lineNumber: 929
+            lineNumber: 915
             isFinal: true
         }
         Property {
@@ -409,7 +409,7 @@ Module {
             read: "getFanModeSupported"
             notify: "fanModeSupportedChanged"
             index: 26
-            lineNumber: 931
+            lineNumber: 917
             isReadonly: true
             isFinal: true
         }
@@ -420,7 +420,7 @@ Module {
             write: "setWebcam"
             notify: "webcamChanged"
             index: 27
-            lineNumber: 933
+            lineNumber: 919
             isFinal: true
         }
         Property {
@@ -430,7 +430,7 @@ Module {
             write: "setWebcamBlock"
             notify: "webcamBlockChanged"
             index: 28
-            lineNumber: 935
+            lineNumber: 921
             isFinal: true
         }
         Property {
@@ -439,7 +439,7 @@ Module {
             read: "getWebcamSupported"
             notify: "webcamSupportedChanged"
             index: 29
-            lineNumber: 937
+            lineNumber: 923
             isReadonly: true
             isFinal: true
         }
@@ -449,7 +449,7 @@ Module {
             read: "getWebcamBlockSupported"
             notify: "webcamBlockSupportedChanged"
             index: 30
-            lineNumber: 939
+            lineNumber: 925
             isReadonly: true
             isFinal: true
         }
@@ -460,7 +460,7 @@ Module {
             write: "setCoolerBoost"
             notify: "coolerBoostChanged"
             index: 31
-            lineNumber: 941
+            lineNumber: 927
             isFinal: true
         }
         Property {
@@ -469,7 +469,7 @@ Module {
             read: "getCoolerBoostSupported"
             notify: "coolerBoostSupportedChanged"
             index: 32
-            lineNumber: 943
+            lineNumber: 929
             isReadonly: true
             isFinal: true
         }
@@ -480,7 +480,7 @@ Module {
             write: "setFnKey"
             notify: "fnKeyChanged"
             index: 33
-            lineNumber: 945
+            lineNumber: 931
             isFinal: true
         }
         Property {
@@ -490,7 +490,7 @@ Module {
             write: "setWinKey"
             notify: "winKeyChanged"
             index: 34
-            lineNumber: 947
+            lineNumber: 933
             isFinal: true
         }
         Property {
@@ -499,7 +499,7 @@ Module {
             read: "getFnWinSwapSupported"
             notify: "fnWinSwapSupportedChanged"
             index: 35
-            lineNumber: 949
+            lineNumber: 935
             isReadonly: true
             isFinal: true
         }
@@ -510,7 +510,7 @@ Module {
             write: "setMicMuteLed"
             notify: "micMuteLedChanged"
             index: 36
-            lineNumber: 951
+            lineNumber: 937
             isFinal: true
         }
         Property {
@@ -520,7 +520,7 @@ Module {
             write: "setMuteLed"
             notify: "muteLedChanged"
             index: 37
-            lineNumber: 953
+            lineNumber: 939
             isFinal: true
         }
         Property {
@@ -529,7 +529,7 @@ Module {
             read: "getMicMuteLedSupported"
             notify: "micMuteLedSupportedChanged"
             index: 38
-            lineNumber: 955
+            lineNumber: 941
             isReadonly: true
             isFinal: true
         }
@@ -539,7 +539,7 @@ Module {
             read: "getMuteLedSupported"
             notify: "muteLedSupportedChanged"
             index: 39
-            lineNumber: 957
+            lineNumber: 943
             isReadonly: true
             isFinal: true
         }
@@ -549,7 +549,7 @@ Module {
             read: "getCpuRtFanSpeed"
             notify: "cpuRtFanSpeedChanged"
             index: 40
-            lineNumber: 959
+            lineNumber: 945
             isReadonly: true
             isFinal: true
         }
@@ -559,7 +559,7 @@ Module {
             read: "getCpuRtTemp"
             notify: "cpuRtTempChanged"
             index: 41
-            lineNumber: 961
+            lineNumber: 947
             isReadonly: true
             isFinal: true
         }
@@ -569,7 +569,7 @@ Module {
             read: "getGpuRtFanSpeed"
             notify: "gpuRtFanSpeedChanged"
             index: 42
-            lineNumber: 963
+            lineNumber: 949
             isReadonly: true
             isFinal: true
         }
@@ -579,7 +579,7 @@ Module {
             read: "getGpuRtTemp"
             notify: "gpuRtTempChanged"
             index: 43
-            lineNumber: 965
+            lineNumber: 951
             isReadonly: true
             isFinal: true
         }
@@ -590,7 +590,7 @@ Module {
             write: "setCpuFanCurveWmi2"
             notify: "cpuFanCurveWmi2Changed"
             index: 44
-            lineNumber: 967
+            lineNumber: 953
             isFinal: true
         }
         Property {
@@ -600,7 +600,7 @@ Module {
             write: "setCpuTempCurveWmi2"
             notify: "cpuTempCurveWmi2Changed"
             index: 45
-            lineNumber: 969
+            lineNumber: 955
             isFinal: true
         }
         Property {
@@ -610,7 +610,7 @@ Module {
             write: "setCpuHysteresisCurveWmi2"
             notify: "cpuHysteresisCurveWmi2Changed"
             index: 46
-            lineNumber: 971
+            lineNumber: 957
             isFinal: true
         }
         Property {
@@ -620,7 +620,7 @@ Module {
             write: "setGpuFanCurveWmi2"
             notify: "gpuFanCurveWmi2Changed"
             index: 47
-            lineNumber: 974
+            lineNumber: 960
             isFinal: true
         }
         Property {
@@ -630,7 +630,7 @@ Module {
             write: "setGpuTempCurveWmi2"
             notify: "gpuTempCurveWmi2Changed"
             index: 48
-            lineNumber: 976
+            lineNumber: 962
             isFinal: true
         }
         Property {
@@ -640,7 +640,7 @@ Module {
             write: "setGpuHysteresisCurveWmi2"
             notify: "gpuHysteresisCurveWmi2Changed"
             index: 49
-            lineNumber: 978
+            lineNumber: 964
             isFinal: true
         }
         Property {
@@ -649,7 +649,7 @@ Module {
             read: "getMethodList"
             notify: "methodListChanged"
             index: 50
-            lineNumber: 981
+            lineNumber: 967
             isReadonly: true
             isFinal: true
         }
@@ -660,7 +660,7 @@ Module {
             read: "getMethods"
             notify: "methodsChanged"
             index: 51
-            lineNumber: 983
+            lineNumber: 969
             isReadonly: true
             isFinal: true
         }
@@ -670,7 +670,7 @@ Module {
             read: "getEcDump"
             notify: "ecDumpChanged"
             index: 52
-            lineNumber: 985
+            lineNumber: 971
             isReadonly: true
             isFinal: true
         }
@@ -680,145 +680,141 @@ Module {
             read: "getEcDumpPretty"
             notify: "ecDumpPrettyChanged"
             index: 53
-            lineNumber: 986
+            lineNumber: 972
             isReadonly: true
             isFinal: true
         }
-        Signal { name: "connectedChanged"; lineNumber: 995 }
-        Signal { name: "pathChanged"; lineNumber: 996 }
-        Signal { name: "fanCountChanged"; lineNumber: 997 }
-        Signal { name: "fanMaxChanged"; lineNumber: 998 }
-        Signal { name: "hasDgpuChanged"; lineNumber: 999 }
-        Signal { name: "wmiVerChanged"; lineNumber: 1000 }
-        Signal { name: "fwVersionChanged"; lineNumber: 1001 }
-        Signal { name: "fwDateChanged"; lineNumber: 1002 }
-        Signal { name: "fwTimeChanged"; lineNumber: 1003 }
-        Signal { name: "shiftModesChanged"; lineNumber: 1004 }
-        Signal { name: "shiftModeChanged"; lineNumber: 1005 }
-        Signal { name: "shiftModeSupportedChanged"; lineNumber: 1006 }
-        Signal { name: "batteryChargeModeChanged"; lineNumber: 1007 }
-        Signal { name: "batteryChargeModeSupportedChanged"; lineNumber: 1008 }
-        Signal { name: "superBatteryChanged"; lineNumber: 1009 }
-        Signal { name: "superBatterySupportedChanged"; lineNumber: 1010 }
-        Signal { name: "fan1RpmChanged"; lineNumber: 1011 }
-        Signal { name: "fan2RpmChanged"; lineNumber: 1012 }
-        Signal { name: "fan3RpmChanged"; lineNumber: 1013 }
-        Signal { name: "fan4RpmChanged"; lineNumber: 1014 }
-        Signal { name: "fan1SupportedChanged"; lineNumber: 1015 }
-        Signal { name: "fan2SupportedChanged"; lineNumber: 1016 }
-        Signal { name: "fan3SupportedChanged"; lineNumber: 1017 }
-        Signal { name: "fan4SupportedChanged"; lineNumber: 1018 }
-        Signal { name: "fanModesChanged"; lineNumber: 1019 }
-        Signal { name: "fanModeChanged"; lineNumber: 1020 }
-        Signal { name: "fanModeSupportedChanged"; lineNumber: 1021 }
-        Signal { name: "webcamChanged"; lineNumber: 1022 }
-        Signal { name: "webcamBlockChanged"; lineNumber: 1023 }
-        Signal { name: "webcamSupportedChanged"; lineNumber: 1024 }
-        Signal { name: "webcamBlockSupportedChanged"; lineNumber: 1025 }
-        Signal { name: "coolerBoostChanged"; lineNumber: 1026 }
-        Signal { name: "coolerBoostSupportedChanged"; lineNumber: 1027 }
-        Signal { name: "fnKeyChanged"; lineNumber: 1028 }
-        Signal { name: "winKeyChanged"; lineNumber: 1029 }
-        Signal { name: "fnWinSwapSupportedChanged"; lineNumber: 1030 }
-        Signal { name: "micMuteLedChanged"; lineNumber: 1031 }
-        Signal { name: "muteLedChanged"; lineNumber: 1032 }
-        Signal { name: "micMuteLedSupportedChanged"; lineNumber: 1033 }
-        Signal { name: "muteLedSupportedChanged"; lineNumber: 1034 }
-        Signal { name: "cpuRtFanSpeedChanged"; lineNumber: 1035 }
-        Signal { name: "cpuRtTempChanged"; lineNumber: 1036 }
-        Signal { name: "gpuRtFanSpeedChanged"; lineNumber: 1037 }
-        Signal { name: "gpuRtTempChanged"; lineNumber: 1038 }
-        Signal { name: "cpuFanCurveWmi2Changed"; lineNumber: 1039 }
-        Signal { name: "cpuTempCurveWmi2Changed"; lineNumber: 1040 }
-        Signal { name: "cpuHysteresisCurveWmi2Changed"; lineNumber: 1041 }
-        Signal { name: "gpuFanCurveWmi2Changed"; lineNumber: 1042 }
-        Signal { name: "gpuTempCurveWmi2Changed"; lineNumber: 1043 }
-        Signal { name: "gpuHysteresisCurveWmi2Changed"; lineNumber: 1044 }
-        Signal { name: "methodListChanged"; lineNumber: 1045 }
-        Signal { name: "methodsChanged"; lineNumber: 1046 }
-        Signal { name: "ecDumpChanged"; lineNumber: 1047 }
-        Signal { name: "ecDumpPrettyChanged"; lineNumber: 1048 }
+        Signal { name: "connectedChanged"; lineNumber: 981 }
+        Signal { name: "pathChanged"; lineNumber: 982 }
+        Signal { name: "fanCountChanged"; lineNumber: 983 }
+        Signal { name: "fanMaxChanged"; lineNumber: 984 }
+        Signal { name: "hasDgpuChanged"; lineNumber: 985 }
+        Signal { name: "wmiVerChanged"; lineNumber: 986 }
+        Signal { name: "fwVersionChanged"; lineNumber: 987 }
+        Signal { name: "fwDateChanged"; lineNumber: 988 }
+        Signal { name: "fwTimeChanged"; lineNumber: 989 }
+        Signal { name: "shiftModesChanged"; lineNumber: 990 }
+        Signal { name: "shiftModeChanged"; lineNumber: 991 }
+        Signal { name: "shiftModeSupportedChanged"; lineNumber: 992 }
+        Signal { name: "batteryChargeModeChanged"; lineNumber: 993 }
+        Signal { name: "batteryChargeModeSupportedChanged"; lineNumber: 994 }
+        Signal { name: "superBatteryChanged"; lineNumber: 995 }
+        Signal { name: "superBatterySupportedChanged"; lineNumber: 996 }
+        Signal { name: "fan1RpmChanged"; lineNumber: 997 }
+        Signal { name: "fan2RpmChanged"; lineNumber: 998 }
+        Signal { name: "fan3RpmChanged"; lineNumber: 999 }
+        Signal { name: "fan4RpmChanged"; lineNumber: 1000 }
+        Signal { name: "fan1SupportedChanged"; lineNumber: 1001 }
+        Signal { name: "fan2SupportedChanged"; lineNumber: 1002 }
+        Signal { name: "fan3SupportedChanged"; lineNumber: 1003 }
+        Signal { name: "fan4SupportedChanged"; lineNumber: 1004 }
+        Signal { name: "fanModesChanged"; lineNumber: 1005 }
+        Signal { name: "fanModeChanged"; lineNumber: 1006 }
+        Signal { name: "fanModeSupportedChanged"; lineNumber: 1007 }
+        Signal { name: "webcamChanged"; lineNumber: 1008 }
+        Signal { name: "webcamBlockChanged"; lineNumber: 1009 }
+        Signal { name: "webcamSupportedChanged"; lineNumber: 1010 }
+        Signal { name: "webcamBlockSupportedChanged"; lineNumber: 1011 }
+        Signal { name: "coolerBoostChanged"; lineNumber: 1012 }
+        Signal { name: "coolerBoostSupportedChanged"; lineNumber: 1013 }
+        Signal { name: "fnKeyChanged"; lineNumber: 1014 }
+        Signal { name: "winKeyChanged"; lineNumber: 1015 }
+        Signal { name: "fnWinSwapSupportedChanged"; lineNumber: 1016 }
+        Signal { name: "micMuteLedChanged"; lineNumber: 1017 }
+        Signal { name: "muteLedChanged"; lineNumber: 1018 }
+        Signal { name: "micMuteLedSupportedChanged"; lineNumber: 1019 }
+        Signal { name: "muteLedSupportedChanged"; lineNumber: 1020 }
+        Signal { name: "cpuRtFanSpeedChanged"; lineNumber: 1021 }
+        Signal { name: "cpuRtTempChanged"; lineNumber: 1022 }
+        Signal { name: "gpuRtFanSpeedChanged"; lineNumber: 1023 }
+        Signal { name: "gpuRtTempChanged"; lineNumber: 1024 }
+        Signal { name: "cpuFanCurveWmi2Changed"; lineNumber: 1025 }
+        Signal { name: "cpuTempCurveWmi2Changed"; lineNumber: 1026 }
+        Signal { name: "cpuHysteresisCurveWmi2Changed"; lineNumber: 1027 }
+        Signal { name: "gpuFanCurveWmi2Changed"; lineNumber: 1028 }
+        Signal { name: "gpuTempCurveWmi2Changed"; lineNumber: 1029 }
+        Signal { name: "gpuHysteresisCurveWmi2Changed"; lineNumber: 1030 }
+        Signal { name: "methodListChanged"; lineNumber: 1031 }
+        Signal { name: "methodsChanged"; lineNumber: 1032 }
+        Signal { name: "ecDumpChanged"; lineNumber: 1033 }
+        Signal { name: "ecDumpPrettyChanged"; lineNumber: 1034 }
         Signal {
             name: "initStateChanged"
-            lineNumber: 1174
+            lineNumber: 1161
             Parameter { name: "running"; type: "bool" }
         }
         Signal {
             name: "stateChanged"
-            lineNumber: 1175
+            lineNumber: 1162
             Parameter { name: "prop"; type: "QString" }
-        }
-        Signal {
-            name: "taskFinished"
-            lineNumber: 1176
-            Parameter { name: "id"; type: "::std::size_t" }
         }
         Method {
             name: "setPath"
-            lineNumber: 994
+            lineNumber: 980
             Parameter { name: "value"; type: "QString" }
         }
-        Method { name: "initState"; lineNumber: 1119 }
+        Method { name: "initState"; lineNumber: 1105 }
         Method {
-            name: "submitTask"
-            lineNumber: 1120
-            Parameter { name: "id"; type: "::std::size_t" }
+            name: "queue"
+            lineNumber: 1106
+            Parameter { name: "cb"; type: "QJSValue" }
         }
-        Method { name: "updateFanCount"; lineNumber: 1121 }
-        Method { name: "updateFanMax"; lineNumber: 1122 }
-        Method { name: "updateHasDgpu"; lineNumber: 1123 }
-        Method { name: "updateWmiVer"; lineNumber: 1124 }
-        Method { name: "updateFwVersion"; lineNumber: 1125 }
-        Method { name: "updateFwDate"; lineNumber: 1126 }
-        Method { name: "updateFwTime"; lineNumber: 1127 }
-        Method { name: "updateShiftModes"; lineNumber: 1128 }
-        Method { name: "updateShiftMode"; lineNumber: 1129 }
-        Method { name: "updateShiftModeSupported"; lineNumber: 1130 }
-        Method { name: "updateBatteryChargeMode"; lineNumber: 1131 }
-        Method { name: "updateBatteryChargeModeSupported"; lineNumber: 1132 }
-        Method { name: "updateSuperBattery"; lineNumber: 1133 }
-        Method { name: "updateSuperBatterySupported"; lineNumber: 1134 }
-        Method { name: "updateFan1Rpm"; lineNumber: 1135 }
-        Method { name: "updateFan2Rpm"; lineNumber: 1136 }
-        Method { name: "updateFan3Rpm"; lineNumber: 1137 }
-        Method { name: "updateFan4Rpm"; lineNumber: 1138 }
-        Method { name: "updateFan1Supported"; lineNumber: 1139 }
-        Method { name: "updateFan2Supported"; lineNumber: 1140 }
-        Method { name: "updateFan3Supported"; lineNumber: 1141 }
-        Method { name: "updateFan4Supported"; lineNumber: 1142 }
-        Method { name: "updateFanModes"; lineNumber: 1143 }
-        Method { name: "updateFanMode"; lineNumber: 1144 }
-        Method { name: "updateFanModeSupported"; lineNumber: 1145 }
-        Method { name: "updateWebcam"; lineNumber: 1146 }
-        Method { name: "updateWebcamBlock"; lineNumber: 1147 }
-        Method { name: "updateWebcamSupported"; lineNumber: 1148 }
-        Method { name: "updateWebcamBlockSupported"; lineNumber: 1149 }
-        Method { name: "updateCoolerBoost"; lineNumber: 1150 }
-        Method { name: "updateCoolerBoostSupported"; lineNumber: 1151 }
-        Method { name: "updateFnKey"; lineNumber: 1152 }
-        Method { name: "updateWinKey"; lineNumber: 1153 }
-        Method { name: "updateFnWinSwapSupported"; lineNumber: 1154 }
-        Method { name: "updateMicMuteLed"; lineNumber: 1155 }
-        Method { name: "updateMuteLed"; lineNumber: 1156 }
-        Method { name: "updateMicMuteLedSupported"; lineNumber: 1157 }
-        Method { name: "updateMuteLedSupported"; lineNumber: 1158 }
-        Method { name: "updateCpuRtFanSpeed"; lineNumber: 1159 }
-        Method { name: "updateCpuRtTemp"; lineNumber: 1160 }
-        Method { name: "updateGpuRtFanSpeed"; lineNumber: 1161 }
-        Method { name: "updateGpuRtTemp"; lineNumber: 1162 }
-        Method { name: "updateCpuFanCurveWmi2"; lineNumber: 1163 }
-        Method { name: "updateCpuTempCurveWmi2"; lineNumber: 1164 }
-        Method { name: "updateCpuHysteresisCurveWmi2"; lineNumber: 1165 }
-        Method { name: "updateGpuFanCurveWmi2"; lineNumber: 1166 }
-        Method { name: "updateGpuTempCurveWmi2"; lineNumber: 1167 }
-        Method { name: "updateGpuHysteresisCurveWmi2"; lineNumber: 1168 }
-        Method { name: "updateMethodList"; lineNumber: 1169 }
-        Method { name: "updateMethods"; lineNumber: 1170 }
-        Method { name: "updateEcDump"; lineNumber: 1171 }
-        Method { name: "updateEcDumpPretty"; lineNumber: 1172 }
+        Method { name: "serialize"; type: "QVariant"; lineNumber: 1107 }
+        Method { name: "updateFanCount"; lineNumber: 1108 }
+        Method { name: "updateFanMax"; lineNumber: 1109 }
+        Method { name: "updateHasDgpu"; lineNumber: 1110 }
+        Method { name: "updateWmiVer"; lineNumber: 1111 }
+        Method { name: "updateFwVersion"; lineNumber: 1112 }
+        Method { name: "updateFwDate"; lineNumber: 1113 }
+        Method { name: "updateFwTime"; lineNumber: 1114 }
+        Method { name: "updateShiftModes"; lineNumber: 1115 }
+        Method { name: "updateShiftMode"; lineNumber: 1116 }
+        Method { name: "updateShiftModeSupported"; lineNumber: 1117 }
+        Method { name: "updateBatteryChargeMode"; lineNumber: 1118 }
+        Method { name: "updateBatteryChargeModeSupported"; lineNumber: 1119 }
+        Method { name: "updateSuperBattery"; lineNumber: 1120 }
+        Method { name: "updateSuperBatterySupported"; lineNumber: 1121 }
+        Method { name: "updateFan1Rpm"; lineNumber: 1122 }
+        Method { name: "updateFan2Rpm"; lineNumber: 1123 }
+        Method { name: "updateFan3Rpm"; lineNumber: 1124 }
+        Method { name: "updateFan4Rpm"; lineNumber: 1125 }
+        Method { name: "updateFan1Supported"; lineNumber: 1126 }
+        Method { name: "updateFan2Supported"; lineNumber: 1127 }
+        Method { name: "updateFan3Supported"; lineNumber: 1128 }
+        Method { name: "updateFan4Supported"; lineNumber: 1129 }
+        Method { name: "updateFanModes"; lineNumber: 1130 }
+        Method { name: "updateFanMode"; lineNumber: 1131 }
+        Method { name: "updateFanModeSupported"; lineNumber: 1132 }
+        Method { name: "updateWebcam"; lineNumber: 1133 }
+        Method { name: "updateWebcamBlock"; lineNumber: 1134 }
+        Method { name: "updateWebcamSupported"; lineNumber: 1135 }
+        Method { name: "updateWebcamBlockSupported"; lineNumber: 1136 }
+        Method { name: "updateCoolerBoost"; lineNumber: 1137 }
+        Method { name: "updateCoolerBoostSupported"; lineNumber: 1138 }
+        Method { name: "updateFnKey"; lineNumber: 1139 }
+        Method { name: "updateWinKey"; lineNumber: 1140 }
+        Method { name: "updateFnWinSwapSupported"; lineNumber: 1141 }
+        Method { name: "updateMicMuteLed"; lineNumber: 1142 }
+        Method { name: "updateMuteLed"; lineNumber: 1143 }
+        Method { name: "updateMicMuteLedSupported"; lineNumber: 1144 }
+        Method { name: "updateMuteLedSupported"; lineNumber: 1145 }
+        Method { name: "updateCpuRtFanSpeed"; lineNumber: 1146 }
+        Method { name: "updateCpuRtTemp"; lineNumber: 1147 }
+        Method { name: "updateGpuRtFanSpeed"; lineNumber: 1148 }
+        Method { name: "updateGpuRtTemp"; lineNumber: 1149 }
+        Method { name: "updateCpuFanCurveWmi2"; lineNumber: 1150 }
+        Method { name: "updateCpuTempCurveWmi2"; lineNumber: 1151 }
+        Method { name: "updateCpuHysteresisCurveWmi2"; lineNumber: 1152 }
+        Method { name: "updateGpuFanCurveWmi2"; lineNumber: 1153 }
+        Method { name: "updateGpuTempCurveWmi2"; lineNumber: 1154 }
+        Method { name: "updateGpuHysteresisCurveWmi2"; lineNumber: 1155 }
+        Method { name: "updateMethodList"; lineNumber: 1156 }
+        Method { name: "updateMethods"; lineNumber: 1157 }
+        Method { name: "updateEcDump"; lineNumber: 1158 }
+        Method { name: "updateEcDumpPretty"; lineNumber: 1159 }
         Method {
             name: "update"
-            lineNumber: 1173
+            lineNumber: 1160
             Parameter { name: "method"; type: "Method::Method" }
         }
     }
