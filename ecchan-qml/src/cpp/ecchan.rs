@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    borrow::Cow,
     io,
     pin::Pin,
     str::FromStr,
@@ -16,7 +16,7 @@ use cxx_qt::{Constructor, CxxQtType, Threading};
 use cxx_qt_lib::{QByteArray, QQmlEngine, QString, QStringList, QVariant};
 use ecchan_ipc::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MethodData,
-    ShiftMode, SuperBattery, Webcam, WmiVer,
+    MethodOp, ShiftMode, SuperBattery, Webcam, WmiVer,
     method::{Method, MethodTy},
     ret::{Bin, RetVal},
 };
@@ -217,6 +217,8 @@ pub mod qobject {
         fn set_gpu_hysteresis_curve_wmi2(self: Pin<&mut Self>, curve: &QVariant);
 
         fn get_methods(&self) -> QVariant;
+        #[qinvokable]
+        fn method_write(self: Pin<&mut Self>, method: &QString, value: &QJSValue);
 
         fn get_ec_dump(&self) -> QByteArray;
         fn get_ec_dump_pretty(&self) -> &QString;
@@ -649,7 +651,16 @@ pub struct EcchanClientRust {
 }
 
 struct Methods {
-    data: HashMap<String, MethodData>,
+    data: Vec<MethodPayload>,
+}
+
+struct MethodPayload {
+    name: String,
+    method: String,
+    data: MethodData,
+    #[expect(unused)]
+    read_op: MethodOp,
+    write_op: MethodOp,
 }
 
 impl Default for EcchanClientRust {
@@ -722,7 +733,7 @@ impl Default for EcchanClientRust {
             gpu_hysteresis_curve_wmi2: Curve6::default(),
 
             methods: Methods {
-                data: HashMap::new(),
+                data: Vec::new(),
             },
 
             ec_dump: Box::default(),
@@ -1745,8 +1756,61 @@ impl qobject::EcchanClient {
             }
 
             MethodTy::Methods => {
-                // this is queued because it is called after methodList, and is expected to work in order
-                self.as_mut().queued_call(|mut ctx| {});
+                self.as_mut().call(Method::MethodList, |mut ctx, res| {
+                    let Ok(ret) = res else {
+                        return;
+                    };
+
+                    let list = ret.into_methods().unwrap();
+
+                    let accepted_groups = [
+                        [MethodOp::Read, MethodOp::Write],
+                        [MethodOp::ReadBit, MethodOp::WriteBit],
+                        [MethodOp::ReadRange, MethodOp::WriteRange],
+                    ];
+
+                    let len = list.len();
+                    for (i, method) in list.into_iter().enumerate() {
+                        for group in accepted_groups {
+                            let has_read = method.ops.iter().any(|op| *op == group[0]);
+                            let has_write = method.ops.iter().any(|op| *op == group[1]);
+
+                            if !has_read || !has_write {
+                                q_warning!("skipping method {} since it doesn't have both read and write capability", method.method);
+                                continue;
+                            }
+                        }
+
+                        let read_op = *method.ops.iter().find(|op| matches!(op, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)).unwrap();
+                        let write_op = *method.ops.iter().find(|op| matches!(op, MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange)).unwrap();
+
+                        let mut payload = MethodPayload {
+                            name: method.name.to_string(),
+                            method: method.method.to_string(),
+                            data: MethodData::Bit(false), // dummy for now
+                            read_op, write_op
+                        };
+
+                        let last = i == len - 1;
+                        ctx.as_mut().call(Method::MethodRead { method: method.method.clone(), op: read_op }, move |mut ctx, res| {
+                            let Ok(ret) = res else {
+                                if last {
+                                    ctx.methods_changed();
+                                }
+
+                                return;
+                            };
+
+                            let data = ret.method_data().unwrap();
+                            payload.data = data;
+
+                            ctx.as_mut().rust_mut().methods.data.push(payload);
+                            if last {
+                                ctx.methods_changed();
+                            }
+                        });
+                    }
+                });
             }
 
             MethodTy::EcDumpRaw => {
@@ -1997,8 +2061,8 @@ impl qobject::EcchanClient {
         );
 
         let mut methods = engine.as_mut().new_object();
-        for (key, data) in &self.methods.data {
-            let val = match data {
+        for data in &self.methods.data {
+            let val = match &data.data {
                 MethodData::Bit(b) => QJSValue::from_bool(*b),
                 MethodData::Byte(b) => QJSValue::from_uint(*b as _),
                 MethodData::Range(items) => {
@@ -2011,7 +2075,9 @@ impl qobject::EcchanClient {
                 }
             };
 
-            methods.pin_mut().set_property(&key.into(), &val);
+            methods
+                .pin_mut()
+                .set_property(&data.method.clone().into(), &val);
         }
 
         pin.as_mut().set_property(&"methods".into(), &methods);
@@ -3067,8 +3133,143 @@ impl qobject::EcchanClient {
         );
     }
 
-    fn get_methods(&self) -> *mut QQmlPropertyMap {
-        self.methods.map.as_mut_ptr()
+    fn get_methods(&self) -> QVariant {
+        let Some(mut engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
+        let mut arr = engine.as_mut().new_array(self.methods.data.len() as u32);
+        let mut pin = arr.pin_mut();
+
+        for (i, method) in self.methods.data.iter().enumerate() {
+            let mut inner = engine.as_mut().new_object();
+            let mut inner_pin = inner.pin_mut();
+
+            let val = match &method.data {
+                MethodData::Bit(b) => QJSValue::from_bool(*b),
+                MethodData::Byte(b) => QJSValue::from_uint(*b as u32),
+                MethodData::Range(items) => {
+                    let v = items
+                        .iter()
+                        .map(|b| QJSValue::from_uint(*b as u32))
+                        .collect::<Vec<_>>();
+                    QJSValue::from_array(engine.as_mut(), &v)
+                }
+            };
+
+            inner_pin
+                .as_mut()
+                .set_property(&QString::from("value"), &val);
+
+            inner_pin
+                .as_mut()
+                .set_property(&QString::from("name"), &QJSValue::from_str(&method.name));
+
+            inner_pin.as_mut().set_property(
+                &QString::from("method"),
+                &QJSValue::from_str(&method.method),
+            );
+
+            pin.as_mut().set_element(i as u32, &inner);
+        }
+
+        arr.to_qvariant()
+    }
+
+    fn method_write(self: Pin<&mut Self>, method: &QString, value: &QJSValue) {
+        let method = method.to_string();
+
+        let (data, op) = {
+            let Some(payload) = self.methods.data.iter().find(|m| m.method == method) else {
+                q_warning!("method_write: method {method} not found");
+                return;
+            };
+
+            let data = match payload.write_op {
+                MethodOp::WriteBit => {
+                    if value.is_bool() {
+                        MethodData::Bit(value.to_bool())
+                    } else {
+                        q_warning!("method_write: expected bool for method {method}");
+                        return;
+                    }
+                }
+
+                MethodOp::Write => {
+                    if value.is_number() {
+                        let n = value.to_uint();
+                        if n > u8::MAX as u32 {
+                            q_warning!("method_write: value {n} exceeded u8 max");
+                            return;
+                        }
+
+                        MethodData::Byte(n as u8)
+                    } else {
+                        q_warning!("method_write: expected u8 for method {method}");
+                        return;
+                    }
+                }
+
+                MethodOp::WriteRange => {
+                    if value.is_array() {
+                        let mut data = Vec::new();
+                        let length = value.get_property(&"length".into()).to_int();
+                        for i in 0..length {
+                            let elem = value.get_element(i as u32);
+                            if !elem.is_number() {
+                                q_warning!("method_write: expected array[u8] for method {method}");
+                                return;
+                            }
+
+                            let elem = elem.to_uint();
+                            if elem > u8::MAX as u32 {
+                                q_warning!("method_write: value {elem} exceeded u8 max");
+                                return;
+                            }
+
+                            data.push(elem as u8);
+                        }
+
+                        MethodData::Range(data)
+                    } else {
+                        q_warning!("method_write: expected array[u8] for method {method}");
+                        return;
+                    }
+                }
+
+                _ => unreachable!(),
+            };
+
+            (data, payload.write_op)
+        };
+
+        self.call(
+            Method::MethodWrite {
+                method: Cow::Owned(method.clone()),
+                op,
+                data: data.clone(),
+            },
+            move |mut ctx, res| {
+                if res.is_err() {
+                    return;
+                }
+
+                {
+                    let mut this = ctx.as_mut().rust_mut();
+                    let payload = this
+                        .methods
+                        .data
+                        .iter_mut()
+                        .find(|m| m.method == method)
+                        .unwrap();
+
+                    payload.data = data;
+                }
+
+                ctx.methods_changed();
+            },
+        );
     }
 
     fn get_ec_dump(&self) -> QByteArray {
