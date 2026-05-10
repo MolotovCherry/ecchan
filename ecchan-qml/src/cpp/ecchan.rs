@@ -538,8 +538,7 @@ impl From<qobject::Method> for MethodTy {
             47 => MethodTy::GpuHysteresisCurveWmi2,
             48 => MethodTy::EcDumpRaw,
             49 => MethodTy::EcDumpPretty,
-            50 => MethodTy::MethodList,
-            51 => MethodTy::Methods,
+            50 => MethodTy::Methods,
             _ => unreachable!(),
         }
     }
@@ -1771,44 +1770,75 @@ impl qobject::EcchanClient {
 
                     let len = list.len();
                     for (i, method) in list.into_iter().enumerate() {
+                        let mut has_read = false;
+                        let mut has_write = false;
                         for group in accepted_groups {
-                            let has_read = method.ops.iter().any(|op| *op == group[0]);
-                            let has_write = method.ops.iter().any(|op| *op == group[1]);
+                            has_read = method.ops.iter().any(|op| *op == group[0]);
+                            has_write = method.ops.iter().any(|op| *op == group[1]);
 
-                            if !has_read || !has_write {
-                                q_warning!("skipping method {} since it doesn't have both read and write capability", method.method);
-                                continue;
+                            if has_read && has_write {
+                                break;
                             }
                         }
 
-                        let read_op = *method.ops.iter().find(|op| matches!(op, MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange)).unwrap();
-                        let write_op = *method.ops.iter().find(|op| matches!(op, MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange)).unwrap();
+                        if !has_read && !has_write {
+                            q_warning!("skipping method {} since it doesn't have both read and write capability", method.method);
+                            continue;
+                        }
+
+                        let read_op = *method
+                            .ops
+                            .iter()
+                            .find(|op| {
+                                matches!(
+                                    op,
+                                    MethodOp::Read | MethodOp::ReadBit | MethodOp::ReadRange
+                                )
+                            })
+                            .unwrap();
+                        let write_op = *method
+                            .ops
+                            .iter()
+                            .find(|op| {
+                                matches!(
+                                    op,
+                                    MethodOp::Write | MethodOp::WriteBit | MethodOp::WriteRange
+                                )
+                            })
+                            .unwrap();
 
                         let mut payload = MethodPayload {
                             name: method.name.to_string(),
                             method: method.method.to_string(),
                             data: MethodData::Bit(false), // dummy for now
-                            read_op, write_op
+                            read_op,
+                            write_op,
                         };
 
                         let last = i == len - 1;
-                        ctx.as_mut().call(Method::MethodRead { method: method.method.clone(), op: read_op }, move |mut ctx, res| {
-                            let Ok(ret) = res else {
+                        ctx.as_mut().call(
+                            Method::MethodRead {
+                                method: method.method.clone(),
+                                op: read_op,
+                            },
+                            move |mut ctx, res| {
+                                let Ok(ret) = res else {
+                                    if last {
+                                        ctx.methods_changed();
+                                    }
+
+                                    return;
+                                };
+
+                                let data = ret.method_data().unwrap();
+                                payload.data = data;
+
+                                ctx.as_mut().rust_mut().methods.data.push(payload);
                                 if last {
                                     ctx.methods_changed();
                                 }
-
-                                return;
-                            };
-
-                            let data = ret.method_data().unwrap();
-                            payload.data = data;
-
-                            ctx.as_mut().rust_mut().methods.data.push(payload);
-                            if last {
-                                ctx.methods_changed();
-                            }
-                        });
+                            },
+                        );
                     }
                 });
             }
@@ -1872,7 +1902,10 @@ impl qobject::EcchanClient {
         self.as_mut().init_state_changed(true);
 
         for name in MethodTy::iter() {
-            if matches!(name, MethodTy::EcDumpRaw | MethodTy::EcDumpPretty) {
+            if matches!(
+                name,
+                MethodTy::EcDumpRaw | MethodTy::EcDumpPretty | MethodTy::MethodList
+            ) {
                 continue;
             }
 
