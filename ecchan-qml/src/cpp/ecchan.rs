@@ -243,6 +243,8 @@ pub mod qobject {
         fn queue(self: Pin<&mut Self>, cb: &QJSValue);
         #[qinvokable]
         fn serialize(self: Pin<&mut Self>) -> QVariant;
+        #[qinvokable]
+        fn apply(self: Pin<&mut Self>, data: &QJSValue);
 
         #[qinvokable]
         fn update_fan_count(self: Pin<&mut Self>);
@@ -653,6 +655,7 @@ struct Methods {
     data: Vec<MethodPayload>,
 }
 
+#[derive(Clone)]
 struct MethodPayload {
     name: String,
     method: String,
@@ -1831,7 +1834,7 @@ impl qobject::EcchanClient {
                                 };
 
                                 let data = ret.method_data().unwrap();
-                                payload.data = data;
+                                payload.data = data; // replace dummy with real data
 
                                 ctx.as_mut().rust_mut().methods.data.push(payload);
                                 if last {
@@ -2116,6 +2119,111 @@ impl qobject::EcchanClient {
         pin.as_mut().set_property(&"methods".into(), &methods);
 
         obj.to_qvariant()
+    }
+
+    fn apply(mut self: Pin<&mut Self>, data: &QJSValue) {
+        if !data.is_object() {
+            q_warning!("apply: only accept objects");
+            return;
+        }
+
+        let shift_mode = data.get_property(&"shiftMode".into());
+        if shift_mode.is_string() {
+            let mode = shift_mode.to_qstring();
+            self.as_mut().set_shift_mode(&mode);
+        }
+
+        let battery_mode = data.get_property(&"batteryChargeMode".into());
+        if battery_mode.is_string() || battery_mode.is_number() {
+            self.as_mut()
+                .set_battery_charge_mode(battery_mode.to_qvariant());
+        }
+
+        let super_battery = data.get_property(&"superBattery".into());
+        if super_battery.is_bool() {
+            self.as_mut().set_super_battery(super_battery.to_bool());
+        }
+
+        let fan_mode = data.get_property(&"fanMode".into());
+        if fan_mode.is_string() {
+            let mode = fan_mode.to_qstring();
+            self.as_mut().set_fan_mode(&mode);
+        }
+
+        let webcam = data.get_property(&"webcam".into());
+        if webcam.is_bool() {
+            self.as_mut().set_webcam(webcam.to_bool());
+        }
+
+        let webcam_block = data.get_property(&"webcamBlock".into());
+        if webcam_block.is_bool() {
+            self.as_mut().set_webcam_block(webcam_block.to_bool());
+        }
+
+        let cooler_boost = data.get_property(&"coolerBoost".into());
+        if cooler_boost.is_bool() {
+            self.as_mut().set_cooler_boost(cooler_boost.to_bool());
+        }
+
+        // there's no need to set both winkey and fnkey since they internally <map to the same setting
+        let fn_key = data.get_property(&"fnKey".into());
+        if fn_key.is_string() {
+            let mode = fn_key.to_qstring();
+            self.as_mut().set_fn_key(&mode);
+        }
+
+        let mic_mute_led = data.get_property(&"micMuteLed".into());
+        if mic_mute_led.is_bool() {
+            self.as_mut().set_mic_mute_led(mic_mute_led.to_bool());
+        }
+
+        let mute_led = data.get_property(&"muteLed".into());
+        if mute_led.is_bool() {
+            self.as_mut().set_mute_led(mute_led.to_bool());
+        }
+
+        let curve = data.get_property(&"cpuFanCurveWmi2".into());
+        if curve.is_array() {
+            self.as_mut().set_cpu_fan_curve_wmi2(&curve.to_qvariant());
+        }
+
+        let curve = data.get_property(&"cpuTempCurveWmi2".into());
+        if curve.is_array() {
+            self.as_mut().set_cpu_temp_curve_wmi2(&curve.to_qvariant());
+        }
+
+        let curve = data.get_property(&"cpuHysteresisCurveWmi2".into());
+        if curve.is_array() {
+            self.as_mut()
+                .set_cpu_hysteresis_curve_wmi2(&curve.to_qvariant());
+        }
+
+        let curve = data.get_property(&"gpuFanCurveWmi2".into());
+        if curve.is_array() {
+            self.as_mut().set_gpu_fan_curve_wmi2(&curve.to_qvariant());
+        }
+
+        let curve = data.get_property(&"gpuTempCurveWmi2".into());
+        if curve.is_array() {
+            self.as_mut().set_gpu_temp_curve_wmi2(&curve.to_qvariant());
+        }
+
+        let curve = data.get_property(&"gpuHysteresisCurveWmi2".into());
+        if curve.is_array() {
+            self.as_mut()
+                .set_gpu_hysteresis_curve_wmi2(&curve.to_qvariant());
+        }
+
+        let methods = data.get_property(&"methods".into());
+        if methods.is_object() {
+            for method in self.methods.data.clone() {
+                let data = methods.get_property(&method.name.clone().into());
+                if !data.is_undefined() && !data.is_null() {
+                    self.as_mut()
+                        .method_write(&method.name.clone().into(), &data);
+                }
+            }
+        }
     }
 
     fn update(self: Pin<&mut Self>, method: qobject::Method) {
