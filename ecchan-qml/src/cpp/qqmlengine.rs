@@ -1,3 +1,5 @@
+#![expect(unused)]
+
 use std::pin::Pin;
 
 use cxx_qt::{QObject, casting::Upcast};
