@@ -4,7 +4,11 @@ use cxx::UniquePtr;
 use cxx_qt_lib::{QString, QVariant};
 use serde::de::DeserializeOwned;
 
+use crate::cpp::qjsvalue::qobject::QJSPrimitiveValue;
+
 use super::{JSEngineDeserializer, QJSEngine, QJSValueList};
+
+pub use qobject::QJSValue;
 
 #[cxx_qt::bridge]
 mod qobject {
@@ -16,6 +20,9 @@ mod qobject {
 
         include!("ecchan-client/qjsvalue.h");
         type QJSValue;
+
+        include!("ecchan-client/qjsprimitivevalue.h");
+        type QJSPrimitiveValue = crate::cpp::QJSPrimitiveValue;
     }
 
     #[namespace = "rust::cxxqtlib1"]
@@ -46,6 +53,9 @@ mod qobject {
         fn qvariantCanConvertQJSValue(variant: &QVariant) -> bool;
         #[rust_name = "qjsvalue_from_qvariant"]
         fn qjsvalueFromQVariant(variant: &QVariant) -> UniquePtr<QJSValue>;
+
+        #[rust_name = "qjsvalue_to_primitive"]
+        fn qjsvalue_toPrimitive(value: &QJSValue) -> UniquePtr<QJSPrimitiveValue>;
     }
 
     #[namespace = "rust::cxxqtlib1"]
@@ -97,11 +107,8 @@ mod qobject {
         fn toInt(self: &QJSValue) -> i32;
         #[rust_name = "to_f64"]
         fn toNumber(self: &QJSValue) -> f64;
-
     }
 }
-
-pub use qobject::QJSValue;
 
 impl QJSValue {
     pub fn undefined() -> UniquePtr<Self> {
@@ -183,6 +190,10 @@ impl QJSValue {
 
     pub fn to_qvariant(&self) -> QVariant {
         qobject::qjsvalue_to_qvariant(self)
+    }
+
+    pub fn to_primitive(&self) -> UniquePtr<QJSPrimitiveValue> {
+        qobject::qjsvalue_to_primitive(self)
     }
 
     pub fn deserialize<T: DeserializeOwned>(&self) -> Result<T, serde_json::Error> {

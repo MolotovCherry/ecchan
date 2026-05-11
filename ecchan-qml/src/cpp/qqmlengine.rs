@@ -61,7 +61,7 @@ pub trait QQmlEngineExt {
     /// Get a reference to a QObject's parent QJSEngine
     #[allow(clippy::self_named_constructors)]
     #[allow(clippy::mut_from_ref)]
-    fn js_engine<T>(obj: &T) -> Option<Pin<&mut QJSEngine>>
+    fn js_engine<'a, T>(obj: &T) -> Option<Pin<&'a mut QJSEngine>>
     where
         T: Upcast<QObject>,
     {

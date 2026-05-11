@@ -34,5 +34,7 @@ namespace rust
         ::std::unique_ptr<QJSValue> qjsvalueFromQVariant(const QVariant &variant) noexcept;
 
         ::std::unique_ptr<QJSValue> qjsvalue_call(const QJSValue &value, const QJSValueList &args) noexcept;
+
+        ::std::unique_ptr<QJSPrimitiveValue> qjsvalue_toPrimitive(const QJSValue &value) noexcept;
     }
 }

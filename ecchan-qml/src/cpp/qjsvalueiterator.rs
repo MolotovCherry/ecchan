@@ -1,5 +1,3 @@
-#![expect(unused)]
-
 use std::pin::Pin;
 
 use cxx::UniquePtr;

@@ -1,10 +1,11 @@
 use std::{
     borrow::Cow,
+    collections::HashMap,
     io,
     pin::Pin,
     str::FromStr,
     sync::{
-        Arc,
+        Arc, LazyLock,
         atomic::{AtomicBool, Ordering},
         mpsc::{Sender, TryRecvError, channel},
     },
@@ -12,7 +13,7 @@ use std::{
     time::Duration,
 };
 
-use cxx_qt::{Constructor, CxxQtType, Threading};
+use cxx_qt::{Constructor, CxxQtType, QMetaObjectConnection, Threading};
 use cxx_qt_lib::{QByteArray, QMetaTypeType, QQmlEngine, QString, QStringList, QVariant};
 use ecchan_ipc::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MethodData,
@@ -20,12 +21,12 @@ use ecchan_ipc::{
     method::{Method, MethodTy},
     ret::{Bin, RetVal},
 };
-use sayuri::sync::Sendable;
+use sayuri::sync::{Mutex, Sendable};
 use strum::IntoEnumIterator as _;
 
 use crate::{
     client::{Client, ClientError},
-    cpp::{QJSValue, QJSValueList, qqmlengine::QQmlEngineExt as _},
+    cpp::{QJSValue, QJSValueIterator, QJSValueList, qqmlengine::QQmlEngineExt as _},
     q_critical, q_warning,
     setup::setup,
 };
@@ -655,7 +656,7 @@ struct Methods {
     data: Vec<MethodPayload>,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct MethodPayload {
     name: String,
     method: String,
@@ -1830,7 +1831,8 @@ impl qobject::EcchanClient {
                             move |mut ctx, res| {
                                 let Ok(ret) = res else {
                                     if last {
-                                        ctx.methods_changed();
+                                        ctx.as_mut().methods_changed();
+                                        ctx.state_changed("methods".into());
                                     }
 
                                     return;
@@ -1841,7 +1843,8 @@ impl qobject::EcchanClient {
 
                                 ctx.as_mut().rust_mut().methods.data.push(payload);
                                 if last {
-                                    ctx.methods_changed();
+                                    ctx.as_mut().methods_changed();
+                                    ctx.state_changed("methods".into());
                                 }
                             },
                         );
@@ -2218,13 +2221,89 @@ impl qobject::EcchanClient {
 
         let methods = data.get_property(&"methods".into());
         if methods.is_object() {
-            for method in self.methods.data.clone() {
-                let data = methods.get_property(&method.name.clone().into());
-                if !data.is_undefined() && !data.is_null() {
-                    self.as_mut()
-                        .method_write(&method.name.clone().into(), &data);
-                }
+            // race condition here; method list cb fires, THEN adds read cb to the end of the queue
+            // but this already added write requests before that, so this is placed before the data
+            // is even available; you can listen to the signal to know if/when it finished
+
+            static GUARD: LazyLock<Mutex<Vec<QMetaObjectConnection>>> =
+                LazyLock::new(Mutex::default);
+
+            let mut data = HashMap::new();
+
+            // for (const method in methods)
+            let mut iterator = QJSValueIterator::new(&methods);
+            while iterator.pin_mut().next() {
+                let val = iterator.value();
+                let name = iterator.name();
+
+                let md = if val.is_bool() {
+                    MethodData::Bit(val.to_bool())
+                } else if val.is_number() {
+                    MethodData::Byte(val.to_uint() as u8)
+                } else if val.is_array() {
+                    let mut data = Vec::new();
+                    let len = val.get_property(&"length".into()).to_uint();
+                    for n in 0..len {
+                        let elem = val.get_element(n);
+
+                        if !elem.is_number() {
+                            // bad array
+                            continue;
+                        }
+
+                        let n = elem.to_uint();
+                        if n > u8::MAX as u32 {
+                            // not a u8
+                            continue;
+                        }
+
+                        data.push(n as u8);
+                    }
+
+                    MethodData::Range(data)
+                } else {
+                    continue;
+                };
+
+                data.insert(name.to_string(), md);
             }
+
+            let conn = self.as_mut().on_methods_changed(move |mut ctx| {
+                // disconnect them all
+                GUARD.lock().drain(..).for_each(|conn| {
+                    conn.disconnect();
+                });
+
+                let Some(mut engine) = QQmlEngine::js_engine(&*ctx) else {
+                    q_critical!("js engine was null");
+                    return;
+                };
+
+                for method in ctx.methods.data.clone() {
+                    let Some(val) = data.get(&method.method) else {
+                        continue;
+                    };
+
+                    let js = match val {
+                        MethodData::Bit(b) => QJSValue::from_bool(*b),
+                        MethodData::Byte(b) => QJSValue::from_uint(*b as u32),
+                        MethodData::Range(items) => {
+                            let items = items
+                                .iter()
+                                .map(|i| QJSValue::from_uint(*i as u32))
+                                .collect::<Vec<_>>();
+
+                            QJSValue::from_array(engine.as_mut(), &items)
+                        }
+                    };
+
+                    let method = method.method.clone();
+                    ctx.as_mut().method_write(&method.into(), &js);
+                }
+            });
+
+            let guard = conn.release();
+            GUARD.lock().push(guard);
         }
     }
 
@@ -3386,6 +3465,11 @@ impl qobject::EcchanClient {
                 _ => unreachable!(),
             };
 
+            // do not bother with a write if the api is already set to this
+            if data == payload.data {
+                return;
+            }
+
             (data, payload.write_op)
         };
 
@@ -3412,7 +3496,8 @@ impl qobject::EcchanClient {
                     payload.data = data;
                 }
 
-                ctx.methods_changed();
+                ctx.as_mut().methods_changed();
+                ctx.state_changed("methods".into());
             },
         );
     }

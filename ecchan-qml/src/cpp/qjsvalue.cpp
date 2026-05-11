@@ -1,4 +1,5 @@
 #include "ecchan-client/qjsvalue.h"
+#include "ecchan-client/qjsprimitivevalue.h"
 #include <QtCore/QList>
 
 namespace rust
@@ -122,6 +123,14 @@ namespace rust
         {
             const QList<QJSValue> &qtArgs = static_cast<const QList<QJSValue>&>(args);
             return ::std::make_unique<QJSValue>(value.call(qtArgs));
+        }
+
+        ::std::unique_ptr<QJSPrimitiveValue> qjsvalue_toPrimitive(const QJSValue &value) noexcept
+        {
+            auto ptr = ::std::make_unique<QJSPrimitiveValue>(value.toPrimitive());
+            Q_ASSERT(ptr != nullptr);
+
+            return ptr;
         }
     }
 }
