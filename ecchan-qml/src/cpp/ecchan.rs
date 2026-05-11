@@ -1914,7 +1914,10 @@ impl qobject::EcchanClient {
         for name in MethodTy::iter() {
             if matches!(
                 name,
-                MethodTy::EcDumpRaw | MethodTy::EcDumpPretty | MethodTy::MethodList
+                MethodTy::EcDumpRaw // Ec dump isn't needed nor required on load, do it on demand
+                    | MethodTy::EcDumpPretty // Ec dump pretty isn't needed nor required on load, do it on demand
+                    | MethodTy::MethodList // MethodList is lumped in together with Methods
+                    | MethodTy::MethodWrite // MethodRead is used as sentinel for Methods; MethodWrite unused
             ) {
                 continue;
             }
