@@ -2265,6 +2265,8 @@ impl qobject::EcchanClient {
                 data.insert(name.to_string(), md);
             }
 
+            let data_size = data.len();
+
             let method_write =
                 move |ctx: Pin<&mut EcchanClient>, engine: Pin<&mut QJSEngine>, method: &str| {
                     let Some(val) = data.get(method) else {
@@ -2288,7 +2290,7 @@ impl qobject::EcchanClient {
                 };
 
             // on init method list is not available, but it is later; we can avoid this by checking the len
-            if !self.methods.data.is_empty() {
+            if self.methods.data.len() >= data_size {
                 let Some(mut engine) = QQmlEngine::js_engine(&*self) else {
                     q_critical!("js engine was null");
                     return;
