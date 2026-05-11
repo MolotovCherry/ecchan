@@ -1763,6 +1763,9 @@ impl qobject::EcchanClient {
                         return;
                     };
 
+                    // so nothing gets duplicated
+                    ctx.as_mut().rust_mut().methods.data.clear();
+
                     let list = ret.into_methods().unwrap();
 
                     let accepted_groups = [
