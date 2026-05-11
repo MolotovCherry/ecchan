@@ -1931,8 +1931,7 @@ impl qobject::EcchanClient {
 
         let cb = Sendable::new(cb.clone());
         self.queued_call(move |_| {
-            // SAFETY: this is the exact same qt thread as above
-            let cb = unsafe { cb.into_inner() };
+            let cb = cb.get_inner().expect("we're on the same thread");
             let value_list = QJSValueList::new();
             cb.call(&value_list);
         });
