@@ -1912,12 +1912,57 @@ impl qobject::EcchanClient {
         self.as_mut().init_state_changed(true);
 
         for name in MethodTy::iter() {
-            if matches!(
+            if !matches!(
                 name,
-                MethodTy::EcDumpRaw // Ec dump isn't needed nor required on load, do it on demand
-                    | MethodTy::EcDumpPretty // Ec dump pretty isn't needed nor required on load, do it on demand
-                    | MethodTy::MethodList // MethodList is lumped in together with Methods
-                    | MethodTy::MethodWrite // MethodRead is used as sentinel for Methods; MethodWrite unused
+                MethodTy::FanCount
+                    | MethodTy::FanMax
+                    | MethodTy::HasDGpu
+                    | MethodTy::WmiVer
+                    | MethodTy::FwVersion
+                    | MethodTy::FwDate
+                    | MethodTy::FwTime
+                    | MethodTy::ShiftModes
+                    | MethodTy::ShiftMode
+                    | MethodTy::ShiftModeSupported
+                    | MethodTy::BatteryChargeMode
+                    | MethodTy::BatteryChargeModeSupported
+                    | MethodTy::SuperBattery
+                    | MethodTy::SuperBatterySupported
+                    | MethodTy::Fan1Rpm
+                    | MethodTy::Fan2Rpm
+                    | MethodTy::Fan3Rpm
+                    | MethodTy::Fan4Rpm
+                    | MethodTy::Fan1Supported
+                    | MethodTy::Fan2Supported
+                    | MethodTy::Fan3Supported
+                    | MethodTy::Fan4Supported
+                    | MethodTy::FanModes
+                    | MethodTy::FanMode
+                    | MethodTy::FanModeSupported
+                    | MethodTy::Webcam
+                    | MethodTy::WebcamBlock
+                    | MethodTy::WebcamSupported
+                    | MethodTy::WebcamBlockSupported
+                    | MethodTy::CoolerBoost
+                    | MethodTy::CoolerBoostSupported
+                    | MethodTy::FnKey
+                    | MethodTy::WinKey
+                    | MethodTy::FnWinSwapSupported
+                    | MethodTy::MicMuteLed
+                    | MethodTy::MuteLed
+                    | MethodTy::MicMuteLedSupported
+                    | MethodTy::MuteLedSupported
+                    | MethodTy::CpuRtFanSpeed
+                    | MethodTy::CpuRtTemp
+                    | MethodTy::GpuRtFanSpeed
+                    | MethodTy::GpuRtTemp
+                    | MethodTy::CpuFanCurveWmi2
+                    | MethodTy::CpuTempCurveWmi2
+                    | MethodTy::CpuHysteresisCurveWmi2
+                    | MethodTy::GpuFanCurveWmi2
+                    | MethodTy::GpuTempCurveWmi2
+                    | MethodTy::GpuHysteresisCurveWmi2
+                    | MethodTy::MethodRead // sentinel for methods
             ) {
                 continue;
             }
