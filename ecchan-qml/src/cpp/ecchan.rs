@@ -26,7 +26,7 @@ use strum::IntoEnumIterator as _;
 
 use crate::{
     client::{Client, ClientError},
-    cpp::{QJSEngine, QJSValue, QJSValueIterator, QJSValueList, qqmlengine::QQmlEngineExt as _},
+    cpp::{QJSValue, QJSValueIterator, QJSValueList, qqmlengine::QQmlEngineExt as _},
     q_critical, q_warning,
     setup::setup,
 };
