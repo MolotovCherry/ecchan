@@ -30,6 +30,20 @@ Currently only supports WMI2 models.
 
 This currently requires the Linux `ec_sys` driver is loaded with `write_support` enabled, however compatibility with [msi-ec](https://github.com/BeardOverflow/msi-ec) driver is planned, and using the driver will be preferred over direct ecram editing. Please note that msi-ec does not support editing of fan curves or model specific functions.
 
+# Building
+
+- Install rust
+- `cargo build -p <crate_name>`
+
+Server is required for all clients. Client and servers are split because server must be run as root, but it's usually not feasible or possible to run clients as root.
+
+ecchan-dbus: This is currently unfinished because I don't have a need for it.
+ecchan-qml: This is required for any qml-based ui. This requires a c++ compiler as well as qt6 and all associated dev packages.
+
+# Making your own client
+
+Use ecchan-ipc crate and make a client which reads/writes to the socket
+
 # Adding support for your model
 
 1. Check if your ec version is supported under the `fw` folder.
