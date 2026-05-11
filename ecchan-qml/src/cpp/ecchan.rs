@@ -5,7 +5,7 @@ use std::{
     pin::Pin,
     str::FromStr,
     sync::{
-        Arc, LazyLock,
+        Arc,
         atomic::{AtomicBool, Ordering},
         mpsc::{Sender, TryRecvError, channel},
     },
@@ -13,7 +13,7 @@ use std::{
     time::Duration,
 };
 
-use cxx_qt::{Constructor, CxxQtType, QMetaObjectConnection, Threading};
+use cxx_qt::{Constructor, CxxQtType, Threading};
 use cxx_qt_lib::{QByteArray, QMetaTypeType, QQmlEngine, QString, QStringList, QVariant};
 use ecchan_ipc::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MethodData,
@@ -21,12 +21,12 @@ use ecchan_ipc::{
     method::{Method, MethodTy},
     ret::{Bin, RetVal},
 };
-use sayuri::sync::{Mutex, Sendable};
+use sayuri::sync::Sendable;
 use strum::IntoEnumIterator as _;
 
 use crate::{
     client::{Client, ClientError},
-    cpp::{QJSValue, QJSValueIterator, QJSValueList, qqmlengine::QQmlEngineExt as _},
+    cpp::{QJSEngine, QJSValue, QJSValueIterator, QJSValueList, qqmlengine::QQmlEngineExt as _},
     q_critical, q_warning,
     setup::setup,
 };
@@ -2225,13 +2225,6 @@ impl qobject::EcchanClient {
 
         let methods = data.get_property(&"methods".into());
         if methods.is_object() {
-            // race condition here; method list cb fires, THEN adds read cb to the end of the queue
-            // but this already added write requests before that, so this is placed before the data
-            // is even available; you can listen to the signal to know if/when it finished
-
-            static GUARD: LazyLock<Mutex<Vec<QMetaObjectConnection>>> =
-                LazyLock::new(Mutex::default);
-
             let mut data = HashMap::new();
 
             // for (const method in methods)
@@ -2272,20 +2265,10 @@ impl qobject::EcchanClient {
                 data.insert(name.to_string(), md);
             }
 
-            let conn = self.as_mut().on_methods_changed(move |mut ctx| {
-                // disconnect them all
-                GUARD.lock().drain(..).for_each(|conn| {
-                    conn.disconnect();
-                });
-
-                let Some(mut engine) = QQmlEngine::js_engine(&*ctx) else {
-                    q_critical!("js engine was null");
-                    return;
-                };
-
-                for method in ctx.methods.data.clone() {
-                    let Some(val) = data.get(&method.method) else {
-                        continue;
+            let method_write =
+                move |ctx: Pin<&mut EcchanClient>, engine: Pin<&mut QJSEngine>, method: &str| {
+                    let Some(val) = data.get(method) else {
+                        return;
                     };
 
                     let js = match val {
@@ -2297,17 +2280,41 @@ impl qobject::EcchanClient {
                                 .map(|i| QJSValue::from_uint(*i as u32))
                                 .collect::<Vec<_>>();
 
-                            QJSValue::from_array(engine.as_mut(), &items)
+                            QJSValue::from_array(engine, &items)
                         }
                     };
 
-                    let method = method.method.clone();
-                    ctx.as_mut().method_write(&method.into(), &js);
-                }
-            });
+                    ctx.method_write(&method.to_owned().into(), &js);
+                };
 
-            let guard = conn.release();
-            GUARD.lock().push(guard);
+            // on init method list is not available, but it is later; we can avoid this by checking the len
+            if !self.methods.data.is_empty() {
+                let Some(mut engine) = QQmlEngine::js_engine(&*self) else {
+                    q_critical!("js engine was null");
+                    return;
+                };
+
+                for method in self.methods.data.clone() {
+                    method_write(self.as_mut(), engine.as_mut(), &method.method);
+                }
+            } else {
+                self.as_mut().call(Method::MethodList, move |mut ctx, res| {
+                    let Ok(ret) = res else {
+                        return;
+                    };
+
+                    let methods = ret.into_methods().unwrap();
+
+                    let Some(mut engine) = QQmlEngine::js_engine(&*ctx) else {
+                        q_critical!("js engine was null");
+                        return;
+                    };
+
+                    for method in methods {
+                        method_write(ctx.as_mut(), engine.as_mut(), &method.method);
+                    }
+                });
+            }
         }
     }
 
