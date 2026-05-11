@@ -107,7 +107,7 @@ namespace rust
 
         bool qvariantCanConvertQJSValue(const QVariant &variant)
         {
-            return variant.canConvert<QJSValue *>();
+            return variant.canConvert<QJSValue>();
         }
 
         ::std::unique_ptr<QJSValue> qjsvalueFromQVariant(const QVariant &variant) noexcept
