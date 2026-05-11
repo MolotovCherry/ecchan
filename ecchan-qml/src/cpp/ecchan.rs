@@ -541,7 +541,7 @@ impl From<qobject::Method> for MethodTy {
             47 => MethodTy::GpuHysteresisCurveWmi2,
             48 => MethodTy::EcDumpRaw,
             49 => MethodTy::EcDumpPretty,
-            50 => MethodTy::Methods,
+            50 => MethodTy::MethodRead, // there's no other useful variant, so use this as a sentinel for Methods
             _ => unreachable!(),
         }
     }
@@ -1758,7 +1758,8 @@ impl qobject::EcchanClient {
                     });
             }
 
-            MethodTy::Methods => {
+            // sentinel for Methods
+            MethodTy::MethodRead => {
                 self.as_mut().call(Method::MethodList, |mut ctx, res| {
                     let Ok(ret) = res else {
                         return;
@@ -2373,7 +2374,7 @@ impl qobject::EcchanClient {
         update_gpu_temp_curve_wmi2, GpuTempCurveWmi2,
         update_gpu_hysteresis_curve_wmi2, GpuHysteresisCurveWmi2,
 
-        update_methods, Methods,
+        update_methods, MethodRead, // sentinel for Methods
 
         update_ec_dump, EcDumpRaw,
         update_ec_dump_pretty, EcDumpPretty

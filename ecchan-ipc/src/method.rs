@@ -5,11 +5,13 @@ use ec::{
     MethodOp, ShiftMode, SuperBattery, Webcam,
 };
 use serde::{Deserialize, Serialize};
-use strum::EnumIter;
+use strum::{EnumDiscriminants, EnumIter};
 
 /// A ipc call. Make a value of this and json serialize it to call.
 /// Returns an equivalent return type in Ret (see original fn for type)
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, EnumDiscriminants)]
+#[strum_discriminants(name(MethodTy))]
+#[strum_discriminants(derive(EnumIter))]
 pub enum Method<'a> {
     // Utils
     Ping,
@@ -155,88 +157,4 @@ pub enum Method<'a> {
         op: MethodOp,
         data: MethodData,
     },
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, EnumIter)]
-pub enum MethodTy {
-    // Utils
-    FanCount,
-    FanMax,
-    HasDGpu,
-    WmiVer,
-
-    // Firmware
-    FwVersion,
-    FwDate,
-    FwTime,
-
-    // Shift Modes
-    ShiftModes,
-    ShiftMode,
-    ShiftModeSupported,
-
-    // Battery
-    BatteryChargeMode,
-    BatteryChargeModeSupported,
-
-    SuperBattery,
-    SuperBatterySupported,
-
-    // Fan
-    Fan1Rpm,
-    Fan2Rpm,
-    Fan3Rpm,
-    Fan4Rpm,
-
-    Fan1Supported,
-    Fan2Supported,
-    Fan3Supported,
-    Fan4Supported,
-
-    FanModes,
-    FanMode,
-    FanModeSupported,
-
-    // Webcam
-    Webcam,
-    WebcamBlock,
-    WebcamSupported,
-    WebcamBlockSupported,
-
-    // Cooler Boost
-    CoolerBoost,
-    CoolerBoostSupported,
-
-    // Swap Keys
-    FnKey,
-    WinKey,
-    FnWinSwapSupported,
-
-    // Mute LEDs
-    MicMuteLed,
-    MuteLed,
-    MicMuteLedSupported,
-    MuteLedSupported,
-
-    // Realtime Stats
-    CpuRtFanSpeed,
-    CpuRtTemp,
-    GpuRtFanSpeed,
-    GpuRtTemp,
-
-    // Curves
-    CpuFanCurveWmi2,
-    CpuTempCurveWmi2,
-    CpuHysteresisCurveWmi2,
-    GpuFanCurveWmi2,
-    GpuTempCurveWmi2,
-    GpuHysteresisCurveWmi2,
-
-    // Ec
-    EcDumpRaw,
-    EcDumpPretty,
-
-    // Methods
-    MethodList,
-    Methods,
 }
