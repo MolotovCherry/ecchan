@@ -2310,11 +2310,14 @@ impl qobject::EcchanClient {
                 data.insert(name.to_string(), md);
             }
 
-            let data_size = data.len();
+            self.as_mut().queued_call(move |mut ctx| {
+                let Some(mut engine) = QQmlEngine::js_engine(&*ctx) else {
+                    q_critical!("js engine was null");
+                    return;
+                };
 
-            let method_write =
-                move |ctx: Pin<&mut EcchanClient>, engine: Pin<&mut QJSEngine>, method: &str| {
-                    let Some(val) = data.get(method) else {
+                for method in ctx.methods.data.clone() {
+                    let Some(val) = data.get(&method.method) else {
                         return;
                     };
 
@@ -2327,41 +2330,14 @@ impl qobject::EcchanClient {
                                 .map(|i| QJSValue::from_uint(*i as u32))
                                 .collect::<Vec<_>>();
 
-                            QJSValue::from_array(engine, &items)
+                            QJSValue::from_array(engine.as_mut(), &items)
                         }
                     };
 
-                    ctx.method_write(&method.to_owned().into(), &js);
-                };
-
-            // on init method list is not available, but it is later; we can avoid this by checking the len
-            if self.methods.data.len() >= data_size {
-                let Some(mut engine) = QQmlEngine::js_engine(&*self) else {
-                    q_critical!("js engine was null");
-                    return;
-                };
-
-                for method in self.methods.data.clone() {
-                    method_write(self.as_mut(), engine.as_mut(), &method.method);
+                    ctx.as_mut()
+                        .method_write(&method.method.clone().into(), &js);
                 }
-            } else {
-                self.as_mut().call(Method::MethodList, move |mut ctx, res| {
-                    let Ok(ret) = res else {
-                        return;
-                    };
-
-                    let methods = ret.into_methods().unwrap();
-
-                    let Some(mut engine) = QQmlEngine::js_engine(&*ctx) else {
-                        q_critical!("js engine was null");
-                        return;
-                    };
-
-                    for method in methods {
-                        method_write(ctx.as_mut(), engine.as_mut(), &method.method);
-                    }
-                });
-            }
+            });
         }
     }
 
