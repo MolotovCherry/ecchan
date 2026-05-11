@@ -54,32 +54,4 @@ EcchanClient {
         "methods"
     ];
     // qmlformat on
-
-    function apply(profile) {
-        if (profile == null) {
-            return;
-        }
-
-        for (const prop of root.profileProps) {
-            if (prop === "methods") {
-                continue;
-            }
-
-            const data = profile[prop];
-
-            if (data == null) {
-                continue;
-            }
-
-            root[prop] = data;
-        }
-
-        for (const [key, value] of Object.entries(profile.methods)) {
-            if (!value.write) {
-                continue;
-            }
-
-            root.methods[key].value = value.value;
-        }
-    }
 }

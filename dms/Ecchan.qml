@@ -108,16 +108,16 @@ PluginComponent {
 
         property bool blocked: true
 
-        function onInitFinished() {
-            EcchanClient.apply(root.profiles[root.selectedProfile].state);
-            EcchanClient.submitTask(0);
-        }
+        function onInitStateChanged(state) {
+            const finished = !state;
 
-        function onTaskFinished(id) {
-            if (id === 0) {
-                blocked = false;
-
-                profileWriteTimer.restart();
+            if (finished) {
+                EcchanClient.apply(root.profiles[root.selectedProfile].state);
+                EcchanClient.queue(() => {
+                    blocked = false;
+                    root.profiles[root.selectedProfile].state = EcchanClient.serialize();
+                    profileWriteTimer.restart();
+                });
             }
         }
 
@@ -126,7 +126,7 @@ PluginComponent {
                 return;
             }
 
-            if (!EcchanClient.profileProps.contains(key)) {
+            if (!EcchanClient.profileProps.includes(key)) {
                 return;
             }
 
@@ -157,7 +157,7 @@ PluginComponent {
         profiles = _loadPluginData("profiles", [
             {
                 "name": "Default",
-                "state": EcchanClient.serialize()
+                "state": {}
             }
         ]);
         profilesChanged();
@@ -714,36 +714,35 @@ PluginComponent {
                                     rowSpacing: 0
                                     columnSpacing: 0
 
-                                    property var methodList: EcchanClient.methodList.map(item => {
+                                    property var methods: EcchanClient.methods.map(item => {
+                                        // [{ value: <value>, "name": "name", "method": "method" }]
+                                        let variation;
                                         // qmlformat off
-                                        const ops = [
-                                            { suffix: "Range", type: "range", op: "WriteRange" },
-                                            { suffix: "",      type: "byte", op: "Write" },
-                                            { suffix: "Bit",   type: "bit", op: "WriteBit" }
-                                        ];
+                                        switch (typeof (item.value)) {
+                                            case "boolean":
+                                                variation = "bit";
+                                                break;
+                                            case "number":
+                                                variation = "byte";
+                                                break;
+                                            case "object": // array
+                                                variation = "range";
+                                                break;
+                                            default:
+                                                ToastService.showError("Got invalid value", "EcchanClient.methods returned wrong type ?? " + typeof (item.value));
+                                                break;
+                                        }
                                         // qmlformat on
-
-                                        const found = ops.find(c => item.ops.includes("Read" + c.suffix) && item.ops.includes("Write" + c.suffix));
-
-                                        // no support
-                                        if (!found) {
-                                            return;
-                                        }
-
-                                        const state = EcchanClient.methods[item.method];
-                                        if (state == null) {
-                                            return;
-                                        }
 
                                         return {
                                             "name": item.name,
                                             "icon": null,
                                             "description": null,
                                             "supported": true,
-                                            "value": null,
-                                            "set": value => EcchanClient.methodWrite(item.method, found.op, value),
+                                            "value": item.value,
+                                            "set": value => EcchanClient.methodWrite(item.method, value),
                                             "type": "method",
-                                            "variation": found.type,
+                                            "variation": variation,
                                             "methodKey": item.method
                                         };
                                     }).filter(item => item != null)
@@ -805,7 +804,7 @@ PluginComponent {
                                             "methodKey": null
                                         },
                                         // qmlformat off
-                                        ...methodList
+                                        ...methods
                                         // qmlformat on
                                     ]
 
@@ -917,7 +916,7 @@ PluginComponent {
                                                 visible: type === "method" && variation === "bit"
 
                                                 iconName: "switch_access"
-                                                checked: EcchanClient.methods[methodKey] ?? false
+                                                checked: value
                                                 iconSize: Theme.iconSizeLarge
                                                 buttonHeight: 70
                                                 buttonWidth: 130
