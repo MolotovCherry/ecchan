@@ -729,7 +729,7 @@ PluginComponent {
                                                 variation = "range";
                                                 break;
                                             default:
-                                                ToastService.showError("Got invalid value", "EcchanClient.methods returned wrong type ?? " + typeof (item.value));
+                                                ToastService.showError("Got invalid value", "EcchanClient.methods returned wrong type: " + typeof (item.value));
                                                 break;
                                         }
                                         // qmlformat on
@@ -745,7 +745,7 @@ PluginComponent {
                                             "variation": variation,
                                             "methodKey": item.method
                                         };
-                                    }).filter(item => item != null)
+                                    })
 
                                     property var modelBase: [
                                         {
@@ -806,7 +806,7 @@ PluginComponent {
                                         // qmlformat off
                                         ...methods
                                         // qmlformat on
-                                    ]
+                                    ].filter(item => item.supported)
 
                                     property var filteredModel: modelBase.filter(item => item.supported)
 
@@ -1074,7 +1074,7 @@ PluginComponent {
                                                 "supported": EcchanClient.shiftModes.includes("Super Battery"),
                                                 "setMode": () => EcchanClient.shiftMode = "Super Battery"
                                             },
-                                        ]
+                                        ].filter(item => item.supported)
 
                                         ColumnLayout {
                                             id: page3Column
