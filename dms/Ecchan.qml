@@ -351,6 +351,10 @@ PluginComponent {
                                 }
 
                                 EcchanClient.apply(root.profiles[idx].state);
+                                EcchanClient.queue(() => {
+                                    // sliders do not auto adjust since they have their own internal value
+                                    fanTab.resetPage();
+                                });
                             }
 
                             onValueAdded: (idx, name) => {
@@ -1327,6 +1331,10 @@ PluginComponent {
                                             fanSlider5.value = values[4];
                                             fanSlider6.value = values[5];
                                             fanSlider7.value = values[6] ?? 0;
+                                        }
+
+                                        function resetPage() {
+                                            fanTab.reset(fanTab.values);
                                         }
 
                                         function reset(obj) {
