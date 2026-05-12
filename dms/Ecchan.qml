@@ -1194,7 +1194,7 @@ PluginComponent {
                                                     "name": "Advanced",
                                                     "icon": "tune",
                                                     "selected": EcchanClient.fanMode === "Advanced",
-                                                    "supported": EcchanClient.shiftModes.includes("Advanced"),
+                                                    "supported": EcchanClient.fanModes.includes("Advanced"),
                                                     "setMode": () => EcchanClient.fanMode = "Advanced"
                                                 },
                                                 {
@@ -1211,7 +1211,7 @@ PluginComponent {
                                                     "supported": EcchanClient.coolerBoostSupported,
                                                     "setMode": () => EcchanClient.coolerBoost = !EcchanClient.coolerBoost
                                                 },
-                                            ]
+                                            ].filter(item => item.supported)
 
                                             ColumnLayout {
                                                 id: page4Column
