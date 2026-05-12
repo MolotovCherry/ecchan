@@ -1,3 +1,4 @@
 /target
 plugin_init.o
 libecchan_client.so
+.qmlls.ini
