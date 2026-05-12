@@ -1411,6 +1411,17 @@ PluginComponent {
                                                 }
 
                                                 fanTab.item.set(values);
+                                                EcchanClient.queue(() => {
+                                                    // update values after call; this is important, if
+                                                    // e.g. the call fails, the values need to always reflect the actual values
+                                                    fanSlider1.value = fanTab.values[0];
+                                                    fanSlider2.value = fanTab.values[1];
+                                                    fanSlider3.value = fanTab.values[2];
+                                                    fanSlider4.value = fanTab.values[3];
+                                                    fanSlider5.value = fanTab.values[4];
+                                                    fanSlider6.value = fanTab.values[5];
+                                                    fanSlider7.value = fanTab.values[6] ?? 0;
+                                                });
                                             }
                                         }
 
