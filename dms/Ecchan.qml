@@ -1383,7 +1383,7 @@ PluginComponent {
                                         Layout.fillWidth: true
                                         Layout.topMargin: Theme.spacingM
 
-                                        spacing: Theme.spacingXL + 4
+                                        spacing: Theme.spacingXL + 10
 
                                         Item {
                                             Layout.fillWidth: true
