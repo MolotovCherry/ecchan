@@ -783,7 +783,7 @@ PluginComponent {
                                         },
                                         {
                                             "name": "Mic Mute Light",
-                                            "icon": "backlight_high",
+                                            "icon": EcchanClient.micMuteLed ? "backlight_high" : "backlight_high_off",
                                             "description": "Toggle the mic mute keyboard indicator light",
                                             "supported": EcchanClient.micMuteLedSupported,
                                             "value": EcchanClient.micMuteLed,
@@ -794,7 +794,7 @@ PluginComponent {
                                         },
                                         {
                                             "name": "Mute Light",
-                                            "icon": "backlight_high",
+                                            "icon": EcchanClient.muteLed ? "backlight_high" : "backlight_high_off",
                                             "description": "Toggle the audio mute keyboard indicator light",
                                             "supported": EcchanClient.muteLedSupported,
                                             "value": EcchanClient.muteLed,
@@ -1151,109 +1151,179 @@ PluginComponent {
                         }
 
                         // Fans
-                        // ColumnLayout {
-                        //     id: page4
+                        ColumnLayout {
+                            id: page4
 
-                        //     visible: popout.currentTab === 3
-                        //     Layout.fillWidth: true
-                        //     Layout.fillHeight: true
+                            property int fanIndex: 0
 
-                        //     StyledRect {
-                        //         Layout.fillWidth: true
-                        //         Layout.fillHeight: true
+                            visible: popout.currentTab === 3
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
 
-                        //         radius: Theme.cornerRadius
-                        //         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                            StyledRect {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
 
-                        //         GridLayout {
-                        //             columns: 4
+                                radius: Theme.cornerRadius
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
 
-                        //             anchors.top: parent.top
-                        //             anchors.left: parent.left
-                        //             anchors.right: parent.right
-                        //             anchors.margins: Theme.spacingM
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: Theme.spacingM
+                                    spacing: Theme.spacingM
 
-                        //             rowSpacing: Theme.spacingM
-                        //             columnSpacing: Theme.spacingM
+                                    GridLayout {
+                                        columns: 4
 
-                        //             Repeater {
-                        //                 model: [
-                        //                     {
-                        //                         "name": "Advanced",
-                        //                         "icon": "rocket_launch",
-                        //                         "supported": EcchanClient.shiftModes.includes("Turbo"),
-                        //                         "setMode": () => {
-                        //                             EcchanClient.setShiftMode("Turbo");
+                                        Layout.fillWidth: true
+                                        Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
 
-                        //                             if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
-                        //                                 EcchanClient.setSuperBattery(false);
-                        //                             }
-                        //                         }
-                        //                     },
-                        //                     {
-                        //                         "name": "Silent",
-                        //                         "icon": "airwave",
-                        //                         "supported": EcchanClient.fanModes.includes("Silent"),
-                        //                         "setMode": () => EcchanClient.setFanMode("Silent")
-                        //                     },
-                        //                     {
-                        //                         "name": "Auto",
-                        //                         "icon": "airwave",
-                        //                         "supported": EcchanClient.fanModes.includes("Silent"),
-                        //                         "setMode": () => EcchanClient.setFanMode("Silent")
-                        //                     },
-                        //                 ]
+                                        rowSpacing: Theme.spacingM
+                                        columnSpacing: Theme.spacingM
 
-                        //                 ColumnLayout {
-                        //                     id: page3Column
-                        //                     Layout.preferredWidth: actionBtn.width
-                        //                     Layout.preferredHeight: page2Column.implicitHeight + Theme.spacingL
-                        //                     Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
+                                        Repeater {
+                                            model: [
+                                                {
+                                                    "name": "Auto",
+                                                    "icon": "mode_fan",
+                                                    "selected": EcchanClient.fanMode === "Auto",
+                                                    "supported": EcchanClient.fanModes.includes("Auto"),
+                                                    "setMode": () => EcchanClient.fanMode = "Auto"
+                                                },
+                                                {
+                                                    "name": "Advanced",
+                                                    "icon": "tune",
+                                                    "selected": EcchanClient.fanMode === "Advanced",
+                                                    "supported": EcchanClient.shiftModes.includes("Advanced"),
+                                                    "setMode": () => EcchanClient.fanMode = "Advanced"
+                                                },
+                                                {
+                                                    "name": "Silent",
+                                                    "icon": "airwave",
+                                                    "selected": EcchanClient.fanMode === "Silent",
+                                                    "supported": EcchanClient.fanModes.includes("Silent"),
+                                                    "setMode": () => EcchanClient.fanMode = "Silent"
+                                                },
+                                                {
+                                                    "name": "Cooler Boost",
+                                                    "icon": EcchanClient.coolerBoost ? "mode_cool" : "mode_cool_off",
+                                                    "selected": EcchanClient.coolerBoost,
+                                                    "supported": EcchanClient.coolerBoostSupported,
+                                                    "setMode": () => EcchanClient.coolerBoost = !EcchanClient.coolerBoost
+                                                },
+                                            ]
 
-                        //                     required property string name
-                        //                     required property string icon
-                        //                     required property bool supported
-                        //                     required property var setMode
+                                            ColumnLayout {
+                                                id: page4Column
+                                                Layout.preferredHeight: page4Column.implicitHeight + Theme.spacingL
+                                                Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
 
-                        //                     spacing: Theme.spacingS
+                                                required property string name
+                                                required property string icon
+                                                required property bool selected
+                                                required property bool supported
+                                                required property var setMode
 
-                        //                     // toggles
-                        //                     ToggleActionButton {
-                        //                         id: actionBtn3
+                                                spacing: Theme.spacingS
 
-                        //                         iconName: icon
-                        //                         checked: EcchanClient.shiftMode === name
-                        //                         iconSize: Theme.iconSizeLarge + 16
-                        //                         buttonHeight: 100
-                        //                         buttonWidth: 140
+                                                // toggles
+                                                ToggleActionButton {
+                                                    id: actionBtn3
 
-                        //                         onClicked: setMode()
-                        //                     }
+                                                    iconName: icon
+                                                    checked: selected
+                                                    iconSize: Theme.iconSizeLarge + 16
+                                                    buttonHeight: 100
+                                                    buttonWidth: 140
 
-                        //                     // name
-                        //                     RowLayout {
-                        //                         id: row3Layout
-                        //                         Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
-                        //                         spacing: Theme.spacingXS
-                        //                         Layout.fillWidth: true
+                                                    onClicked: setMode()
 
-                        //                         StyledText {
-                        //                             Layout.maximumWidth: actionBtn3.width
+                                                    StyledText {
+                                                        Layout.maximumWidth: parent.width
 
-                        //                             text: name
-                        //                             font.pixelSize: Theme.fontSizeSmall
-                        //                             font.weight: Font.Medium
-                        //                             color: Theme.surfaceText
+                                                        anchors.bottom: parent.bottom
+                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                        anchors.bottomMargin: Theme.spacingS
 
-                        //                             horizontalAlignment: Text.AlignCenter
-                        //                             wrapMode: Text.WordWrap
-                        //                         }
-                        //                     }
-                        //                 }
-                        //             }
-                        //         }
-                        //     }
-                        // }
+                                                        text: name
+                                                        font.pixelSize: Theme.fontSizeSmall
+                                                        font.weight: Font.Bold
+                                                        color: parent.checked ? Theme.primaryText : Theme.surfaceText
+
+                                                        horizontalAlignment: Text.AlignCenter
+                                                        wrapMode: Text.WordWrap
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    DankTabBar {
+                                        id: fanTab
+
+                                        Layout.alignment: Qt.AlignTop
+                                        Layout.fillWidth: true
+
+                                        currentIndex: page4.fanIndex
+
+                                        property var item: model[page4.fanIndex]
+
+                                        model: [
+                                            {
+                                                "isAction": false,
+                                                "supported": EcchanClient.wmiVer == 2,
+                                                "icon": "memory",
+                                                "text": "CFan",
+                                                "sliders": 7,
+                                                "values": EcchanClient.cpuFanCurveWmi2
+                                            },
+                                            {
+                                                "isAction": false,
+                                                "supported": EcchanClient.wmiVer == 2,
+                                                "icon": "memory",
+                                                "text": "CTemp",
+                                                "sliders": 7,
+                                                "values": EcchanClient.cpuTempCurveWmi2
+                                            },
+                                            {
+                                                "isAction": false,
+                                                "supported": EcchanClient.wmiVer == 2,
+                                                "icon": "memory",
+                                                "text": "CHysteresis",
+                                                "sliders": 6,
+                                                "values": EcchanClient.cpuHysteresisCurveWmi2
+                                            },
+                                            {
+                                                "isAction": false,
+                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
+                                                "icon": "developer_board",
+                                                "text": "GFan",
+                                                "sliders": 7,
+                                                "values": EcchanClient.gpuFanCurveWmi2
+                                            },
+                                            {
+                                                "isAction": false,
+                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
+                                                "icon": "developer_board",
+                                                "text": "GTemp",
+                                                "sliders": 7,
+                                                "values": EcchanClient.gpuTempCurveWmi2
+                                            },
+                                            {
+                                                "isAction": false,
+                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
+                                                "icon": "developer_board",
+                                                "text": "GHysteresis",
+                                                "sliders": 7,
+                                                "values": EcchanClient.gpuHysteresisCurveWmi2
+                                            },
+                                        ].filter(item => item.supported)
+
+                                        onTabClicked: index => page4.fanIndex = index
+                                    }
+                                }
+                            }
+                        }
 
                         // EcMem page
                         ColumnLayout {
