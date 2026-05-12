@@ -2,6 +2,7 @@ pragma Singleton
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import qs.Services
 
 import "../ecchan_client"
 
@@ -13,7 +14,6 @@ EcchanClient {
     property int _reconnectAttempt: 0
 
     onConnectedChanged: {
-        Method;
         if (connected) {
             _reconnectAttempt = 0;
         } else if (reconnect && _reconnectAttempt == 0) {
@@ -21,6 +21,8 @@ EcchanClient {
             Qt.callLater(() => connect());
         }
     }
+
+    onError: error => ToastService.showError("EcchanClient error", error)
 
     function disconnect() {
         // do not reconnect since this was intentional

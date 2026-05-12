@@ -234,6 +234,9 @@ pub mod qobject {
         #[qsignal]
         fn state_changed(self: Pin<&mut Self>, prop: QString);
 
+        #[qsignal]
+        fn error(self: Pin<&mut Self>, error: QString);
+
         //
         // Invokables
         //
@@ -801,7 +804,10 @@ impl qobject::EcchanClient {
 
                 Err(e) => {
                     match e {
-                        ClientError::Call { .. } | ClientError::Json { .. } => (),
+                        ClientError::Call { .. } | ClientError::Json { .. } => {
+                            ctx.as_mut().error(e.to_string().into());
+                        }
+
                         ClientError::Io { .. } | ClientError::Eof => {
                             // socket error, so we now disconnect
                             ctx.as_mut().disconnect();
@@ -810,6 +816,7 @@ impl qobject::EcchanClient {
 
                     if !matches!(e, ClientError::Eof) {
                         q_critical!("{e}");
+                        ctx.as_mut().error(e.to_string().into());
                     }
 
                     if matches!(method, Method::Ping) {
@@ -2427,6 +2434,7 @@ impl qobject::EcchanClient {
                 Ok(c) => c,
                 Err(e) => {
                     q_warning!("{e}");
+                    self.error(e.to_string().into());
                     return;
                 }
             };
