@@ -2,3 +2,5 @@ CircleGauge 1.0 CircleGauge.qml
 DankEditableDropdown 1.0 DankEditableDropdown.qml
 Tooltip 1.0 Tooltip.qml
 ToggleActionButton 1.0 ToggleActionButton.qml
+DankVerticalSlider 1.0 DankVerticalSlider.qml
+DankColorfulTabBar 1.0 DankColorfulTabBar.qml

@@ -1187,6 +1187,7 @@ PluginComponent {
                                                     "name": "Auto",
                                                     "icon": "mode_fan",
                                                     "selected": EcchanClient.fanMode === "Auto",
+                                                    "color": Theme.primary,
                                                     "supported": EcchanClient.fanModes.includes("Auto"),
                                                     "setMode": () => EcchanClient.fanMode = "Auto"
                                                 },
@@ -1194,6 +1195,7 @@ PluginComponent {
                                                     "name": "Advanced",
                                                     "icon": "tune",
                                                     "selected": EcchanClient.fanMode === "Advanced",
+                                                    "color": Theme.primary,
                                                     "supported": EcchanClient.fanModes.includes("Advanced"),
                                                     "setMode": () => EcchanClient.fanMode = "Advanced"
                                                 },
@@ -1201,6 +1203,7 @@ PluginComponent {
                                                     "name": "Silent",
                                                     "icon": "airwave",
                                                     "selected": EcchanClient.fanMode === "Silent",
+                                                    "color": Theme.primary,
                                                     "supported": EcchanClient.fanModes.includes("Silent"),
                                                     "setMode": () => EcchanClient.fanMode = "Silent"
                                                 },
@@ -1208,6 +1211,7 @@ PluginComponent {
                                                     "name": "Cooler Boost",
                                                     "icon": EcchanClient.coolerBoost ? "mode_cool" : "mode_cool_off",
                                                     "selected": EcchanClient.coolerBoost,
+                                                    "color": Theme.secondary,
                                                     "supported": EcchanClient.coolerBoostSupported,
                                                     "setMode": () => EcchanClient.coolerBoost = !EcchanClient.coolerBoost
                                                 },
@@ -1220,6 +1224,7 @@ PluginComponent {
 
                                                 required property string name
                                                 required property string icon
+                                                required property color color
                                                 required property bool selected
                                                 required property bool supported
                                                 required property var setMode
@@ -1233,6 +1238,7 @@ PluginComponent {
                                                     iconName: icon
                                                     checked: selected
                                                     iconSize: Theme.iconSizeLarge + 16
+                                                    iconColor: checked ? Theme.primaryText : color
                                                     buttonHeight: 100
                                                     buttonWidth: 140
 
@@ -1258,7 +1264,7 @@ PluginComponent {
                                         }
                                     }
 
-                                    DankTabBar {
+                                    DankColorfulTabBar {
                                         id: fanTab
 
                                         Layout.alignment: Qt.AlignTop
@@ -1266,60 +1272,237 @@ PluginComponent {
 
                                         currentIndex: page4.fanIndex
 
-                                        property var item: model[page4.fanIndex]
+                                        tabColor: item.color
+
+                                        readonly property var item: model[page4.fanIndex]
+                                        readonly property var values: model[page4.fanIndex].values
+
+                                        onTabClicked: index => {
+                                            // if we click a tab before pending updates have changed
+                                            // they get lost, so they need to be applied before changing values
+                                            if (fanSliderUpdate.running) {
+                                                fanSliderUpdate.stop();
+                                                fanSliderUpdate.triggered();
+                                            }
+
+                                            page4.fanIndex = index;
+
+                                            fanSlider1.value = values[0];
+                                            fanSlider2.value = values[1];
+                                            fanSlider3.value = values[2];
+                                            fanSlider4.value = values[3];
+                                            fanSlider5.value = values[4];
+                                            fanSlider6.value = values[5];
+                                            fanSlider7.value = values[6] ?? 0;
+                                        }
 
                                         model: [
                                             {
                                                 "isAction": false,
-                                                "supported": EcchanClient.wmiVer == 2,
+                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.fanMax > 0,
                                                 "icon": "memory",
-                                                "text": "CFan",
+                                                "text": "Fan",
+                                                "unit": "%",
+                                                "min": 0,
+                                                "max": EcchanClient.fanMax,
+                                                "color": Theme.primary,
                                                 "sliders": 7,
-                                                "values": EcchanClient.cpuFanCurveWmi2
+                                                "values": EcchanClient.cpuFanCurveWmi2,
+                                                "set": value => EcchanClient.cpuFanCurveWmi2 = value
                                             },
                                             {
                                                 "isAction": false,
                                                 "supported": EcchanClient.wmiVer == 2,
                                                 "icon": "memory",
-                                                "text": "CTemp",
+                                                "text": "Temp",
+                                                "unit": "°C",
+                                                "min": 0,
+                                                "max": 100,
+                                                "color": Theme.primary,
                                                 "sliders": 7,
-                                                "values": EcchanClient.cpuTempCurveWmi2
+                                                "values": EcchanClient.cpuTempCurveWmi2,
+                                                "set": value => EcchanClient.cpuTempCurveWmi2 = value
                                             },
                                             {
                                                 "isAction": false,
                                                 "supported": EcchanClient.wmiVer == 2,
                                                 "icon": "memory",
-                                                "text": "CHysteresis",
+                                                "text": "Hysteresis",
+                                                "unit": "°C",
+                                                "min": 0,
+                                                "max": 10,
+                                                "color": Theme.primary,
                                                 "sliders": 6,
-                                                "values": EcchanClient.cpuHysteresisCurveWmi2
+                                                "values": EcchanClient.cpuHysteresisCurveWmi2,
+                                                "set": value => EcchanClient.cpuHysteresisCurveWmi2 = value
+                                            },
+                                            {
+                                                "isAction": false,
+                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu && EcchanClient.fanMax > 0,
+                                                "icon": "developer_board",
+                                                "text": "Fan",
+                                                "unit": "%",
+                                                "min": 0,
+                                                "max": EcchanClient.fanMax,
+                                                "color": Theme.success,
+                                                "sliders": 7,
+                                                "values": EcchanClient.gpuFanCurveWmi2,
+                                                "set": value => EcchanClient.gpuFanCurveWmi2 = value
                                             },
                                             {
                                                 "isAction": false,
                                                 "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
                                                 "icon": "developer_board",
-                                                "text": "GFan",
+                                                "text": "Temp",
+                                                "unit": "°C",
+                                                "min": 0,
+                                                "max": 100,
+                                                "color": Theme.success,
                                                 "sliders": 7,
-                                                "values": EcchanClient.gpuFanCurveWmi2
+                                                "values": EcchanClient.gpuTempCurveWmi2,
+                                                "set": value => EcchanClient.gpuTempCurveWmi2 = value
                                             },
                                             {
                                                 "isAction": false,
                                                 "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
                                                 "icon": "developer_board",
-                                                "text": "GTemp",
-                                                "sliders": 7,
-                                                "values": EcchanClient.gpuTempCurveWmi2
-                                            },
-                                            {
-                                                "isAction": false,
-                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
-                                                "icon": "developer_board",
-                                                "text": "GHysteresis",
-                                                "sliders": 7,
-                                                "values": EcchanClient.gpuHysteresisCurveWmi2
+                                                "text": "Hysteresis",
+                                                "unit": "°C",
+                                                "min": 0,
+                                                "max": 10,
+                                                "color": Theme.success,
+                                                "sliders": 6,
+                                                "values": EcchanClient.gpuHysteresisCurveWmi2,
+                                                "set": value => EcchanClient.gpuHysteresisCurveWmi2 = value
                                             },
                                         ].filter(item => item.supported)
+                                    }
 
-                                        onTabClicked: index => page4.fanIndex = index
+                                    RowLayout {
+                                        Layout.fillHeight: true
+                                        Layout.fillWidth: true
+                                        Layout.topMargin: Theme.spacingM
+
+                                        spacing: Theme.spacingXL + 4
+
+                                        Item {
+                                            Layout.fillWidth: true
+                                        }
+
+                                        Timer {
+                                            id: fanSliderUpdate
+                                            interval: 1000
+                                            repeat: false
+                                            triggeredOnStart: false
+                                            onTriggered: {
+                                                // qmlformat off
+                                                const values = [
+                                                    fanSlider1.value,
+                                                    fanSlider2.value,
+                                                    fanSlider3.value,
+                                                    fanSlider4.value,
+                                                    fanSlider5.value,
+                                                    fanSlider6.value
+                                                ];
+                                                // qmlformat on
+
+                                                if (fanTab.item.sliders === 7) {
+                                                    values.push(fanSlider7.value);
+                                                }
+
+                                                fanTab.item.set(values);
+                                            }
+                                        }
+
+                                        DankVerticalSlider {
+                                            id: fanSlider1
+                                            Layout.fillHeight: true
+
+                                            value: fanTab.values[0]
+                                            unit: fanTab.item.unit
+                                            minimum: fanTab.item.min
+                                            maximum: fanTab.item.max
+
+                                            onSliderDragFinished: value => fanSliderUpdate.restart()
+                                        }
+
+                                        DankVerticalSlider {
+                                            id: fanSlider2
+                                            Layout.fillHeight: true
+
+                                            value: fanTab.values[1]
+                                            unit: fanTab.item.unit
+                                            minimum: fanTab.item.min
+                                            maximum: fanTab.item.max
+
+                                            onSliderDragFinished: value => fanSliderUpdate.restart()
+                                        }
+
+                                        DankVerticalSlider {
+                                            id: fanSlider3
+                                            Layout.fillHeight: true
+
+                                            value: fanTab.values[2]
+                                            unit: fanTab.item.unit
+                                            minimum: fanTab.item.min
+                                            maximum: fanTab.item.max
+
+                                            onSliderDragFinished: value => fanSliderUpdate.restart()
+                                        }
+
+                                        DankVerticalSlider {
+                                            id: fanSlider4
+                                            Layout.fillHeight: true
+
+                                            value: fanTab.values[3]
+                                            unit: fanTab.item.unit
+                                            minimum: fanTab.item.min
+                                            maximum: fanTab.item.max
+
+                                            onSliderDragFinished: value => fanSliderUpdate.restart()
+                                        }
+
+                                        DankVerticalSlider {
+                                            id: fanSlider5
+                                            Layout.fillHeight: true
+
+                                            value: fanTab.values[4]
+                                            unit: fanTab.item.unit
+                                            minimum: fanTab.item.min
+                                            maximum: fanTab.item.max
+
+                                            onSliderDragFinished: value => fanSliderUpdate.restart()
+                                        }
+
+                                        DankVerticalSlider {
+                                            id: fanSlider6
+                                            Layout.fillHeight: true
+
+                                            value: fanTab.values[5]
+                                            unit: fanTab.item.unit
+                                            minimum: fanTab.item.min
+                                            maximum: fanTab.item.max
+
+                                            onSliderDragFinished: value => fanSliderUpdate.restart()
+                                        }
+
+                                        DankVerticalSlider {
+                                            id: fanSlider7
+                                            visible: fanTab.item.sliders === 7
+
+                                            Layout.fillHeight: true
+
+                                            value: fanTab.values[6] ?? 0
+                                            unit: fanTab.item.unit
+                                            minimum: fanTab.item.min
+                                            maximum: fanTab.item.max
+
+                                            onSliderDragFinished: value => fanSliderUpdate.restart()
+                                        }
+
+                                        Item {
+                                            Layout.fillWidth: true
+                                        }
                                     }
                                 }
                             }
