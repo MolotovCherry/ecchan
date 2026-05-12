@@ -1278,7 +1278,7 @@ PluginComponent {
                                         readonly property var values: model[page4.fanIndex].values
 
                                         onTabClicked: index => {
-                                            // if we click a tab before pending updates have changed
+                                            // if we click a tab before pending updates have flushed
                                             // they get lost, so they need to be applied before changing values
                                             if (fanSliderUpdate.running) {
                                                 fanSliderUpdate.stop();
