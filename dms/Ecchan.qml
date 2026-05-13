@@ -1706,11 +1706,13 @@ PluginComponent {
                                         onCustomChargeModeEnabledChanged: {
                                             if (root.pluginService) {
                                                 root.profile.customBatteryChargeModeEnabled = customChargeModeEnabled;
+                                                root.profilesChanged();
                                             }
                                         }
                                         onCustomChargeModeValueChanged: {
                                             if (root.pluginService) {
                                                 root.profile.customBatteryChargeModeValue = customChargeModeValue;
+                                                root.profilesChanged();
                                             }
                                         }
 
