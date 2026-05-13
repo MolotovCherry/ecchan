@@ -1701,11 +1701,11 @@ PluginComponent {
                                         }
 
                                         Binding on customChargeModeValue {
-                                            value: root.profile.customBatteryChargeModeValue
+                                            value: root.profile
                                         }
 
                                         Binding on customChargeModeEnabled {
-                                            value: root.profile.customBatteryChargeModeEnabled
+                                            value: root.profile
                                         }
 
                                         onCustomChargeModeEnabledChanged: {
