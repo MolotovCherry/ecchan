@@ -26,6 +26,10 @@ In addition to that, it also has:
 
 Currently only supports WMI2 models.
 
+# Showcase
+
+https://github.com/user-attachments/assets/591abba7-8da1-4666-b010-5ab7daec18c4
+
 # Using
 
 This currently requires the Linux `ec_sys` driver is loaded with `write_support` enabled, however compatibility with [msi-ec](https://github.com/BeardOverflow/msi-ec) driver is planned, and using the driver will be preferred over direct ecram editing. Please note that msi-ec does not support editing of fan curves or model specific functions.
