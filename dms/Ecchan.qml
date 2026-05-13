@@ -103,6 +103,7 @@ PluginComponent {
     property int selectedProfile: 0
     property var profiles: []
     property var defaults: ({})
+    property var profile: profiles[selectedProfile]
 
     Connections {
         target: EcchanClient
@@ -113,8 +114,6 @@ PluginComponent {
             const finished = !state;
 
             if (finished) {
-                const profile = root.profiles[root.selectedProfile];
-
                 // if they don't exist, we want to save the default fan curves on
                 // the very very first startup so we can revert
                 // this must be done before the first apply is done
@@ -122,10 +121,10 @@ PluginComponent {
                 // https://stackoverflow.com/a/32108184/9423933
                 root.saveDefaults();
 
-                EcchanClient.apply(profile.state);
+                EcchanClient.apply(root.profile.state);
                 EcchanClient.queue(() => {
                     blocked = false;
-                    profile.state = EcchanClient.serialize();
+                    root.profile.state = EcchanClient.serialize();
                     profileWriteTimer.restart();
                 });
             }
@@ -172,7 +171,7 @@ PluginComponent {
         triggeredOnStart: false
         onTriggered: {
             const state = EcchanClient.serialize();
-            root.profiles[root.selectedProfile].state = state;
+            root.profile.state = state;
             root.profilesChanged();
         }
     }
@@ -387,25 +386,30 @@ PluginComponent {
                             model: [
                                 {
                                     text: "Dashboard",
-                                    icon: "analytics"
+                                    icon: "analytics",
+                                    supported: true
                                 },
                                 {
                                     text: "General",
-                                    icon: "list_alt"
+                                    icon: "list_alt",
+                                    supported: true
                                 },
                                 {
                                     text: "Performance",
-                                    icon: "speed"
+                                    icon: "speed",
+                                    supported: EcchanClient.shiftModeSupported
                                 },
                                 {
                                     text: "Fans",
-                                    icon: "mode_fan"
+                                    icon: "mode_fan",
+                                    supported: true
                                 },
                                 {
                                     text: "Battery",
-                                    icon: "battery_android_full"
+                                    icon: "battery_android_full",
+                                    supported: EcchanClient.batteryChargeModeSupported
                                 }
-                            ]
+                            ].filter(item => item.supported)
 
                             Row {
                                 id: row
@@ -781,7 +785,7 @@ PluginComponent {
                                         return {
                                             "name": item.name,
                                             "icon": null,
-                                            "description": null,
+                                            "description": "Custom model specific feature",
                                             "supported": true,
                                             "value": item.value,
                                             "set": value => EcchanClient.methodWrite(item.method, value),
@@ -1219,6 +1223,8 @@ PluginComponent {
                                     GridLayout {
                                         columns: 4
 
+                                        visible: EcchanClient.fanModeSupported
+
                                         Layout.fillWidth: true
                                         Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
 
@@ -1310,6 +1316,8 @@ PluginComponent {
 
                                     DankColorfulTabBar {
                                         id: fanTab
+
+                                        visible: EcchanClient.wmiVer === 2
 
                                         Layout.alignment: Qt.AlignTop
                                         Layout.fillWidth: true
@@ -1407,7 +1415,7 @@ PluginComponent {
                                                 "unit": "%",
                                                 "min": 0,
                                                 "max": EcchanClient.fanMax,
-                                                "color": Theme.success,
+                                                "color": Theme.secondary,
                                                 "sliders": 7,
                                                 "values": EcchanClient.gpuFanCurveWmi2,
                                                 "set": value => EcchanClient.gpuFanCurveWmi2 = value,
@@ -1424,7 +1432,7 @@ PluginComponent {
                                                 "unit": "°C",
                                                 "min": 0,
                                                 "max": 100,
-                                                "color": Theme.success,
+                                                "color": Theme.secondary,
                                                 "sliders": 7,
                                                 "values": EcchanClient.gpuTempCurveWmi2,
                                                 "set": value => EcchanClient.gpuTempCurveWmi2 = value,
@@ -1441,7 +1449,7 @@ PluginComponent {
                                                 "unit": "°C",
                                                 "min": 0,
                                                 "max": 10,
-                                                "color": Theme.success,
+                                                "color": Theme.secondary,
                                                 "sliders": 6,
                                                 "values": EcchanClient.gpuHysteresisCurveWmi2,
                                                 "set": value => EcchanClient.gpuHysteresisCurveWmi2 = value,
@@ -1455,6 +1463,8 @@ PluginComponent {
 
                                     RowLayout {
                                         id: fanRow
+
+                                        visible: EcchanClient.wmiVer === 2
 
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
@@ -1604,6 +1614,193 @@ PluginComponent {
 
                                         Item {
                                             Layout.fillWidth: true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Battery
+                        ColumnLayout {
+                            id: page5
+
+                            visible: popout.currentTab === 4 && EcchanClient.batteryChargeModeSupported
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            StyledRect {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+
+                                radius: Theme.cornerRadius
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+
+                                GridLayout {
+                                    columns: 4
+
+                                    anchors.top: parent.top
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.margins: Theme.spacingM
+                                    anchors.centerIn: parent
+
+                                    rowSpacing: Theme.spacingM
+                                    columnSpacing: Theme.spacingM
+
+                                    Repeater {
+                                        id: modelRptr
+
+                                        model: [
+                                            {
+                                                "name": "Mobility",
+                                                "icon": "battery_android_full",
+                                                "selected": EcchanClient.batteryChargeMode === "Mobility",
+                                                "setMode": () => EcchanClient.batteryChargeMode = "Mobility"
+                                            },
+                                            {
+                                                "name": "Balanced",
+                                                "icon": "battery_android_5",
+                                                "selected": EcchanClient.batteryChargeMode === "Balanced",
+                                                "setMode": () => EcchanClient.batteryChargeMode = "Balanced"
+                                            },
+                                            {
+                                                "name": "Healthy",
+                                                "icon": "battery_android_4",
+                                                "selected": EcchanClient.batteryChargeMode === "Healthy",
+                                                "setMode": () => EcchanClient.batteryChargeMode = "Healthy"
+                                            },
+                                            {
+                                                "name": "Custom",
+                                                "icon": "battery_android_bolt",
+                                                "selected": customChargeModeEnabled,
+                                                "setMode": () => EcchanClient.batteryChargeMode = customChargeModeValue
+                                            },
+                                        ]
+
+                                        property bool customChargeModeEnabled: root.profile.customBatteryChargeModeEnabled || typeof (EcchanClient.batteryChargeMode) === "number"
+                                        property int customChargeModeValue: modeToInt(root.profile.customBatteryChargeModeValue) || modeToInt(EcchanClient.batteryChargeMode)
+
+                                        function modeToInt(mode) {
+                                            switch (mode) {
+                                                // qmlformat off
+                                                case "Mobility":
+                                                    return 100;
+                                                case "Balanced":
+                                                    return 80;
+                                                case "Healthy":
+                                                    return 60;
+                                                default:
+                                                    return mode;
+                                                // qmlformat on
+                                            }
+                                        }
+
+                                        Binding on customChargeModeValue {
+                                            value: root.profile.customBatteryChargeModeValue
+                                        }
+
+                                        Binding on customChargeModeEnabled {
+                                            value: root.profile.customBatteryChargeModeEnabled
+                                        }
+
+                                        onCustomChargeModeEnabledChanged: {
+                                            if (root.pluginService) {
+                                                root.profile.customBatteryChargeModeEnabled = customChargeModeEnabled;
+                                            }
+                                        }
+                                        onCustomChargeModeValueChanged: {
+                                            if (root.pluginService) {
+                                                root.profile.customBatteryChargeModeValue = customChargeModeValue;
+                                            }
+                                        }
+
+                                        ColumnLayout {
+                                            id: page5Column
+
+                                            Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
+
+                                            required property string name
+                                            required property string icon
+                                            required property bool selected
+                                            required property var setMode
+
+                                            spacing: Theme.spacingXS
+
+                                            // toggles
+                                            ToggleActionButton {
+                                                id: customBtn
+                                                iconName: icon
+                                                checked: (name !== "Custom" && selected && !modelRptr.customChargeModeEnabled) || (name === "Custom" && modelRptr.customChargeModeEnabled)
+                                                iconSize: Theme.iconSizeLarge + 16
+                                                buttonHeight: 110
+                                                buttonWidth: 140
+
+                                                onClicked: {
+                                                    setMode();
+
+                                                    if (name === "Custom") {
+                                                        modelRptr.customChargeModeEnabled = true;
+                                                    } else if (modelRptr.customChargeModeEnabled) {
+                                                        EcchanClient.queue(() => {
+                                                            modelRptr.customChargeModeEnabled = false;
+                                                        });
+                                                    }
+                                                }
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+
+                                                    anchors.bottom: parent.bottom
+                                                    anchors.horizontalCenter: parent.horizontalCenter
+                                                    anchors.bottomMargin: name === "Custom" ? -5 : Theme.spacingS
+
+                                                    StyledText {
+                                                        Layout.leftMargin: name === "Custom" ? 40 : 0
+
+                                                        text: name === "Custom" ? "Custom:" : name
+                                                        font.pixelSize: Theme.fontSizeSmall
+                                                        font.weight: Font.Bold
+                                                        color: customBtn.checked ? Theme.primaryText : Theme.surfaceText
+
+                                                        horizontalAlignment: Text.AlignCenter
+                                                    }
+
+                                                    DankTextField {
+                                                        Layout.maximumWidth: 55
+
+                                                        enabled: modelRptr.customChargeModeEnabled
+
+                                                        transform: Translate {
+                                                            x: -14
+                                                        }
+
+                                                        visible: name === "Custom"
+                                                        text: String(modelRptr.customChargeModeValue)
+                                                        textColor: modelRptr.customChargeModeEnabled ? Theme.primaryText : Theme.surfaceText
+
+                                                        focusedBorderColor: Qt.rgba(0, 0, 0, 0)
+                                                        normalBorderColor: Qt.rgba(0, 0, 0, 0)
+                                                        backgroundColor: Qt.rgba(0, 0, 0, 0)
+
+                                                        font.pixelSize: Theme.fontSizeSmall
+                                                        font.weight: Font.Bold
+
+                                                        topPadding: 0
+                                                        bottomPadding: 0
+
+                                                        maximumLength: 3
+                                                        validator: IntValidator {
+                                                            bottom: 10
+                                                            top: 100
+                                                        }
+
+                                                        onAccepted: {
+                                                            modelRptr.customChargeModeValue = parseInt(text);
+                                                            setMode();
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
