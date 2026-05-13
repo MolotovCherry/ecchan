@@ -43,12 +43,17 @@ This currently requires the Linux `ec_sys` driver is loaded with `write_support`
 
 Server is required for all clients. Client and servers are split because server must be run as root, but it's usually not feasible or possible to run clients as root.
 
-ecchan-dbus: This is currently unfinished because I don't have a need for it.
-ecchan-qml: This is required for any qml-based ui. This requires a c++ compiler as well as qt6 and all associated dev packages.
+`ecchan-dbus`: This is currently unfinished because I don't have a need for it. I probably won't pick dev back up unless a significant need arises.
+
+`ecchan-qml`: This plugin is required for any qml-based ui. This requires a c++ compiler as well as qt6 and all associated dev packages.
+
+`ecchan-ipc`: Exposes types to interface with `ecchan-server` over socket
+
+`ecchan-server`: The socket server which all clients talk to. Only 1 client at a time is allowed.
 
 # Making your own client
 
-Use ecchan-ipc crate and make a client which reads/writes to the socket
+Use `ecchan-ipc` crate and make a client which reads/writes to the socket
 
 # Adding support for your model
 
