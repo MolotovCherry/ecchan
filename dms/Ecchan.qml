@@ -108,7 +108,6 @@ PluginComponent {
     property int selectedProfile: 0
     property var profiles: []
     property var defaults: ({})
-    property var profile: profiles[selectedProfile]
 
     Connections {
         target: EcchanClient
@@ -126,10 +125,10 @@ PluginComponent {
                 // https://stackoverflow.com/a/32108184/9423933
                 root.saveDefaults();
 
-                EcchanClient.apply(root.profile.state);
+                EcchanClient.apply(root.profiles[root.selectedProfile].state);
                 EcchanClient.queue(() => {
                     blocked = false;
-                    root.profile.state = EcchanClient.serialize();
+                    root.profiles[root.selectedProfile].state = EcchanClient.serialize();
                     profileWriteTimer.restart();
                 });
             }
@@ -176,7 +175,7 @@ PluginComponent {
         triggeredOnStart: false
         onTriggered: {
             const state = EcchanClient.serialize();
-            root.profile.state = state;
+            root.profiles[root.selectedProfile].state = state;
             root.profilesChanged();
         }
     }
