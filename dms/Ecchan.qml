@@ -154,12 +154,12 @@ PluginComponent {
 
         if (isEmpty) {
             defaults = {
-                "cpuFanCurveWmi2": EcchanClient.cpuFanCurveWmi2,
-                "cpuTempCurveWmi2": EcchanClient.cpuTempCurveWmi2,
-                "cpuHysteresisCurveWmi2": EcchanClient.cpuHysteresisCurveWmi2,
-                "gpuFanCurveWmi2": EcchanClient.gpuFanCurveWmi2,
-                "gpuTempCurveWmi2": EcchanClient.gpuTempCurveWmi2,
-                "gpuHysteresisCurveWmi2": EcchanClient.gpuHysteresisCurveWmi2
+                cpuFanCurveWmi2: EcchanClient.cpuFanCurveWmi2,
+                cpuTempCurveWmi2: EcchanClient.cpuTempCurveWmi2,
+                cpuHysteresisCurveWmi2: EcchanClient.cpuHysteresisCurveWmi2,
+                gpuFanCurveWmi2: EcchanClient.gpuFanCurveWmi2,
+                gpuTempCurveWmi2: EcchanClient.gpuTempCurveWmi2,
+                gpuHysteresisCurveWmi2: EcchanClient.gpuHysteresisCurveWmi2
             };
         }
     }
@@ -189,8 +189,8 @@ PluginComponent {
 
         profiles = _loadPluginData("profiles", [
             {
-                "name": "Default",
-                "state": {}
+                name: "Default",
+                state: {}
             }
         ]);
         profilesChanged();
@@ -360,8 +360,8 @@ PluginComponent {
                                 // explicit reassign so signals fire
                                 root.profiles = [...root.profiles,
                                     {
-                                        "name": name,
-                                        "state": EcchanClient.serialize()
+                                        name: name,
+                                        state: EcchanClient.serialize()
                                     }
                                 ];
 
@@ -680,16 +680,16 @@ PluginComponent {
 
                                                 model: [
                                                     {
-                                                        "rpm": EcchanClient.fan1Rpm
+                                                        rpm: EcchanClient.fan1Rpm
                                                     },
                                                     {
-                                                        "rpm": EcchanClient.fan2Rpm
+                                                        rpm: EcchanClient.fan2Rpm
                                                     },
                                                     {
-                                                        "rpm": EcchanClient.fan3Rpm
+                                                        rpm: EcchanClient.fan3Rpm
                                                     },
                                                     {
-                                                        "rpm": EcchanClient.fan4Rpm
+                                                        rpm: EcchanClient.fan4Rpm
                                                     }
                                                 ]
 
@@ -783,73 +783,73 @@ PluginComponent {
                                         // qmlformat on
 
                                         return {
-                                            "name": item.name,
-                                            "icon": null,
-                                            "description": "Custom model specific feature",
-                                            "supported": true,
-                                            "value": item.value,
-                                            "set": value => EcchanClient.methodWrite(item.method, value),
-                                            "type": "method",
-                                            "variation": variation,
-                                            "methodKey": item.method
+                                            name: item.name,
+                                            icon: null,
+                                            description: "Custom model specific feature",
+                                            supported: true,
+                                            value: item.value,
+                                            set: value => EcchanClient.methodWrite(item.method, value),
+                                            type: "method",
+                                            variation: variation,
+                                            methodKey: item.method
                                         };
                                     })
 
                                     property var modelBase: [
                                         {
-                                            "name": "Webcam",
-                                            "icon": "camera_video",
-                                            "description": "Enable the integrated webcam (as if by a keyboard button)",
-                                            "supported": EcchanClient.webcamSupported,
-                                            "value": EcchanClient.webcam,
-                                            "set": state => EcchanClient.webcam = state,
-                                            "type": "toggle",
-                                            "variation": null,
-                                            "methodKey": null
+                                            name: "Webcam",
+                                            icon: "camera_video",
+                                            description: "Enable the integrated webcam (as if by a keyboard button)",
+                                            supported: EcchanClient.webcamSupported,
+                                            value: EcchanClient.webcam,
+                                            set: state => EcchanClient.webcam = state,
+                                            type: "toggle",
+                                            variation: null,
+                                            methodKey: null
                                         },
                                         {
-                                            "name": "Webcam Block",
-                                            "icon": "camera_video",
-                                            "description": "Block the integrated webcam (can't be enabled by a keyboard button)",
-                                            "supported": EcchanClient.webcamBlockSupported,
-                                            "value": EcchanClient.webcamBlock,
-                                            "set": state => EcchanClient.webcamBlock = state,
-                                            "type": "toggle",
-                                            "variation": null,
-                                            "methodKey": null
+                                            name: "Webcam Block",
+                                            icon: "camera_video",
+                                            description: "Block the integrated webcam (can't be enabled by a keyboard button)",
+                                            supported: EcchanClient.webcamBlockSupported,
+                                            value: EcchanClient.webcamBlock,
+                                            set: state => EcchanClient.webcamBlock = state,
+                                            type: "toggle",
+                                            variation: null,
+                                            methodKey: null
                                         },
                                         {
-                                            "name": "Swap Win/Fn",
-                                            "icon": null,
-                                            "description": "Swap the Fn / Windows key positions",
-                                            "supported": EcchanClient.fnWinSwapSupported,
-                                            "value": EcchanClient.fnKey,
-                                            "set": state => EcchanClient.fnKey = state,
-                                            "type": "swapKey",
-                                            "variation": null,
-                                            "methodKey": null
+                                            name: "Swap Win/Fn",
+                                            icon: null,
+                                            description: "Swap the Fn / Windows key positions",
+                                            supported: EcchanClient.fnWinSwapSupported,
+                                            value: EcchanClient.fnKey,
+                                            set: state => EcchanClient.fnKey = state,
+                                            type: "swapKey",
+                                            variation: null,
+                                            methodKey: null
                                         },
                                         {
-                                            "name": "Mic Mute Light",
-                                            "icon": EcchanClient.micMuteLed ? "backlight_high" : "backlight_high_off",
-                                            "description": "Toggle the mic mute keyboard indicator light",
-                                            "supported": EcchanClient.micMuteLedSupported,
-                                            "value": EcchanClient.micMuteLed,
-                                            "set": state => EcchanClient.micMuteLed = state,
-                                            "type": "toggle",
-                                            "variation": null,
-                                            "methodKey": null
+                                            name: "Mic Mute Light",
+                                            icon: EcchanClient.micMuteLed ? "backlight_high" : "backlight_high_off",
+                                            description: "Toggle the mic mute keyboard indicator light",
+                                            supported: EcchanClient.micMuteLedSupported,
+                                            value: EcchanClient.micMuteLed,
+                                            set: state => EcchanClient.micMuteLed = state,
+                                            type: "toggle",
+                                            variation: null,
+                                            methodKey: null
                                         },
                                         {
-                                            "name": "Mute Light",
-                                            "icon": EcchanClient.muteLed ? "backlight_high" : "backlight_high_off",
-                                            "description": "Toggle the audio mute keyboard indicator light",
-                                            "supported": EcchanClient.muteLedSupported,
-                                            "value": EcchanClient.muteLed,
-                                            "set": state => EcchanClient.muteLed = state,
-                                            "type": "toggle",
-                                            "variation": null,
-                                            "methodKey": null
+                                            name: "Mute Light",
+                                            icon: EcchanClient.muteLed ? "backlight_high" : "backlight_high_off",
+                                            description: "Toggle the audio mute keyboard indicator light",
+                                            supported: EcchanClient.muteLedSupported,
+                                            value: EcchanClient.muteLed,
+                                            set: state => EcchanClient.muteLed = state,
+                                            type: "toggle",
+                                            variation: null,
+                                            methodKey: null
                                         },
                                         // qmlformat off
                                         ...methods
@@ -1014,8 +1014,8 @@ PluginComponent {
                                                                 }
 
                                                                 return {
-                                                                    "x": x,
-                                                                    "y": y
+                                                                    x: x,
+                                                                    y: y
                                                                 };
                                                             };
 
@@ -1077,11 +1077,11 @@ PluginComponent {
                                     Repeater {
                                         model: [
                                             {
-                                                "name": "Turbo",
-                                                "id": "Turbo",
-                                                "icon": "rocket_launch",
-                                                "supported": EcchanClient.shiftModes.includes("Turbo"),
-                                                "setMode": () => {
+                                                name: "Turbo",
+                                                id: "Turbo",
+                                                icon: "rocket_launch",
+                                                supported: EcchanClient.shiftModes.includes("Turbo"),
+                                                setMode: () => {
                                                     EcchanClient.shiftMode = "Turbo";
 
                                                     if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
@@ -1090,11 +1090,11 @@ PluginComponent {
                                                 }
                                             },
                                             {
-                                                "name": "Extreme Performance",
-                                                "id": "Extreme Performance",
-                                                "icon": "speed",
-                                                "supported": EcchanClient.shiftModes.includes("Extreme Performance"),
-                                                "setMode": () => {
+                                                name: "Extreme Performance",
+                                                id: "Extreme Performance",
+                                                icon: "speed",
+                                                supported: EcchanClient.shiftModes.includes("Extreme Performance"),
+                                                setMode: () => {
                                                     EcchanClient.shiftMode = "Extreme Performance";
 
                                                     if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
@@ -1103,11 +1103,11 @@ PluginComponent {
                                                 }
                                             },
                                             {
-                                                "name": "Balanced",
-                                                "id": "Balanced",
-                                                "icon": "balance",
-                                                "supported": EcchanClient.shiftModes.includes("Balanced"),
-                                                "setMode": () => {
+                                                name: "Balanced",
+                                                id: "Balanced",
+                                                icon: "balance",
+                                                supported: EcchanClient.shiftModes.includes("Balanced"),
+                                                setMode: () => {
                                                     EcchanClient.shiftMode = "Balanced";
 
                                                     if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
@@ -1116,11 +1116,11 @@ PluginComponent {
                                                 }
                                             },
                                             {
-                                                "name": "Eco",
-                                                "id": "Super Battery",
-                                                "icon": "psychiatry",
-                                                "supported": EcchanClient.shiftModes.includes("Super Battery"),
-                                                "setMode": () => EcchanClient.shiftMode = "Super Battery"
+                                                name: "Eco",
+                                                id: "Super Battery",
+                                                icon: "psychiatry",
+                                                supported: EcchanClient.shiftModes.includes("Super Battery"),
+                                                setMode: () => EcchanClient.shiftMode = "Super Battery"
                                             },
                                         ].filter(item => item.supported)
 
@@ -1234,36 +1234,36 @@ PluginComponent {
                                         Repeater {
                                             model: [
                                                 {
-                                                    "name": "Auto",
-                                                    "icon": "mode_fan",
-                                                    "selected": EcchanClient.fanMode === "Auto",
-                                                    "color": Theme.primary,
-                                                    "supported": EcchanClient.fanModes.includes("Auto"),
-                                                    "setMode": () => EcchanClient.fanMode = "Auto"
+                                                    name: "Auto",
+                                                    icon: "mode_fan",
+                                                    selected: EcchanClient.fanMode === "Auto",
+                                                    color: Theme.primary,
+                                                    supported: EcchanClient.fanModes.includes("Auto"),
+                                                    setMode: () => EcchanClient.fanMode = "Auto"
                                                 },
                                                 {
-                                                    "name": "Advanced",
-                                                    "icon": "tune",
-                                                    "selected": EcchanClient.fanMode === "Advanced",
-                                                    "color": Theme.primary,
-                                                    "supported": EcchanClient.fanModes.includes("Advanced"),
-                                                    "setMode": () => EcchanClient.fanMode = "Advanced"
+                                                    name: "Advanced",
+                                                    icon: "tune",
+                                                    selected: EcchanClient.fanMode === "Advanced",
+                                                    color: Theme.primary,
+                                                    supported: EcchanClient.fanModes.includes("Advanced"),
+                                                    setMode: () => EcchanClient.fanMode = "Advanced"
                                                 },
                                                 {
-                                                    "name": "Silent",
-                                                    "icon": "airwave",
-                                                    "selected": EcchanClient.fanMode === "Silent",
-                                                    "color": Theme.primary,
-                                                    "supported": EcchanClient.fanModes.includes("Silent"),
-                                                    "setMode": () => EcchanClient.fanMode = "Silent"
+                                                    name: "Silent",
+                                                    icon: "airwave",
+                                                    selected: EcchanClient.fanMode === "Silent",
+                                                    color: Theme.primary,
+                                                    supported: EcchanClient.fanModes.includes("Silent"),
+                                                    setMode: () => EcchanClient.fanMode = "Silent"
                                                 },
                                                 {
-                                                    "name": "Cooler Boost",
-                                                    "icon": EcchanClient.coolerBoost ? "mode_cool" : "mode_cool_off",
-                                                    "selected": EcchanClient.coolerBoost,
-                                                    "color": Theme.secondary,
-                                                    "supported": EcchanClient.coolerBoostSupported,
-                                                    "setMode": () => EcchanClient.coolerBoost = !EcchanClient.coolerBoost
+                                                    name: "Cooler Boost",
+                                                    icon: EcchanClient.coolerBoost ? "mode_cool" : "mode_cool_off",
+                                                    selected: EcchanClient.coolerBoost,
+                                                    color: Theme.secondary,
+                                                    supported: EcchanClient.coolerBoostSupported,
+                                                    setMode: () => EcchanClient.coolerBoost = !EcchanClient.coolerBoost
                                                 },
                                             ].filter(item => item.supported)
 
@@ -1357,103 +1357,103 @@ PluginComponent {
 
                                         model: [
                                             {
-                                                "isAction": false,
-                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.fanMax > 0,
-                                                "icon": "memory",
-                                                "text": "Fan",
-                                                "unit": "%",
-                                                "min": 0,
-                                                "max": EcchanClient.fanMax,
-                                                "color": Theme.primary,
-                                                "sliders": 7,
-                                                "values": EcchanClient.cpuFanCurveWmi2,
-                                                "set": value => EcchanClient.cpuFanCurveWmi2 = value,
-                                                "reset": () => {
+                                                isAction: false,
+                                                supported: EcchanClient.wmiVer == 2 && EcchanClient.fanMax > 0,
+                                                icon: "memory",
+                                                text: "Fan",
+                                                unit: "%",
+                                                min: 0,
+                                                max: EcchanClient.fanMax,
+                                                color: Theme.primary,
+                                                sliders: 7,
+                                                values: EcchanClient.cpuFanCurveWmi2,
+                                                set: value => EcchanClient.cpuFanCurveWmi2 = value,
+                                                reset: () => {
                                                     EcchanClient.cpuFanCurveWmi2 = root.defaults.cpuFanCurveWmi2;
                                                     fanTab.reset(root.defaults.cpuFanCurveWmi2);
                                                 }
                                             },
                                             {
-                                                "isAction": false,
-                                                "supported": EcchanClient.wmiVer == 2,
-                                                "icon": "memory",
-                                                "text": "Temp",
-                                                "unit": "°C",
-                                                "min": 0,
-                                                "max": 100,
-                                                "color": Theme.primary,
-                                                "sliders": 7,
-                                                "values": EcchanClient.cpuTempCurveWmi2,
-                                                "set": value => EcchanClient.cpuTempCurveWmi2 = value,
-                                                "reset": () => {
+                                                isAction: false,
+                                                supported: EcchanClient.wmiVer == 2,
+                                                icon: "memory",
+                                                text: "Temp",
+                                                unit: "°C",
+                                                min: 0,
+                                                max: 100,
+                                                color: Theme.primary,
+                                                sliders: 7,
+                                                values: EcchanClient.cpuTempCurveWmi2,
+                                                set: value => EcchanClient.cpuTempCurveWmi2 = value,
+                                                reset: () => {
                                                     EcchanClient.cpuTempCurveWmi2 = root.defaults.cpuTempCurveWmi2;
                                                     fanTab.reset(root.defaults.cpuTempCurveWmi2);
                                                 }
                                             },
                                             {
-                                                "isAction": false,
-                                                "supported": EcchanClient.wmiVer == 2,
-                                                "icon": "memory",
-                                                "text": "Hysteresis",
-                                                "unit": "°C",
-                                                "min": 0,
-                                                "max": 10,
-                                                "color": Theme.primary,
-                                                "sliders": 6,
-                                                "values": EcchanClient.cpuHysteresisCurveWmi2,
-                                                "set": value => EcchanClient.cpuHysteresisCurveWmi2 = value,
-                                                "reset": () => {
+                                                isAction: false,
+                                                supported: EcchanClient.wmiVer == 2,
+                                                icon: "memory",
+                                                text: "Hysteresis",
+                                                unit: "°C",
+                                                min: 0,
+                                                max: 10,
+                                                color: Theme.primary,
+                                                sliders: 6,
+                                                values: EcchanClient.cpuHysteresisCurveWmi2,
+                                                set: value => EcchanClient.cpuHysteresisCurveWmi2 = value,
+                                                reset: () => {
                                                     EcchanClient.cpuHysteresisCurveWmi2 = root.defaults.cpuHysteresisCurveWmi2;
                                                     fanTab.reset(root.defaults.cpuHysteresisCurveWmi2);
                                                 }
                                             },
                                             {
-                                                "isAction": false,
-                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu && EcchanClient.fanMax > 0,
-                                                "icon": "developer_board",
-                                                "text": "DFan",
-                                                "unit": "%",
-                                                "min": 0,
-                                                "max": EcchanClient.fanMax,
-                                                "color": Theme.secondary,
-                                                "sliders": 7,
-                                                "values": EcchanClient.gpuFanCurveWmi2,
-                                                "set": value => EcchanClient.gpuFanCurveWmi2 = value,
-                                                "reset": () => {
+                                                isAction: false,
+                                                supported: EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu && EcchanClient.fanMax > 0,
+                                                icon: "developer_board",
+                                                text: "DFan",
+                                                unit: "%",
+                                                min: 0,
+                                                max: EcchanClient.fanMax,
+                                                color: Theme.secondary,
+                                                sliders: 7,
+                                                values: EcchanClient.gpuFanCurveWmi2,
+                                                set: value => EcchanClient.gpuFanCurveWmi2 = value,
+                                                reset: () => {
                                                     EcchanClient.gpuFanCurveWmi2 = root.defaults.gpuFanCurveWmi2;
                                                     fanTab.reset(root.defaults.gpuFanCurveWmi2);
                                                 }
                                             },
                                             {
-                                                "isAction": false,
-                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
-                                                "icon": "developer_board",
-                                                "text": "DTemp",
-                                                "unit": "°C",
-                                                "min": 0,
-                                                "max": 100,
-                                                "color": Theme.secondary,
-                                                "sliders": 7,
-                                                "values": EcchanClient.gpuTempCurveWmi2,
-                                                "set": value => EcchanClient.gpuTempCurveWmi2 = value,
-                                                "reset": () => {
+                                                isAction: false,
+                                                supported: EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
+                                                icon: "developer_board",
+                                                text: "DTemp",
+                                                unit: "°C",
+                                                min: 0,
+                                                max: 100,
+                                                color: Theme.secondary,
+                                                sliders: 7,
+                                                values: EcchanClient.gpuTempCurveWmi2,
+                                                set: value => EcchanClient.gpuTempCurveWmi2 = value,
+                                                reset: () => {
                                                     EcchanClient.gpuTempCurveWmi2 = root.defaults.gpuTempCurveWmi2;
                                                     fanTab.reset(root.defaults.gpuTempCurveWmi2);
                                                 }
                                             },
                                             {
-                                                "isAction": false,
-                                                "supported": EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
-                                                "icon": "developer_board",
-                                                "text": "DHysteresis",
-                                                "unit": "°C",
-                                                "min": 0,
-                                                "max": 10,
-                                                "color": Theme.secondary,
-                                                "sliders": 6,
-                                                "values": EcchanClient.gpuHysteresisCurveWmi2,
-                                                "set": value => EcchanClient.gpuHysteresisCurveWmi2 = value,
-                                                "reset": () => {
+                                                isAction: false,
+                                                supported: EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
+                                                icon: "developer_board",
+                                                text: "DHysteresis",
+                                                unit: "°C",
+                                                min: 0,
+                                                max: 10,
+                                                color: Theme.secondary,
+                                                sliders: 6,
+                                                values: EcchanClient.gpuHysteresisCurveWmi2,
+                                                set: value => EcchanClient.gpuHysteresisCurveWmi2 = value,
+                                                reset: () => {
                                                     EcchanClient.gpuHysteresisCurveWmi2 = root.defaults.gpuHysteresisCurveWmi2;
                                                     fanTab.reset(root.defaults.gpuHysteresisCurveWmi2);
                                                 }
@@ -1652,28 +1652,28 @@ PluginComponent {
 
                                         model: [
                                             {
-                                                "name": "Mobility",
-                                                "icon": "battery_android_full",
-                                                "selected": EcchanClient.batteryChargeMode === "Mobility",
-                                                "setMode": () => EcchanClient.batteryChargeMode = "Mobility"
+                                                name: "Mobility",
+                                                icon: "battery_android_full",
+                                                selected: EcchanClient.batteryChargeMode === "Mobility",
+                                                setMode: () => EcchanClient.batteryChargeMode = "Mobility"
                                             },
                                             {
-                                                "name": "Balanced",
-                                                "icon": "battery_android_5",
-                                                "selected": EcchanClient.batteryChargeMode === "Balanced",
-                                                "setMode": () => EcchanClient.batteryChargeMode = "Balanced"
+                                                name: "Balanced",
+                                                icon: "battery_android_5",
+                                                selected: EcchanClient.batteryChargeMode === "Balanced",
+                                                setMode: () => EcchanClient.batteryChargeMode = "Balanced"
                                             },
                                             {
-                                                "name": "Healthy",
-                                                "icon": "battery_android_4",
-                                                "selected": EcchanClient.batteryChargeMode === "Healthy",
-                                                "setMode": () => EcchanClient.batteryChargeMode = "Healthy"
+                                                name: "Healthy",
+                                                icon: "battery_android_4",
+                                                selected: EcchanClient.batteryChargeMode === "Healthy",
+                                                setMode: () => EcchanClient.batteryChargeMode = "Healthy"
                                             },
                                             {
-                                                "name": "Custom",
-                                                "icon": "battery_android_bolt",
-                                                "selected": customChargeModeEnabled,
-                                                "setMode": () => EcchanClient.batteryChargeMode = customChargeModeValue
+                                                name: "Custom",
+                                                icon: "battery_android_bolt",
+                                                selected: customChargeModeEnabled,
+                                                setMode: () => EcchanClient.batteryChargeMode = customChargeModeValue
                                             },
                                         ]
 
