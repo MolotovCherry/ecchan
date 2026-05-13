@@ -1366,6 +1366,8 @@ PluginComponent {
                                                 icon: "memory",
                                                 text: "Fan",
                                                 unit: "%",
+                                                unitPadding: 8,
+                                                leftPadding: 0,
                                                 min: 0,
                                                 max: EcchanClient.fanMax,
                                                 color: Theme.primary,
@@ -1383,6 +1385,8 @@ PluginComponent {
                                                 icon: "memory",
                                                 text: "Temp",
                                                 unit: "°C",
+                                                unitPadding: 11,
+                                                leftPadding: -18,
                                                 min: 0,
                                                 max: 100,
                                                 color: Theme.primary,
@@ -1400,6 +1404,8 @@ PluginComponent {
                                                 icon: "memory",
                                                 text: "Hysteresis",
                                                 unit: "°C",
+                                                unitPadding: 8,
+                                                leftPadding: 0,
                                                 min: 0,
                                                 max: 10,
                                                 color: Theme.primary,
@@ -1417,6 +1423,8 @@ PluginComponent {
                                                 icon: "developer_board",
                                                 text: "DFan",
                                                 unit: "%",
+                                                unitPadding: 8,
+                                                leftPadding: 0,
                                                 min: 0,
                                                 max: EcchanClient.fanMax,
                                                 color: Theme.secondary,
@@ -1434,6 +1442,8 @@ PluginComponent {
                                                 icon: "developer_board",
                                                 text: "DTemp",
                                                 unit: "°C",
+                                                unitPadding: 11,
+                                                leftPadding: -18,
                                                 min: 0,
                                                 max: 100,
                                                 color: Theme.secondary,
@@ -1451,6 +1461,8 @@ PluginComponent {
                                                 icon: "developer_board",
                                                 text: "DHysteresis",
                                                 unit: "°C",
+                                                unitPadding: 8,
+                                                leftPadding: 0,
                                                 min: 0,
                                                 max: 10,
                                                 color: Theme.secondary,
@@ -1473,8 +1485,6 @@ PluginComponent {
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.topMargin: Theme.spacingM
-
-                                        spacing: Theme.spacingXL + 10
 
                                         function update() {
                                             // qmlformat off
@@ -1530,90 +1540,105 @@ PluginComponent {
                                             }
                                         }
 
-                                        DankVerticalSlider {
-                                            id: fanSlider1
+                                        RowLayout {
                                             Layout.fillHeight: true
+                                            Layout.fillWidth: true
 
-                                            value: fanTab.values[0]
-                                            unit: fanTab.item.unit
-                                            minimum: fanTab.item.min
-                                            maximum: fanTab.item.max
+                                            Layout.leftMargin: fanTab.item.leftPadding
+                                            spacing: Theme.spacingXL + fanTab.item.unitPadding
 
-                                            onSliderDragFinished: () => fanRow.update()
-                                        }
+                                            DankVerticalSlider {
+                                                id: fanSlider1
+                                                Layout.fillHeight: true
 
-                                        DankVerticalSlider {
-                                            id: fanSlider2
-                                            Layout.fillHeight: true
+                                                value: fanTab.values[0]
+                                                unit: fanTab.item.unit
+                                                minimum: fanTab.item.min
+                                                maximum: fanTab.item.max
+                                                alwaysShowValue: true
 
-                                            value: fanTab.values[1]
-                                            unit: fanTab.item.unit
-                                            minimum: fanTab.item.min
-                                            maximum: fanTab.item.max
+                                                onSliderDragFinished: () => fanRow.update()
+                                            }
 
-                                            onSliderDragFinished: () => fanRow.update()
-                                        }
+                                            DankVerticalSlider {
+                                                id: fanSlider2
+                                                Layout.fillHeight: true
 
-                                        DankVerticalSlider {
-                                            id: fanSlider3
-                                            Layout.fillHeight: true
+                                                value: fanTab.values[1]
+                                                unit: fanTab.item.unit
+                                                minimum: fanTab.item.min
+                                                maximum: fanTab.item.max
+                                                alwaysShowValue: true
 
-                                            value: fanTab.values[2]
-                                            unit: fanTab.item.unit
-                                            minimum: fanTab.item.min
-                                            maximum: fanTab.item.max
+                                                onSliderDragFinished: () => fanRow.update()
+                                            }
 
-                                            onSliderDragFinished: () => fanRow.update()
-                                        }
+                                            DankVerticalSlider {
+                                                id: fanSlider3
+                                                Layout.fillHeight: true
 
-                                        DankVerticalSlider {
-                                            id: fanSlider4
-                                            Layout.fillHeight: true
+                                                value: fanTab.values[2]
+                                                unit: fanTab.item.unit
+                                                minimum: fanTab.item.min
+                                                maximum: fanTab.item.max
+                                                alwaysShowValue: true
 
-                                            value: fanTab.values[3]
-                                            unit: fanTab.item.unit
-                                            minimum: fanTab.item.min
-                                            maximum: fanTab.item.max
+                                                onSliderDragFinished: () => fanRow.update()
+                                            }
 
-                                            onSliderDragFinished: () => fanRow.update()
-                                        }
+                                            DankVerticalSlider {
+                                                id: fanSlider4
+                                                Layout.fillHeight: true
 
-                                        DankVerticalSlider {
-                                            id: fanSlider5
-                                            Layout.fillHeight: true
+                                                value: fanTab.values[3]
+                                                unit: fanTab.item.unit
+                                                minimum: fanTab.item.min
+                                                maximum: fanTab.item.max
+                                                alwaysShowValue: true
 
-                                            value: fanTab.values[4]
-                                            unit: fanTab.item.unit
-                                            minimum: fanTab.item.min
-                                            maximum: fanTab.item.max
+                                                onSliderDragFinished: () => fanRow.update()
+                                            }
 
-                                            onSliderDragFinished: () => fanRow.update()
-                                        }
+                                            DankVerticalSlider {
+                                                id: fanSlider5
+                                                Layout.fillHeight: true
 
-                                        DankVerticalSlider {
-                                            id: fanSlider6
-                                            Layout.fillHeight: true
+                                                value: fanTab.values[4]
+                                                unit: fanTab.item.unit
+                                                minimum: fanTab.item.min
+                                                maximum: fanTab.item.max
+                                                alwaysShowValue: true
 
-                                            value: fanTab.values[5]
-                                            unit: fanTab.item.unit
-                                            minimum: fanTab.item.min
-                                            maximum: fanTab.item.max
+                                                onSliderDragFinished: () => fanRow.update()
+                                            }
 
-                                            onSliderDragFinished: () => fanRow.update()
-                                        }
+                                            DankVerticalSlider {
+                                                id: fanSlider6
+                                                Layout.fillHeight: true
 
-                                        DankVerticalSlider {
-                                            id: fanSlider7
-                                            visible: fanTab.item.sliders === 7
+                                                value: fanTab.values[5]
+                                                unit: fanTab.item.unit
+                                                minimum: fanTab.item.min
+                                                maximum: fanTab.item.max
+                                                alwaysShowValue: true
 
-                                            Layout.fillHeight: true
+                                                onSliderDragFinished: () => fanRow.update()
+                                            }
 
-                                            value: fanTab.values[6] ?? 0
-                                            unit: fanTab.item.unit
-                                            minimum: fanTab.item.min
-                                            maximum: fanTab.item.max
+                                            DankVerticalSlider {
+                                                id: fanSlider7
+                                                visible: fanTab.item.sliders === 7
 
-                                            onSliderDragFinished: () => fanRow.update()
+                                                Layout.fillHeight: true
+
+                                                value: fanTab.values[6] ?? 0
+                                                unit: fanTab.item.unit
+                                                minimum: fanTab.item.min
+                                                maximum: fanTab.item.max
+                                                alwaysShowValue: true
+
+                                                onSliderDragFinished: () => fanRow.update()
+                                            }
                                         }
 
                                         Item {
