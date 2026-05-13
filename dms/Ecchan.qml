@@ -240,11 +240,11 @@ PluginComponent {
 
     // --
 
+    property int currentTab: 0
+
     popoutContent: Component {
         PopoutComponent {
             id: popout
-
-            property int currentTab: 0
 
             FocusScope {
                 width: parent.width
@@ -271,7 +271,7 @@ PluginComponent {
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: {
-                                    popout.currentTab = 99;
+                                    root.currentTab = 99;
                                 }
                             }
                         }
@@ -426,9 +426,9 @@ PluginComponent {
                                     width: tabRowContent.implicitWidth + Theme.spacingS * 2
                                     height: Math.round(Theme.fontSizeSmall * 3.1)
                                     radius: Theme.cornerRadius
-                                    color: popout.currentTab === row.index ? Theme.primaryPressed : (tabMouseArea.containsMouse ? Theme.primaryHoverLight : "transparent")
-                                    border.color: popout.currentTab === row.index ? Theme.primary : "transparent"
-                                    border.width: popout.currentTab === row.index ? 1 : 0
+                                    color: root.currentTab === row.index ? Theme.primaryPressed : (tabMouseArea.containsMouse ? Theme.primaryHoverLight : "transparent")
+                                    border.color: root.currentTab === row.index ? Theme.primary : "transparent"
+                                    border.width: root.currentTab === row.index ? 1 : 0
 
                                     Row {
                                         id: tabRowContent
@@ -438,8 +438,8 @@ PluginComponent {
                                         DankIcon {
                                             name: row.icon
                                             size: Theme.iconSize - 2
-                                            color: popout.currentTab === row.index ? Theme.primary : Theme.surfaceText
-                                            opacity: popout.currentTab === row.index ? 1 : 0.7
+                                            color: root.currentTab === row.index ? Theme.primary : Theme.surfaceText
+                                            opacity: root.currentTab === row.index ? 1 : 0.7
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
 
@@ -447,7 +447,7 @@ PluginComponent {
                                             text: row.text
                                             font.pixelSize: Theme.fontSizeMedium
                                             font.weight: Font.Medium
-                                            color: popout.currentTab === row.index ? Theme.primary : Theme.surfaceText
+                                            color: root.currentTab === row.index ? Theme.primary : Theme.surfaceText
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
                                     }
@@ -457,7 +457,7 @@ PluginComponent {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: popout.currentTab = row.index
+                                        onClicked: root.currentTab = row.index
                                     }
 
                                     Behavior on color {
@@ -484,7 +484,7 @@ PluginComponent {
                         RowLayout {
                             id: page1
 
-                            visible: popout.currentTab === 0
+                            visible: root.currentTab === 0
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -744,7 +744,7 @@ PluginComponent {
                         ColumnLayout {
                             id: page2
 
-                            visible: popout.currentTab === 1
+                            visible: root.currentTab === 1
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -1055,7 +1055,7 @@ PluginComponent {
                         ColumnLayout {
                             id: page3
 
-                            visible: popout.currentTab === 2
+                            visible: root.currentTab === 2
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -1208,7 +1208,7 @@ PluginComponent {
 
                             property int fanIndex: 0
 
-                            visible: popout.currentTab === 3
+                            visible: root.currentTab === 3
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -1628,7 +1628,7 @@ PluginComponent {
                         ColumnLayout {
                             id: page5
 
-                            visible: popout.currentTab === 4 && EcchanClient.batteryChargeModeSupported
+                            visible: root.currentTab === 4 && EcchanClient.batteryChargeModeSupported
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -1833,7 +1833,7 @@ PluginComponent {
                         ColumnLayout {
                             id: page99
 
-                            visible: popout.currentTab === 99
+                            visible: root.currentTab === 99
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
