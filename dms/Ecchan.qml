@@ -62,9 +62,12 @@ PluginComponent {
         onTriggered: {
             if (!EcchanClient.hasDgpu) {
                 gpuUpdate.stop();
+                return;
             }
 
-            EcchanClient.updateGpuRtTemp();
+            if (EcchanClient.connected) {
+                EcchanClient.updateGpuRtTemp();
+            }
         }
     }
 
@@ -83,17 +86,19 @@ PluginComponent {
         triggeredOnStart: true
         // qmlformat off
         onTriggered: {
-            // qmllint disable unterminated-case
-            switch (EcchanClient.fanCount) {
-                case 4:
-                    EcchanClient.updateFan4Rpm();
-                case 3:
-                    EcchanClient.updateFan3Rpm();
-                case 2:
-                    EcchanClient.updateFan2Rpm();
-                case 1:
-                default:
-                    EcchanClient.updateFan1Rpm();
+            if (EcchanClient.connected) {
+                // qmllint disable unterminated-case
+                switch (EcchanClient.fanCount) {
+                    case 4:
+                        EcchanClient.updateFan4Rpm();
+                    case 3:
+                        EcchanClient.updateFan3Rpm();
+                    case 2:
+                        EcchanClient.updateFan2Rpm();
+                    case 1:
+                    default:
+                        EcchanClient.updateFan1Rpm();
+                }
             }
         }
         // qmlformat on
