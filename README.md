@@ -43,6 +43,8 @@ This currently requires the Linux `ec_sys` driver is loaded with `write_support`
 
 Server is required for all clients. Client and servers are split because server must be run as root, but it's usually not feasible or possible to run clients as root.
 
+`ec`: The core ecram editing library.
+
 `ecchan-dbus`: This is currently unfinished because I don't have a need for it. I probably won't pick dev back up unless a significant need arises.
 
 `ecchan-qml`: This plugin is required for any qml-based ui. This requires a c++ compiler as well as qt6 and all associated dev packages.
