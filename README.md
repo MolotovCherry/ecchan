@@ -55,7 +55,7 @@ You may add support for model specific features that are unavailable under fw in
 
 # Alternatives
 
-[msi-ec](https://github.com/BeardOverflow/msi-ec) is a great project and is already a kernel driver. Building and installing it is relatively trivial too. However it does not support gpu fan/temp/hysteresis curves and model specific features, nor does it have an ipc api.
+[msi-ec](https://github.com/BeardOverflow/msi-ec) is a great project and is already a kernel driver. Building and installing it is relatively trivial too. However it does not support gpu fan/temp/hysteresis curves and model specific features, nor does it have an ipc api or ui.
 
 # AI Policy
 
@@ -66,6 +66,12 @@ No AI was used in the programming of this library. It is entirely human produced
 # Contributions
 
 Contributions to further improve and expand ec version and model support are welcome. As per the AI policy, AI is not allowed to be used in the making of your contribution, and any such PRs and issues will immediately be rejected. If you used AI, please do not contribute.
+
+AI assistance is allowed in a minimal sense. If you have gotten ideas and help from it, that's fine, but ultimately you must know in detail how your entire contribution works, and must have programmed it yourself (AI written code is not allowed).
+
+# Support
+
+I do not plan to develop this ui and library past my current needs, i.e. I made this purely for myself. As stated, contributions such as bug fixes or features are welcome, but I am very unlikely to go out of my way to support anyone else's needs or requests. My level of support is purely on a "it works on my machine" basis. That being said, the library and ui has been designed to support other laptop models, so you should be able to fairly easily make support for your own firmware / models.
 
 # Disclaimer
 
