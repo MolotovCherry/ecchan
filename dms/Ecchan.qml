@@ -348,14 +348,16 @@ PluginComponent {
                                     return;
                                 }
 
-                                root.selectedProfile = idx;
-
                                 if (isSame) {
+                                    root.selectedProfile = idx;
                                     return;
                                 }
 
                                 EcchanClient.apply(root.profiles[idx].state);
+
                                 EcchanClient.queue(() => {
+                                    // only visibly apply profile once api calls have finished
+                                    root.selectedProfile = idx;
                                     // sliders do not auto adjust since they have their own internal value
                                     fanTab.resetPage();
                                 });
@@ -363,12 +365,10 @@ PluginComponent {
 
                             onValueAdded: (idx, name) => {
                                 // explicit reassign so signals fire
-                                root.profiles = [...root.profiles,
-                                    {
-                                        name: name,
-                                        state: EcchanClient.serialize()
-                                    }
-                                ];
+                                const clone = Object.assign({}, root.profiles[root.selectedProfile]);
+                                clone.name = name;
+
+                                root.profiles = [...root.profiles, clone];
 
                                 root.selectedProfile = idx;
                             }
@@ -1633,6 +1633,61 @@ PluginComponent {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
+                            function modeToInt(mode) {
+                                switch (mode) {
+                                    // qmlformat off
+                                    case "Mobility":
+                                        return 100;
+                                    case "Balanced":
+                                        return 80;
+                                    case "Healthy":
+                                        return 60;
+                                    default:
+                                        return mode;
+                                    // qmlformat on
+                                }
+                            }
+
+                            property bool customChargeModeEnabled: false
+                            property int customChargeModeValue: 100
+
+                            function updateCustom() {
+                                customChargeModeEnabled = root.profiles[root.selectedProfile].customBatteryChargeModeEnabled || typeof (EcchanClient.batteryChargeMode) === "number";
+                                customChargeModeValue = modeToInt(root.profiles[root.selectedProfile].customBatteryChargeModeValue) || modeToInt(EcchanClient.batteryChargeMode);
+                            }
+
+                            Component.onCompleted: updateCustom()
+
+                            Connections {
+                                target: root
+
+                                function onSelectedProfileChanged() {
+                                    page5.updateCustom();
+                                }
+                            }
+
+                            Connections {
+                                target: EcchanClient
+
+                                function onBatteryChargeModeChanged() {
+                                    page5.updateCustom();
+                                }
+                            }
+
+                            onCustomChargeModeEnabledChanged: {
+                                if (root.pluginService) {
+                                    root.profiles[root.selectedProfile].customBatteryChargeModeEnabled = customChargeModeEnabled;
+                                    root.profilesChanged();
+                                }
+                            }
+
+                            onCustomChargeModeValueChanged: {
+                                if (root.pluginService) {
+                                    root.profiles[root.selectedProfile].customBatteryChargeModeValue = customChargeModeValue;
+                                    root.profilesChanged();
+                                }
+                            }
+
                             StyledRect {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
@@ -1677,49 +1732,10 @@ PluginComponent {
                                             {
                                                 name: "Custom",
                                                 icon: "battery_android_bolt",
-                                                selected: customChargeModeEnabled,
-                                                setMode: () => EcchanClient.batteryChargeMode = customChargeModeValue
+                                                selected: page5.customChargeModeEnabled,
+                                                setMode: () => EcchanClient.batteryChargeMode = page5.customChargeModeValue
                                             },
                                         ]
-
-                                        property bool customChargeModeEnabled: root.profile.customBatteryChargeModeEnabled || typeof (EcchanClient.batteryChargeMode) === "number"
-                                        property int customChargeModeValue: modeToInt(root.profile.customBatteryChargeModeValue) || modeToInt(EcchanClient.batteryChargeMode)
-
-                                        function modeToInt(mode) {
-                                            switch (mode) {
-                                                // qmlformat off
-                                                case "Mobility":
-                                                    return 100;
-                                                case "Balanced":
-                                                    return 80;
-                                                case "Healthy":
-                                                    return 60;
-                                                default:
-                                                    return mode;
-                                                // qmlformat on
-                                            }
-                                        }
-
-                                        Binding on customChargeModeValue {
-                                            value: root.profile
-                                        }
-
-                                        Binding on customChargeModeEnabled {
-                                            value: root.profile
-                                        }
-
-                                        onCustomChargeModeEnabledChanged: {
-                                            if (root.pluginService) {
-                                                root.profile.customBatteryChargeModeEnabled = customChargeModeEnabled;
-                                                root.profilesChanged();
-                                            }
-                                        }
-                                        onCustomChargeModeValueChanged: {
-                                            if (root.pluginService) {
-                                                root.profile.customBatteryChargeModeValue = customChargeModeValue;
-                                                root.profilesChanged();
-                                            }
-                                        }
 
                                         ColumnLayout {
                                             id: page5Column
@@ -1737,7 +1753,7 @@ PluginComponent {
                                             ToggleActionButton {
                                                 id: customBtn
                                                 iconName: icon
-                                                checked: (name !== "Custom" && selected && !modelRptr.customChargeModeEnabled) || (name === "Custom" && modelRptr.customChargeModeEnabled)
+                                                checked: (name !== "Custom" && selected && !page5.customChargeModeEnabled) || (name === "Custom" && page5.customChargeModeEnabled)
                                                 iconSize: Theme.iconSizeLarge + 16
                                                 buttonHeight: 110
                                                 buttonWidth: 140
@@ -1746,10 +1762,10 @@ PluginComponent {
                                                     setMode();
 
                                                     if (name === "Custom") {
-                                                        modelRptr.customChargeModeEnabled = true;
-                                                    } else if (modelRptr.customChargeModeEnabled) {
+                                                        page5.customChargeModeEnabled = true;
+                                                    } else if (page5.customChargeModeEnabled) {
                                                         EcchanClient.queue(() => {
-                                                            modelRptr.customChargeModeEnabled = false;
+                                                            page5.customChargeModeEnabled = false;
                                                         });
                                                     }
                                                 }
@@ -1775,15 +1791,15 @@ PluginComponent {
                                                     DankTextField {
                                                         Layout.maximumWidth: 55
 
-                                                        enabled: modelRptr.customChargeModeEnabled
+                                                        enabled: page5.customChargeModeEnabled
 
                                                         transform: Translate {
                                                             x: -14
                                                         }
 
                                                         visible: name === "Custom"
-                                                        text: String(modelRptr.customChargeModeValue)
-                                                        textColor: modelRptr.customChargeModeEnabled ? Theme.primaryText : Theme.surfaceText
+                                                        text: String(page5.customChargeModeValue)
+                                                        textColor: page5.customChargeModeEnabled ? Theme.primaryText : Theme.surfaceText
 
                                                         focusedBorderColor: Qt.rgba(0, 0, 0, 0)
                                                         normalBorderColor: Qt.rgba(0, 0, 0, 0)
@@ -1802,7 +1818,7 @@ PluginComponent {
                                                         }
 
                                                         onAccepted: {
-                                                            modelRptr.customChargeModeValue = parseInt(text);
+                                                            page5.customChargeModeValue = parseInt(text);
                                                             setMode();
                                                         }
                                                     }
