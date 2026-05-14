@@ -485,7 +485,7 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
         }
 
         Method::MethodWrite { method, op, data } => {
-            ec.method_write(method, op, data).context(EcSnafu)?;
+            ec.method_write(&method, op, data).context(EcSnafu)?;
             RetVal::Unit
         }
     };
