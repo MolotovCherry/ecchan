@@ -20,7 +20,7 @@ PluginComponent {
         const socket = pluginData.socket;
         if (typeof (socket) === "string" && !EcchanClient.connected) {
             EcchanClient.path = socket;
-            EcchanClient.connect();
+            EcchanClient.reconnect();
         }
     }
 

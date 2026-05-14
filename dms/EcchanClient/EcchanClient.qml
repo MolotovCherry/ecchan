@@ -9,14 +9,12 @@ import "../ecchan_client"
 EcchanClient {
     id: root
 
-    // whether to attempt immediate reconnection attempt after first fail
-    property bool reconnect: true
     property int _reconnectAttempt: 0
 
     onConnectedChanged: {
         if (connected) {
             _reconnectAttempt = 0;
-        } else if (reconnect && _reconnectAttempt == 0) {
+        } else if (_reconnectAttempt === 0) {
             _reconnectAttempt += 1;
             Qt.callLater(() => connect());
         }
@@ -31,7 +29,14 @@ EcchanClient {
     }
 
     function connect() {
+        _reconnectAttempt += 1;
         connected = true;
+    }
+
+    function reconnect() {
+        if (_reconnectAttempt === 0) {
+            connect();
+        }
     }
 
     // qmlformat off
