@@ -770,7 +770,6 @@ impl qobject::EcchanClient {
     fn queued_call(mut self: Pin<&mut Self>, cb: impl FnOnce(Pin<&mut Self>) + Send + 'static) {
         let mut this = self.as_mut().rust_mut();
         let Some(client) = this.client.as_mut() else {
-            q_warning!("not connected; cannot call queued cb");
             return;
         };
 
@@ -786,10 +785,6 @@ impl qobject::EcchanClient {
     ) {
         let mut this = self.as_mut().rust_mut();
         let Some(client) = this.client.as_mut() else {
-            if !matches!(method, Method::Ping) {
-                q_warning!("not connected; cannot call {method:?}");
-            }
-
             let err = Err(ClientError::Io {
                 source: io::Error::new(io::ErrorKind::NotConnected, "not connected"),
             });
