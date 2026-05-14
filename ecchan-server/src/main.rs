@@ -1,13 +1,13 @@
 mod handle_client;
 mod signal;
 
-use std::{error::Error, fs, os::unix::fs::PermissionsExt, path::PathBuf};
+use std::{env, error::Error, fs, os::unix::fs::PermissionsExt, path::PathBuf};
 
 use ec::Ec;
 use env_logger::Env;
-use log::LevelFilter;
 
 use handle_client::handle_client;
+use log::LevelFilter;
 use tokio::{net::UnixSocket, select};
 
 use crate::signal::shutdown_handler;
@@ -61,13 +61,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
 fn setup() {
     let env = Env::new().filter("ECCHAN_LOG").write_style("ECCHAN_STYLE");
 
-    env_logger::builder()
-        .format_timestamp(None)
-        .filter_level(if cfg!(debug_assertions) {
+    let mut builder = env_logger::Builder::from_env(env);
+
+    if env::var("ECCHAN_LOG").is_err() {
+        builder.filter_level(if cfg!(debug_assertions) {
             LevelFilter::Debug
         } else {
             LevelFilter::Info
-        })
-        .parse_env(env)
-        .init();
+        });
+    }
+
+    builder.format_timestamp(None).init();
 }
