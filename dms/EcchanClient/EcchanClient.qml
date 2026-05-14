@@ -9,10 +9,12 @@ import "../ecchan_client"
 EcchanClient {
     id: root
 
+    property int timesConnected: 0
     property int _reconnectAttempt: 0
 
     onConnectedChanged: {
         if (connected) {
+            timesConnected += 1;
             _reconnectAttempt = 0;
         } else if (_reconnectAttempt === 0) {
             _reconnectAttempt += 1;

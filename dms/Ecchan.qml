@@ -396,7 +396,7 @@ PluginComponent {
                                 {
                                     text: "General",
                                     icon: "list_alt",
-                                    supported: true
+                                    supported: EcchanClient.timesConnected > 0
                                 },
                                 {
                                     text: "Performance",
@@ -406,7 +406,7 @@ PluginComponent {
                                 {
                                     text: "Fans",
                                     icon: "mode_fan",
-                                    supported: true
+                                    supported: EcchanClient.fanModeSupported || EcchanClient.wmiVer === 2
                                 },
                                 {
                                     text: "Battery",
