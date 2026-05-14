@@ -1,7 +1,7 @@
 mod handle_client;
 mod signal;
 
-use std::{env, error::Error, fs, os::unix::fs::PermissionsExt, path::PathBuf};
+use std::{error::Error, fs, os::unix::fs::PermissionsExt, path::PathBuf};
 
 use ec::Ec;
 use env_logger::Env;
@@ -63,13 +63,8 @@ fn setup() {
 
     let mut builder = env_logger::Builder::from_env(env);
 
-    if env::var("ECCHAN_LOG").is_err() {
-        builder.filter_level(if cfg!(debug_assertions) {
-            LevelFilter::Debug
-        } else {
-            LevelFilter::Info
-        });
-    }
-
-    builder.format_timestamp(None).init();
+    builder
+        .format_timestamp(None)
+        .filter_level(LevelFilter::Debug)
+        .init();
 }
