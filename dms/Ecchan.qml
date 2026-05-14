@@ -1366,8 +1366,6 @@ PluginComponent {
                                                 icon: "memory",
                                                 text: "Fan",
                                                 unit: "%",
-                                                unitPadding: 8,
-                                                leftPadding: 0,
                                                 min: 0,
                                                 max: EcchanClient.fanMax,
                                                 color: Theme.primary,
@@ -1385,8 +1383,6 @@ PluginComponent {
                                                 icon: "memory",
                                                 text: "Temp",
                                                 unit: "°C",
-                                                unitPadding: 11,
-                                                leftPadding: -18,
                                                 min: 0,
                                                 max: 100,
                                                 color: Theme.primary,
@@ -1404,8 +1400,6 @@ PluginComponent {
                                                 icon: "memory",
                                                 text: "Hysteresis",
                                                 unit: "°C",
-                                                unitPadding: 8,
-                                                leftPadding: 0,
                                                 min: 0,
                                                 max: 10,
                                                 color: Theme.primary,
@@ -1423,8 +1417,6 @@ PluginComponent {
                                                 icon: "developer_board",
                                                 text: "DFan",
                                                 unit: "%",
-                                                unitPadding: 8,
-                                                leftPadding: 0,
                                                 min: 0,
                                                 max: EcchanClient.fanMax,
                                                 color: Theme.secondary,
@@ -1442,8 +1434,6 @@ PluginComponent {
                                                 icon: "developer_board",
                                                 text: "DTemp",
                                                 unit: "°C",
-                                                unitPadding: 11,
-                                                leftPadding: -18,
                                                 min: 0,
                                                 max: 100,
                                                 color: Theme.secondary,
@@ -1461,8 +1451,6 @@ PluginComponent {
                                                 icon: "developer_board",
                                                 text: "DHysteresis",
                                                 unit: "°C",
-                                                unitPadding: 8,
-                                                leftPadding: 0,
                                                 min: 0,
                                                 max: 10,
                                                 color: Theme.secondary,
@@ -1546,100 +1534,182 @@ PluginComponent {
                                             Layout.fillHeight: true
                                             Layout.fillWidth: true
 
-                                            Layout.leftMargin: fanTab.item.leftPadding
-                                            spacing: Theme.spacingXL + fanTab.item.unitPadding
+                                            spacing: Theme.spacingXL
 
-                                            DankVerticalSlider {
-                                                id: fanSlider1
+                                            ColumnLayout {
                                                 Layout.fillHeight: true
 
-                                                value: fanTab.values[0]
-                                                unit: fanTab.item.unit
-                                                minimum: fanTab.item.min
-                                                maximum: fanTab.item.max
-                                                alwaysShowValue: true
+                                                StyledText {
+                                                    id: sliderValueText1
+                                                    color: Theme.surfaceText
+                                                    text: fanSlider1.value + fanTab.item.unit
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    Layout.alignment: Qt.AlignCenter
+                                                }
 
-                                                onSliderDragFinished: () => fanRow.update()
+                                                DankVerticalSlider {
+                                                    id: fanSlider1
+                                                    Layout.fillHeight: true
+
+                                                    value: fanTab.values[0]
+                                                    unit: fanTab.item.unit
+                                                    minimum: fanTab.item.min
+                                                    maximum: fanTab.item.max
+                                                    showValue: false
+
+                                                    onSliderDragFinished: () => fanRow.update()
+                                                }
                                             }
 
-                                            DankVerticalSlider {
-                                                id: fanSlider2
+                                            ColumnLayout {
                                                 Layout.fillHeight: true
 
-                                                value: fanTab.values[1]
-                                                unit: fanTab.item.unit
-                                                minimum: fanTab.item.min
-                                                maximum: fanTab.item.max
-                                                alwaysShowValue: true
+                                                StyledText {
+                                                    id: sliderValueText2
+                                                    color: Theme.surfaceText
+                                                    text: fanSlider2.value + fanTab.item.unit
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    Layout.alignment: Qt.AlignCenter
+                                                }
 
-                                                onSliderDragFinished: () => fanRow.update()
+                                                DankVerticalSlider {
+                                                    id: fanSlider2
+                                                    Layout.fillHeight: true
+
+                                                    value: fanTab.values[1]
+                                                    unit: fanTab.item.unit
+                                                    minimum: fanTab.item.min
+                                                    maximum: fanTab.item.max
+                                                    showValue: false
+
+                                                    onSliderDragFinished: () => fanRow.update()
+                                                }
                                             }
 
-                                            DankVerticalSlider {
-                                                id: fanSlider3
+                                            ColumnLayout {
                                                 Layout.fillHeight: true
 
-                                                value: fanTab.values[2]
-                                                unit: fanTab.item.unit
-                                                minimum: fanTab.item.min
-                                                maximum: fanTab.item.max
-                                                alwaysShowValue: true
+                                                StyledText {
+                                                    id: sliderValueText3
+                                                    color: Theme.surfaceText
+                                                    text: fanSlider3.value + fanTab.item.unit
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    Layout.alignment: Qt.AlignCenter
+                                                }
 
-                                                onSliderDragFinished: () => fanRow.update()
+                                                DankVerticalSlider {
+                                                    id: fanSlider3
+                                                    Layout.fillHeight: true
+
+                                                    value: fanTab.values[2]
+                                                    unit: fanTab.item.unit
+                                                    minimum: fanTab.item.min
+                                                    maximum: fanTab.item.max
+                                                    showValue: false
+
+                                                    onSliderDragFinished: () => fanRow.update()
+                                                }
                                             }
 
-                                            DankVerticalSlider {
-                                                id: fanSlider4
+                                            ColumnLayout {
                                                 Layout.fillHeight: true
 
-                                                value: fanTab.values[3]
-                                                unit: fanTab.item.unit
-                                                minimum: fanTab.item.min
-                                                maximum: fanTab.item.max
-                                                alwaysShowValue: true
+                                                StyledText {
+                                                    id: sliderValueText4
+                                                    color: Theme.surfaceText
+                                                    text: fanSlider4.value + fanTab.item.unit
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    Layout.alignment: Qt.AlignCenter
+                                                }
 
-                                                onSliderDragFinished: () => fanRow.update()
+                                                DankVerticalSlider {
+                                                    id: fanSlider4
+                                                    Layout.fillHeight: true
+
+                                                    value: fanTab.values[3]
+                                                    unit: fanTab.item.unit
+                                                    minimum: fanTab.item.min
+                                                    maximum: fanTab.item.max
+                                                    showValue: false
+
+                                                    onSliderDragFinished: () => fanRow.update()
+                                                }
                                             }
 
-                                            DankVerticalSlider {
-                                                id: fanSlider5
+                                            ColumnLayout {
                                                 Layout.fillHeight: true
 
-                                                value: fanTab.values[4]
-                                                unit: fanTab.item.unit
-                                                minimum: fanTab.item.min
-                                                maximum: fanTab.item.max
-                                                alwaysShowValue: true
+                                                StyledText {
+                                                    id: sliderValueText5
+                                                    color: Theme.surfaceText
+                                                    text: fanSlider5.value + fanTab.item.unit
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    Layout.alignment: Qt.AlignCenter
+                                                }
 
-                                                onSliderDragFinished: () => fanRow.update()
+                                                DankVerticalSlider {
+                                                    id: fanSlider5
+                                                    Layout.fillHeight: true
+
+                                                    value: fanTab.values[4]
+                                                    unit: fanTab.item.unit
+                                                    minimum: fanTab.item.min
+                                                    maximum: fanTab.item.max
+                                                    showValue: false
+
+                                                    onSliderDragFinished: () => fanRow.update()
+                                                }
                                             }
 
-                                            DankVerticalSlider {
-                                                id: fanSlider6
+                                            ColumnLayout {
                                                 Layout.fillHeight: true
 
-                                                value: fanTab.values[5]
-                                                unit: fanTab.item.unit
-                                                minimum: fanTab.item.min
-                                                maximum: fanTab.item.max
-                                                alwaysShowValue: true
+                                                StyledText {
+                                                    id: sliderValueText6
+                                                    color: Theme.surfaceText
+                                                    text: fanSlider6.value + fanTab.item.unit
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    Layout.alignment: Qt.AlignCenter
+                                                }
 
-                                                onSliderDragFinished: () => fanRow.update()
+                                                DankVerticalSlider {
+                                                    id: fanSlider6
+                                                    Layout.fillHeight: true
+
+                                                    value: fanTab.values[5]
+                                                    unit: fanTab.item.unit
+                                                    minimum: fanTab.item.min
+                                                    maximum: fanTab.item.max
+                                                    showValue: false
+
+                                                    onSliderDragFinished: () => fanRow.update()
+                                                }
                                             }
 
-                                            DankVerticalSlider {
-                                                id: fanSlider7
+                                            ColumnLayout {
                                                 visible: fanTab.item.sliders === 7
-
                                                 Layout.fillHeight: true
 
-                                                value: fanTab.values[6] ?? 0
-                                                unit: fanTab.item.unit
-                                                minimum: fanTab.item.min
-                                                maximum: fanTab.item.max
-                                                alwaysShowValue: true
+                                                StyledText {
+                                                    id: sliderValueText7
+                                                    color: Theme.surfaceText
+                                                    text: fanSlider7.value + fanTab.item.unit
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    Layout.alignment: Qt.AlignCenter
+                                                }
 
-                                                onSliderDragFinished: () => fanRow.update()
+                                                DankVerticalSlider {
+                                                    id: fanSlider7
+                                                    Layout.fillHeight: true
+
+                                                    value: fanTab.values[6] ?? 0
+                                                    unit: fanTab.item.unit
+                                                    minimum: fanTab.item.min
+                                                    maximum: fanTab.item.max
+                                                    showValue: false
+
+                                                    onSliderDragFinished: () => fanRow.update()
+                                                }
                                             }
                                         }
 
