@@ -1330,8 +1330,8 @@ PluginComponent {
 
                                         tabColor: item.color
 
-                                        readonly property var item: model[page4.fanIndex]
-                                        readonly property var values: model[page4.fanIndex].values
+                                        readonly property var item: model[page4.fanIndex] || modelConfig[0]
+                                        readonly property var values: model[page4.fanIndex]?.values || [0, 0, 0, 0, 0, 0, 0]
 
                                         onTabClicked: index => {
                                             page4.fanIndex = index;
@@ -1359,7 +1359,7 @@ PluginComponent {
                                             fanSlider7.value = obj[6] ?? 0;
                                         }
 
-                                        model: [
+                                        property var modelConfig: [
                                             {
                                                 isAction: false,
                                                 supported: EcchanClient.wmiVer == 2 && EcchanClient.fanMax > 0,
@@ -1474,7 +1474,9 @@ PluginComponent {
                                                     fanTab.reset(root.defaults.gpuHysteresisCurveWmi2);
                                                 }
                                             },
-                                        ].filter(item => item.supported)
+                                        ]
+
+                                        model: modelConfig.filter(item => item.supported)
                                     }
 
                                     RowLayout {
