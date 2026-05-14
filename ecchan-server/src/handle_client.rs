@@ -8,7 +8,7 @@ use ecchan_ipc::{
 use snafu::{OptionExt, ResultExt, Snafu};
 use tokio::{io::AsyncWriteExt as _, net::UnixStream, select};
 
-use crate::signal::ShutdownSignal;
+use crate::{Args, signal::ShutdownSignal};
 
 #[derive(Debug, Snafu)]
 pub enum ClientError {
@@ -30,6 +30,7 @@ pub async fn handle_client(
     client: &mut UnixStream,
     ec: &mut Ec,
     shutdown: &ShutdownSignal,
+    args: &Args,
 ) -> Result<(), ClientError> {
     let mut buf = [0u8; 1024];
     let mut msg_buf = Vec::with_capacity(1024);
@@ -85,15 +86,20 @@ pub async fn handle_client(
             continue;
         };
 
-        log::debug!("got client req: {msg}");
-
-        let ret = match serde_json::from_str::<Method>(msg) {
-            Ok(c) => call(c, ec),
+        let method = match serde_json::from_str::<Method>(msg) {
+            Ok(c) => c,
             Err(e) => {
                 log::error!("{e}");
                 continue;
             }
         };
+
+        let skip = matches!(method, Method::Ping) && args.skip_config;
+        if !skip {
+            log::debug!("got client req: {method:?}");
+        }
+
+        let ret = call(method, ec);
 
         let response = match ret {
             Ok(d) => Ret::Ok(d),
@@ -102,7 +108,9 @@ pub async fn handle_client(
 
         let mut ser = serde_json::to_string(&response).context(SerdeSnafu)?;
 
-        log::debug!("sending reply: {ser}");
+        if !skip {
+            log::debug!("sending reply: {ser}");
+        }
 
         // push sentinel back on
         ser.push('\n');

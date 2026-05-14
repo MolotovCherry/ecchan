@@ -1,7 +1,7 @@
 mod handle_client;
 mod signal;
 
-use std::{error::Error, fs, os::unix::fs::PermissionsExt, path::PathBuf};
+use std::{env, error::Error, fs, os::unix::fs::PermissionsExt, path::PathBuf};
 
 use ec::Ec;
 use env_logger::Env;
@@ -12,9 +12,23 @@ use tokio::{net::UnixSocket, select};
 
 use crate::signal::shutdown_handler;
 
+#[derive(Default)]
+struct Args {
+    skip_config: bool,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     setup();
+
+    let mut args = Args::default();
+
+    let mut _args = env::args();
+    if let Some(a) = _args.nth(1)
+        && a == "--skip-ping"
+    {
+        args.skip_config = true;
+    }
 
     let sh1 = shutdown_handler()?;
 
@@ -48,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         };
 
-        if let Err(e) = handle_client(&mut stream, &mut ec, &sh1).await {
+        if let Err(e) = handle_client(&mut stream, &mut ec, &sh1, &args).await {
             log::error!("Client error: {e}");
         }
 
