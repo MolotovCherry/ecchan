@@ -21,8 +21,8 @@ pub fn build(b: &mut IfaceBuilder<Data>) {
             .into_iter()
             .map(|o| {
                 (
-                    ("name", o.name.to_owned()),
-                    ("method", o.method.to_owned()),
+                    ("name", o.name.to_string()),
+                    ("method", o.method.to_string()),
                     ("ops", o.ops.into_iter().map(DbusArg).collect::<Vec<_>>()),
                 )
             })

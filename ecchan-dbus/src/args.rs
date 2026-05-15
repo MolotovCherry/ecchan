@@ -3,8 +3,8 @@ use dbus::{
     arg::{Append, Arg, ArgType, IterAppend},
 };
 use ecchan_ipc::{
-    BatteryChargeMode, CoolerBoost, FanMode, Fans, KeyDirection, Led, MethodData, MethodOp,
-    ShiftMode, SuperBattery, Webcam, WmiVer,
+    BatteryChargeMode, CoolerBoost, FanMode, Fans, KeyDirection, Led, MethodOp, ShiftMode,
+    SuperBattery, Webcam, WmiVer,
 };
 
 /// Wrapper which impls dbus traits for Ec types
