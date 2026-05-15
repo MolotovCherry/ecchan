@@ -24,6 +24,7 @@ Item {
     }
 
     property bool isEditing: false
+    property int editingIdx: -1
     property string addNewTextEntry: ""
     property string addNewTextEditPlaceholder: ""
 
@@ -62,6 +63,7 @@ Item {
     signal valueChanged(int idx, string value, bool isSameItem)
     signal valueDeleted(int idx, string value)
     signal valueAdded(int idx, string value)
+    signal valueEdited(int idx, string newValue)
 
     function closeDropdownMenu() {
         dropdownMenu.close();
@@ -268,7 +270,10 @@ Item {
             }
         }
 
-        onClosed: root.isEditing = false
+        onClosed: {
+            root.isEditing = false;
+            root.editingIdx = -1;
+        }
 
         parent: Overlay.overlay
         width: root.popupWidth === -1 ? undefined : (root.popupWidth > 0 ? root.popupWidth : (dropdown.width + root.popupWidthOffset))
@@ -430,28 +435,41 @@ Item {
                         DankTextField {
                             id: inlineEdit
                             anchors.fill: parent
-                            visible: root.isEditing && delegateRoot.isAddNew
+                            visible: root.isEditing && root.editingIdx === delegateRoot.index
                             focus: visible
-                            placeholderText: root.addNewTextEditPlaceholder
+                            placeholderText: delegateRoot.isAddNew ? root.addNewTextEditPlaceholder : ""
+
+                            onVisibleChanged: {
+                                if (visible) {
+                                    text = delegateRoot.isAddNew ? "" : delegateRoot.modelData;
+                                }
+                            }
+
                             onAccepted: {
                                 if (text.trim() !== "") {
-                                    root.valueAdded(delegateRoot.index, text);
+                                    if (delegateRoot.isAddNew) {
+                                        root.valueAdded(delegateRoot.index, text);
+                                    } else {
+                                        root.valueEdited(delegateRoot.index, text);
+                                    }
                                 }
                                 root.isEditing = false;
+                                root.editingIdx = -1;
                                 text = "";
                             }
                             Keys.onEscapePressed: {
                                 root.isEditing = false;
+                                root.editingIdx = -1;
                                 text = "";
                             }
                         }
 
                         Row {
-                            visible: !(root.isEditing && delegateRoot.isAddNew)
+                            visible: !(root.isEditing && root.editingIdx === delegateRoot.index)
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.leftMargin: Theme.spacingS
-                            anchors.rightMargin: Theme.spacingS
+                            anchors.rightMargin: !delegateRoot.isAddNew ? 54 : Theme.spacingS
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: Theme.spacingS
 
@@ -477,13 +495,26 @@ Item {
 
                         DankIcon {
                             id: deleteBtn
+
                             anchors.right: parent.right
                             anchors.rightMargin: Theme.spacingS
                             anchors.verticalCenter: parent.verticalCenter
                             name: "delete"
                             size: 18
                             color: Theme.error
-                            visible: !delegateRoot.isAddNew && optionArea.containsMouse
+                            visible: !delegateRoot.isAddNew && !root.isEditing && optionArea.containsMouse
+                        }
+
+                        DankIcon {
+                            id: editBtn
+
+                            anchors.right: deleteBtn.left
+                            anchors.rightMargin: Theme.spacingS
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: "edit"
+                            size: 18
+                            color: Theme.surfaceText
+                            visible: !delegateRoot.isAddNew && !root.isEditing && optionArea.containsMouse
                         }
 
                         MouseArea {
@@ -493,8 +524,15 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
+                                if (root.isEditing) {
+                                    return;
+                                }
+
                                 let deletePos = deleteBtn.mapToItem(optionArea, 0, 0);
                                 let isDeleteClicked = mouseX >= deletePos.x && mouseX <= (deletePos.x + deleteBtn.width) && mouseY >= deletePos.y && mouseY <= (deletePos.y + deleteBtn.height);
+
+                                let editPos = editBtn.mapToItem(optionArea, 0, 0);
+                                let isEditClicked = mouseX >= editPos.x && mouseX <= (editPos.x + editBtn.width) && mouseY >= editPos.y && mouseY <= (editPos.y + editBtn.height);
 
                                 if (isDeleteClicked && !delegateRoot.isAddNew) {
                                     const deletedIndex = delegateRoot.index;
@@ -525,13 +563,22 @@ Item {
                                     return;
                                 }
 
+                                if (isEditClicked && !delegateRoot.isAddNew) {
+                                    root.isEditing = true;
+                                    root.editingIdx = delegateRoot.index;
+                                    Qt.callLater(inlineEdit.forceActiveFocus);
+                                    return;
+                                }
+
                                 if (delegateRoot.isAddNew) {
                                     root.isEditing = true;
+                                    root.editingIdx = delegateRoot.index;
                                     Qt.callLater(inlineEdit.forceActiveFocus);
-                                } else {
-                                    root.valueChanged(delegateRoot.index, delegateRoot.modelData, false);
-                                    root.closeDropdownMenu();
+                                    return;
                                 }
+
+                                root.valueChanged(delegateRoot.index, delegateRoot.modelData, false);
+                                root.closeDropdownMenu();
                             }
                         }
                     }

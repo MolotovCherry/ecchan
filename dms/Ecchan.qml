@@ -567,6 +567,11 @@ PluginComponent {
 
                                 root.selectedProfile = idx;
                             }
+
+                            onValueEdited: (idx, name) => {
+                                root.profiles[idx].name = name;
+                                root.profilesChanged();
+                            }
                         }
                     }
 
