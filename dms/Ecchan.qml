@@ -28,29 +28,17 @@ PluginComponent {
         EcchanClient.disconnect();
     }
 
-    horizontalBarPill: Component {
-        Row {
-            spacing: Theme.spacingS
-
-            DankIcon {
-                name: "memory"
-                size: Theme.iconSizeSmall + 2
-                color: Theme.surfaceText
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
+    property var refCount: ({})
+    function startGpuUpdate() {
+        refCount.gpuUpdate = (refCount.gpuUpdate ?? 0) + 1;
+        gpuUpdate.start();
     }
 
-    verticalBarPill: Component {
-        Column {
-            spacing: Theme.spacingXS
+    function stopGpuUpdate() {
+        refCount.gpuUpdate = Math.max(0, (refCount.gpuUpdate ?? 0) - 1);
 
-            DankIcon {
-                name: "memory"
-                size: Theme.iconSizeSmall + 2
-                color: Theme.surfaceText
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
+        if (refCount.gpuUpdate === 0) {
+            gpuUpdate.stop();
         }
     }
 
@@ -61,6 +49,7 @@ PluginComponent {
         triggeredOnStart: true
         onTriggered: {
             if (!EcchanClient.hasDgpu) {
+                root.refCount.gpuUpdate = 0;
                 gpuUpdate.stop();
                 return;
             }
@@ -71,12 +60,38 @@ PluginComponent {
         }
     }
 
+    function startCpuUpdate() {
+        refCount.cpuUpdate = (refCount.cpuUpdate ?? 0) + 1;
+        cpuUpdate.start();
+    }
+
+    function stopCpuUpdate() {
+        refCount.cpuUpdate = Math.max(0, (refCount.cpuUpdate ?? 0) - 1);
+
+        if (refCount.cpuUpdate === 0) {
+            cpuUpdate.stop();
+        }
+    }
+
     Timer {
         id: cpuUpdate
         interval: 1000
         repeat: true
         triggeredOnStart: true
         onTriggered: EcchanClient.updateCpuRtTemp()
+    }
+
+    function startFanUpdate() {
+        refCount.fanUpdate = (refCount.fanUpdate ?? 0) + 1;
+        fanUpdate.start();
+    }
+
+    function stopFanUpdate() {
+        refCount.fanUpdate = Math.max(0, (refCount.fanUpdate ?? 0) - 1);
+
+        if (refCount.fanUpdate === 0) {
+            fanUpdate.stop();
+        }
     }
 
     Timer {
@@ -108,6 +123,7 @@ PluginComponent {
     property int selectedProfile: 0
     property var profiles: []
     property var defaults: ({})
+    property var profile: profiles[selectedProfile]
 
     Connections {
         target: EcchanClient
@@ -125,10 +141,10 @@ PluginComponent {
                 // https://stackoverflow.com/a/32108184/9423933
                 root.saveDefaults();
 
-                EcchanClient.apply(root.profiles[root.selectedProfile].state);
+                EcchanClient.apply(root.profile.state);
                 EcchanClient.queue(() => {
                     blocked = false;
-                    root.profiles[root.selectedProfile].state = EcchanClient.serialize();
+                    root.profile.state = EcchanClient.serialize();
                     profileWriteTimer.restart();
                 });
             }
@@ -175,7 +191,7 @@ PluginComponent {
         triggeredOnStart: false
         onTriggered: {
             const state = EcchanClient.serialize();
-            root.profiles[root.selectedProfile].state = state;
+            root.profile.state = state;
             root.profilesChanged();
         }
     }
@@ -236,6 +252,186 @@ PluginComponent {
 
     function _setGlobalVar(key, value) {
         pluginService.setGlobalVar("ecchan", key, value);
+    }
+
+    horizontalBarPill: Component {
+        Row {
+            spacing: Theme.spacingS
+
+            // cpu temp
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Theme.spacingXS
+
+                DankIcon {
+                    name: "memory"
+                    size: root.iconSize
+                    color: Theme.surfaceText
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Item {
+                    width: 20
+                    height: parent.height
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    StyledText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: EcchanClient.cpuRtTemp + "°"
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
+                }
+            }
+
+            // gpu temp
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Theme.spacingXS
+
+                DankIcon {
+                    visible: EcchanClient.hasDgpu
+                    name: "developer_board"
+                    size: root.iconSize
+                    color: Theme.surfaceText
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Item {
+                    width: 20
+                    height: parent.height
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    StyledText {
+                        visible: EcchanClient.hasDgpu
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: EcchanClient.gpuRtTemp + "°"
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
+                }
+            }
+
+            // averaged fan speed
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Theme.spacingXS
+
+                DankIcon {
+                    name: "mode_fan"
+                    size: root.iconSize
+                    color: Theme.surfaceText
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Item {
+                    width: 30
+                    height: parent.height
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    StyledText {
+                        visible: EcchanClient.hasDgpu
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: {
+                            const all = EcchanClient.fan1Rpm + EcchanClient.fan2Rpm + EcchanClient.fan3Rpm + EcchanClient.fan4Rpm;
+                            return Math.trunc(all / EcchanClient.fanCount);
+                        }
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.alignment: Qt.AlignHCenter
+                implicitWidth: 1.1
+                implicitHeight: root.iconSize
+                color: Theme.outline
+                opacity: 0.3
+            }
+
+            // selected profile
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: root.profile.name ?? "Default"
+                font.pixelSize: Theme.fontSizeSmall
+            }
+
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Theme.spacingXS
+
+                // shift mode
+                DankIcon {
+                    visible: EcchanClient.shiftModeSupported
+                    name: {
+                        switch (EcchanClient.shiftMode) {
+                            // qmlformat off
+                            case "Turbo":
+                                return "rocket_launch";
+                            case "Extreme Performance":
+                                return "speed";
+                            case "Balanced":
+                                return "balance";
+                            case "Super Battery":
+                                return "psychiatry";
+                            // qmlformat on
+                        }
+                    }
+                    size: root.iconSize
+                    color: Theme.surfaceText
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                // fan mode
+                DankIcon {
+                    visible: EcchanClient.fanModeSupported
+                    name: {
+                        switch (EcchanClient.fanMode) {
+                            // qmlformat off
+                            case "Auto":
+                                return "mode_fan";
+                            case "Advanced":
+                                return "tune";
+                            case "Silent":
+                                return "airwave";
+                            // qmlformat on
+                        }
+                    }
+                    size: root.iconSize
+                    color: Theme.surfaceText
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                // cooler boost
+                DankIcon {
+                    visible: EcchanClient.coolerBoostSupported && EcchanClient.coolerBoost
+                    name: "mode_cool"
+                    size: root.iconSize
+                    color: Theme.surfaceText
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+        }
+    }
+
+    verticalBarPill: Component {
+        Column {
+            spacing: Theme.spacingXS
+
+            DankIcon {
+                name: "memory"
+                size: root.iconSize
+                color: Theme.surfaceText
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        startCpuUpdate();
+        startGpuUpdate();
+        startFanUpdate();
     }
 
     // --
@@ -364,7 +560,7 @@ PluginComponent {
 
                             onValueAdded: (idx, name) => {
                                 // explicit reassign so signals fire
-                                const clone = Object.assign({}, root.profiles[root.selectedProfile]);
+                                const clone = Object.assign({}, root.profile);
                                 clone.name = name;
 
                                 root.profiles = [...root.profiles, clone];
@@ -507,10 +703,10 @@ PluginComponent {
                                         target: page1
                                         function onVisibleChanged() {
                                             if (page1.visible) {
-                                                cpuUpdate.start();
+                                                root.startCpuUpdate();
                                                 DgopService.addRef(["cpu"]);
                                             } else {
-                                                cpuUpdate.stop();
+                                                root.stopCpuUpdate();
                                                 DgopService.removeRef(["cpu"]);
                                             }
                                         }
@@ -549,9 +745,9 @@ PluginComponent {
                                         target: page1
                                         function onVisibleChanged() {
                                             if (page1.visible) {
-                                                gpuUpdate.start();
+                                                root.startGpuUpdate();
                                             } else {
-                                                gpuUpdate.stop();
+                                                root.stopGpuUpdate();
                                             }
                                         }
                                     }
@@ -637,9 +833,9 @@ PluginComponent {
                                         target: page1
                                         function onVisibleChanged() {
                                             if (page1.visible) {
-                                                fanUpdate.start();
+                                                root.startFanUpdate();
                                             } else {
-                                                fanUpdate.stop();
+                                                root.stopFanUpdate();
                                             }
                                         }
                                     }
@@ -1748,8 +1944,8 @@ PluginComponent {
                             property int customChargeModeValue: 100
 
                             function updateCustom() {
-                                customChargeModeEnabled = root.profiles[root.selectedProfile].customBatteryChargeModeEnabled || typeof (EcchanClient.batteryChargeMode) === "number";
-                                customChargeModeValue = modeToInt(root.profiles[root.selectedProfile].customBatteryChargeModeValue) || modeToInt(EcchanClient.batteryChargeMode);
+                                customChargeModeEnabled = root.profile.customBatteryChargeModeEnabled || typeof (EcchanClient.batteryChargeMode) === "number";
+                                customChargeModeValue = modeToInt(root.profile.customBatteryChargeModeValue) || modeToInt(EcchanClient.batteryChargeMode);
                             }
 
                             Component.onCompleted: updateCustom()
@@ -1772,14 +1968,14 @@ PluginComponent {
 
                             onCustomChargeModeEnabledChanged: {
                                 if (root.pluginService) {
-                                    root.profiles[root.selectedProfile].customBatteryChargeModeEnabled = customChargeModeEnabled;
+                                    root.profile.customBatteryChargeModeEnabled = customChargeModeEnabled;
                                     root.profilesChanged();
                                 }
                             }
 
                             onCustomChargeModeValueChanged: {
                                 if (root.pluginService) {
-                                    root.profiles[root.selectedProfile].customBatteryChargeModeValue = customChargeModeValue;
+                                    root.profile.customBatteryChargeModeValue = customChargeModeValue;
                                     root.profilesChanged();
                                 }
                             }
