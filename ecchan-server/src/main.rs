@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             log::error!("Client error: {e}");
         }
 
-        log::debug!("client disconnected");
+        log::info!("client disconnected");
     }
 
     Ok(())

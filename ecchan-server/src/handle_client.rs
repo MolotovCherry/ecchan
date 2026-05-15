@@ -35,7 +35,7 @@ pub async fn handle_client(
     let mut buf = [0u8; 1024];
     let mut msg_buf = Vec::with_capacity(1024);
 
-    log::debug!("client connected");
+    log::info!("client connected");
 
     let mut sentinel_pos = 0;
     let mut drain = false;
