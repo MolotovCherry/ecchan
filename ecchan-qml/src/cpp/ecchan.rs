@@ -14,7 +14,7 @@ use std::{
 };
 
 use cxx_qt::{Constructor, CxxQtType, Threading};
-use cxx_qt_lib::{QByteArray, QMetaTypeType, QQmlEngine, QString, QStringList, QVariant};
+use cxx_qt_lib::{QMetaTypeType, QQmlEngine, QString, QStringList, QVariant};
 use ecchan_ipc::{
     BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MethodData,
     MethodOp, ShiftMode, SuperBattery, Webcam, WmiVer,
@@ -46,9 +46,6 @@ pub mod qobject {
 
         include!("cxx-qt-lib/qlist.h");
         type QList_QVariant = cxx_qt_lib::QList<QVariant>;
-
-        include!("cxx-qt-lib/qbytearray.h");
-        type QByteArray = cxx_qt_lib::QByteArray;
     }
 
     unsafe extern "C++" {
@@ -132,7 +129,7 @@ pub mod qobject {
         // methods
         #[qproperty(QVariant, methods, READ = get_methods, NOTIFY, FINAL)]
         // dump
-        #[qproperty(QByteArray, ec_dump, READ = get_ec_dump, NOTIFY, FINAL)]
+        #[qproperty(QVariant, ec_dump, READ = get_ec_dump, NOTIFY, FINAL)]
         #[qproperty(QString, ec_dump_pretty, READ = get_ec_dump_pretty, NOTIFY, FINAL)]
         #[namespace = "ecchan_client"]
         type EcchanClient = super::EcchanClientRust;
@@ -221,7 +218,7 @@ pub mod qobject {
         #[qinvokable]
         fn method_write(self: Pin<&mut Self>, method: &QString, value: &QJSValue);
 
-        fn get_ec_dump(&self) -> QByteArray;
+        fn get_ec_dump(&self) -> QVariant;
         fn get_ec_dump_pretty(&self) -> &QString;
 
         //
@@ -3539,8 +3536,20 @@ impl qobject::EcchanClient {
         );
     }
 
-    fn get_ec_dump(&self) -> QByteArray {
-        QByteArray::from(&self.ec_dump.0)
+    fn get_ec_dump(&self) -> QVariant {
+        let Some(engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
+        let mut jsarray = engine.new_array(256);
+        for (i, val) in self.ec_dump.0.iter().enumerate() {
+            jsarray
+                .pin_mut()
+                .set_element(i as u32, &QJSValue::from_uint(*val as u32));
+        }
+
+        jsarray.to_qvariant()
     }
 
     fn get_ec_dump_pretty(&self) -> &QString {

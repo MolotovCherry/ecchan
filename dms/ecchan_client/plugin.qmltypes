@@ -653,7 +653,7 @@ Module {
         }
         Property {
             name: "ecDump"
-            type: "QByteArray"
+            type: "QVariant"
             read: "getEcDump"
             notify: "ecDumpChanged"
             index: 51
