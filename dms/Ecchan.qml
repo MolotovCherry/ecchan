@@ -1953,8 +1953,8 @@ PluginComponent {
                             property int customChargeModeValue: 100
 
                             function updateCustom() {
-                                customChargeModeEnabled = root.profile.customBatteryChargeModeEnabled || typeof (EcchanClient.batteryChargeMode) === "number";
-                                customChargeModeValue = modeToInt(root.profile.customBatteryChargeModeValue) || modeToInt(EcchanClient.batteryChargeMode);
+                                customChargeModeEnabled = root.profile?.customBatteryChargeModeEnabled || typeof (EcchanClient.batteryChargeMode) === "number";
+                                customChargeModeValue = modeToInt(root.profile?.customBatteryChargeModeValue) || modeToInt(EcchanClient.batteryChargeMode);
                             }
 
                             Component.onCompleted: updateCustom()
