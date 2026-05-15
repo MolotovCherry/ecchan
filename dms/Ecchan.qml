@@ -1291,11 +1291,11 @@ PluginComponent {
                                                 icon: "rocket_launch",
                                                 supported: EcchanClient.shiftModes.includes("Turbo"),
                                                 setMode: () => {
-                                                    EcchanClient.shiftMode = "Turbo";
-
                                                     if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
                                                         EcchanClient.superBattery = false;
                                                     }
+
+                                                    EcchanClient.shiftMode = "Turbo";
                                                 }
                                             },
                                             {
@@ -1304,11 +1304,11 @@ PluginComponent {
                                                 icon: "speed",
                                                 supported: EcchanClient.shiftModes.includes("Extreme Performance"),
                                                 setMode: () => {
-                                                    EcchanClient.shiftMode = "Extreme Performance";
-
                                                     if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
                                                         EcchanClient.superBattery = false;
                                                     }
+
+                                                    EcchanClient.shiftMode = "Extreme Performance";
                                                 }
                                             },
                                             {
@@ -1317,11 +1317,11 @@ PluginComponent {
                                                 icon: "balance",
                                                 supported: EcchanClient.shiftModes.includes("Balanced"),
                                                 setMode: () => {
-                                                    EcchanClient.shiftMode = "Balanced";
-
                                                     if (EcchanClient.superBatterySupported && EcchanClient.superBattery) {
                                                         EcchanClient.superBattery = false;
                                                     }
+
+                                                    EcchanClient.shiftMode = "Balanced";
                                                 }
                                             },
                                             {
