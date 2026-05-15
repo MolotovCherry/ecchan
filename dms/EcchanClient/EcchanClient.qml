@@ -9,35 +9,46 @@ import "../ecchan_client"
 EcchanClient {
     id: root
 
-    property int timesConnected: 0
-    property int _reconnectAttempt: 0
-
     onConnectedChanged: {
         if (connected) {
-            timesConnected += 1;
-            _reconnectAttempt = 0;
-        } else if (_reconnectAttempt === 0) {
-            _reconnectAttempt += 1;
-            Qt.callLater(() => connect());
+            disableErrors = false;
+        }
+
+        if (!connected) {
+            reconnectTimer.start();
         }
     }
 
-    onError: error => ToastService.showError("EcchanClient error", error)
+    property bool disableErrors: false
+    onError: error => {
+        if (connected) {
+            disableErrors = false;
+            ToastService.showError("EcchanClient error", error);
+        } else if (!connected && !disableErrors) {
+            disableErrors = true;
+            ToastService.showError("EcchanClient error", error);
+        }
+    }
 
     function disconnect() {
-        // do not reconnect since this was intentional
-        _reconnectAttempt += 1;
         connected = false;
     }
 
     function connect() {
-        _reconnectAttempt += 1;
         connected = true;
     }
 
-    function reconnect() {
-        if (_reconnectAttempt === 0) {
-            connect();
+    property var timer: Timer {
+        id: reconnectTimer
+        interval: 500
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (root.connected) {
+                reconnectTimer.stop();
+            } else {
+                root.connected = true;
+            }
         }
     }
 

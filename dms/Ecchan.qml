@@ -20,7 +20,7 @@ PluginComponent {
         const socket = pluginData.socket;
         if (typeof (socket) === "string" && !EcchanClient.connected) {
             EcchanClient.path = socket;
-            EcchanClient.reconnect();
+            EcchanClient.connect();
         }
     }
 
@@ -512,24 +512,15 @@ PluginComponent {
                             color: Theme.surfaceText
                         }
 
-                        DankButton {
+                        DankIcon {
                             Layout.preferredWidth: 20
                             Layout.preferredHeight: 20
-                            hovered: false
-                            pressed: false
-                            backgroundColor: "transparent"
-                            enableRipple: false
 
-                            onClicked: EcchanClient.connected ? EcchanClient.disconnect() : EcchanClient.connect()
-
-                            DankIcon {
-                                anchors.centerIn: parent
-                                name: "circle"
-                                filled: true
-                                grade: 700
-                                color: EcchanClient.connected ? Theme.primary : Theme.surfaceText
-                                size: Theme.iconSize - 6
-                            }
+                            name: "circle"
+                            filled: true
+                            grade: 700
+                            color: EcchanClient.connected ? Theme.primary : Theme.surfaceText
+                            size: Theme.iconSize - 6
                         }
 
                         Item {
@@ -601,7 +592,7 @@ PluginComponent {
                                 {
                                     text: "General",
                                     icon: "list_alt",
-                                    supported: EcchanClient.timesConnected > 0
+                                    supported: true
                                 },
                                 {
                                     text: "Performance",
