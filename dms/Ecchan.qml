@@ -353,7 +353,7 @@ PluginComponent {
             // selected profile
             StyledText {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.profile.name ?? "Default"
+                text: root.profile?.name ?? "Default"
                 font.pixelSize: Theme.fontSizeSmall
             }
 
