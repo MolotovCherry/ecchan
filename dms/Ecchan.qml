@@ -405,8 +405,8 @@ PluginComponent {
 
                 // cooler boost
                 DankIcon {
-                    visible: EcchanClient.coolerBoostSupported && EcchanClient.coolerBoost
-                    name: "mode_cool"
+                    visible: EcchanClient.coolerBoostSupported
+                    name: EcchanClient.coolerBoost ? "mode_cool" : "mode_cool_off"
                     size: root.iconSize
                     color: Theme.surfaceText
                     anchors.verticalCenter: parent.verticalCenter
