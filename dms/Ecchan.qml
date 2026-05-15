@@ -375,6 +375,8 @@ PluginComponent {
                                 return "balance";
                             case "Super Battery":
                                 return "psychiatry";
+                            default:
+                                return "";
                             // qmlformat on
                         }
                     }
@@ -404,6 +406,8 @@ PluginComponent {
                                 return "tune";
                             case "Silent":
                                 return "airwave";
+                            default:
+                                return "";
                             // qmlformat on
                         }
                     }
