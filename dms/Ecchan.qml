@@ -383,6 +383,15 @@ PluginComponent {
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
+                // super battery
+                DankIcon {
+                    visible: EcchanClient.superBattery
+                    name: "battery_android_bolt"
+                    size: root.iconSize
+                    color: Theme.surfaceText
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
                 // fan mode
                 DankIcon {
                     visible: EcchanClient.fanModeSupported
