@@ -77,8 +77,9 @@ fn setup() {
 
     let mut builder = env_logger::Builder::from_env(env);
 
-    builder
-        .format_timestamp(None)
-        .filter_level(LevelFilter::Debug)
-        .init();
+    if std::env::var("ECCHAN_LOG").is_err() {
+        builder.filter_level(LevelFilter::Debug);
+    }
+
+    builder.format_timestamp(None).init();
 }
