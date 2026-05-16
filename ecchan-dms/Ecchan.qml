@@ -8,7 +8,7 @@ import qs.Widgets
 import qs.Modules.Plugins
 import qs.Services
 
-import "./EcchanClient"
+import "./Services"
 import "./Widgets"
 
 PluginComponent {
@@ -28,105 +28,6 @@ PluginComponent {
         EcchanClient.disconnect();
     }
 
-    property var refCount: ({})
-    function startGpuUpdate() {
-        refCount.gpuUpdate = (refCount.gpuUpdate ?? 0) + 1;
-        gpuUpdate.start();
-    }
-
-    function stopGpuUpdate() {
-        refCount.gpuUpdate = Math.max(0, (refCount.gpuUpdate ?? 0) - 1);
-
-        if (refCount.gpuUpdate === 0) {
-            gpuUpdate.stop();
-        }
-    }
-
-    Timer {
-        id: gpuUpdate
-        interval: 1000
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            if (!EcchanClient.connected) {
-                return;
-            }
-
-            if (!EcchanClient.hasDgpu) {
-                root.refCount.gpuUpdate = 0;
-                gpuUpdate.stop();
-                return;
-            }
-
-            EcchanClient.updateGpuRtTemp();
-        }
-    }
-
-    function startCpuUpdate() {
-        refCount.cpuUpdate = (refCount.cpuUpdate ?? 0) + 1;
-        cpuUpdate.start();
-    }
-
-    function stopCpuUpdate() {
-        refCount.cpuUpdate = Math.max(0, (refCount.cpuUpdate ?? 0) - 1);
-
-        if (refCount.cpuUpdate === 0) {
-            cpuUpdate.stop();
-        }
-    }
-
-    Timer {
-        id: cpuUpdate
-        interval: 1000
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            if (!EcchanClient.connected) {
-                return;
-            }
-
-            EcchanClient.updateCpuRtTemp();
-        }
-    }
-
-    function startFanUpdate() {
-        refCount.fanUpdate = (refCount.fanUpdate ?? 0) + 1;
-        fanUpdate.start();
-    }
-
-    function stopFanUpdate() {
-        refCount.fanUpdate = Math.max(0, (refCount.fanUpdate ?? 0) - 1);
-
-        if (refCount.fanUpdate === 0) {
-            fanUpdate.stop();
-        }
-    }
-
-    Timer {
-        id: fanUpdate
-        interval: 1000
-        repeat: true
-        triggeredOnStart: true
-        // qmlformat off
-        onTriggered: {
-            if (EcchanClient.connected) {
-                // qmllint disable unterminated-case
-                switch (EcchanClient.fanCount) {
-                    case 4:
-                        EcchanClient.updateFan4Rpm();
-                    case 3:
-                        EcchanClient.updateFan3Rpm();
-                    case 2:
-                        EcchanClient.updateFan2Rpm();
-                    case 1:
-                    default:
-                        EcchanClient.updateFan1Rpm();
-                }
-            }
-        }
-        // qmlformat on
-    }
-
     property var profilesModel: []
     property int selectedProfile: 0
     property var profiles: []
@@ -137,14 +38,6 @@ PluginComponent {
         target: EcchanClient
 
         property bool blocked: true
-
-        function onConnectedChanged() {
-            if (!EcchanClient.connected) {
-                root.stopCpuUpdate();
-                root.stopGpuUpdate();
-                root.stopFanUpdate();
-            }
-        }
 
         function onInitStateChanged(state) {
             const finished = !state;
@@ -164,9 +57,11 @@ PluginComponent {
                     profileWriteTimer.restart();
 
                     // should be started after we have the data
-                    root.startCpuUpdate();
-                    root.startGpuUpdate();
-                    root.startFanUpdate();
+                    Update.addRef(["cpuRtTemp"]);
+
+                    if (EcchanClient.hasDgpu) {
+                        Update.addRef(["gpuRtTemp"]);
+                    }
                 });
             }
         }
@@ -727,10 +622,10 @@ PluginComponent {
                                         target: page1
                                         function onVisibleChanged() {
                                             if (page1.visible) {
-                                                root.startCpuUpdate();
+                                                Update.addRef(["cpuRtTemp"]);
                                                 DgopService.addRef(["cpu"]);
                                             } else {
-                                                root.stopCpuUpdate();
+                                                Update.removeRef(["cpuRtTemp"]);
                                                 DgopService.removeRef(["cpu"]);
                                             }
                                         }
@@ -768,10 +663,10 @@ PluginComponent {
                                     Connections {
                                         target: page1
                                         function onVisibleChanged() {
-                                            if (page1.visible) {
-                                                root.startGpuUpdate();
+                                            if (page1.visible && EcchanClient.hasDgpu) {
+                                                Update.addRef(["gpuRtTemp"]);
                                             } else {
-                                                root.stopGpuUpdate();
+                                                Update.removeRef(["gpuRtTemp"]);
                                             }
                                         }
                                     }
@@ -857,9 +752,9 @@ PluginComponent {
                                         target: page1
                                         function onVisibleChanged() {
                                             if (page1.visible) {
-                                                root.startFanUpdate();
+                                                Update.addRef(["fan1Rpm", "fan2Rpm", "fan3Rpm", "fan4Rpm"]);
                                             } else {
-                                                root.stopFanUpdate();
+                                                Update.removeRef(["fan1Rpm", "fan2Rpm", "fan3Rpm", "fan4Rpm"]);
                                             }
                                         }
                                     }
