@@ -48,15 +48,17 @@ PluginComponent {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
+            if (!EcchanClient.connected) {
+                return;
+            }
+
             if (!EcchanClient.hasDgpu) {
                 root.refCount.gpuUpdate = 0;
                 gpuUpdate.stop();
                 return;
             }
 
-            if (EcchanClient.connected) {
-                EcchanClient.updateGpuRtTemp();
-            }
+            EcchanClient.updateGpuRtTemp();
         }
     }
 
@@ -78,7 +80,13 @@ PluginComponent {
         interval: 1000
         repeat: true
         triggeredOnStart: true
-        onTriggered: EcchanClient.updateCpuRtTemp()
+        onTriggered: {
+            if (!EcchanClient.connected) {
+                return;
+            }
+
+            EcchanClient.updateCpuRtTemp();
+        }
     }
 
     function startFanUpdate() {
@@ -130,6 +138,14 @@ PluginComponent {
 
         property bool blocked: true
 
+        function onConnectedChanged() {
+            if (!EcchanClient.connected) {
+                root.stopCpuUpdate();
+                root.stopGpuUpdate();
+                root.stopFanUpdate();
+            }
+        }
+
         function onInitStateChanged(state) {
             const finished = !state;
 
@@ -146,6 +162,11 @@ PluginComponent {
                     blocked = false;
                     root.profile.state = EcchanClient.serialize();
                     profileWriteTimer.restart();
+
+                    // should be started after we have the data
+                    root.startCpuUpdate();
+                    root.startGpuUpdate();
+                    root.startFanUpdate();
                 });
             }
         }
@@ -439,12 +460,6 @@ PluginComponent {
                 anchors.horizontalCenter: parent.horizontalCenter
             }
         }
-    }
-
-    Component.onCompleted: {
-        startCpuUpdate();
-        startGpuUpdate();
-        startFanUpdate();
     }
 
     // --
