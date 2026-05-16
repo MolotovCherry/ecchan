@@ -40,7 +40,7 @@ EcchanClient {
 
     property var timer: Timer {
         id: reconnectTimer
-        interval: 500
+        interval: 5000
         repeat: true
         triggeredOnStart: true
         onTriggered: {
