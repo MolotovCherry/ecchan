@@ -33,6 +33,7 @@ PluginComponent {
     property var profiles: []
     property var defaults: ({})
     property var profile: profiles[selectedProfile]
+    property var firstInit: true
 
     Connections {
         target: EcchanClient
@@ -56,11 +57,15 @@ PluginComponent {
                     root.profile.state = EcchanClient.serialize();
                     profileWriteTimer.restart();
 
-                    // should be started after we have the data
-                    Update.addRef(["cpuRtTemp"]);
+                    if (root.firstInit) {
+                        // should be started after we have the data
+                        Update.addRef(["cpuRtTemp"]);
 
-                    if (EcchanClient.hasDgpu) {
-                        Update.addRef(["gpuRtTemp"]);
+                        if (EcchanClient.hasDgpu) {
+                            Update.addRef(["gpuRtTemp"]);
+                        }
+
+                        root.firstInit = false;
                     }
                 });
             }
