@@ -2056,9 +2056,9 @@ PluginComponent {
 
                             onVisibleChanged: {
                                 if (visible) {
-                                    memTimer.start();
+                                    Update.addRef(["ecDumpPretty"]);
                                 } else {
-                                    memTimer.stop();
+                                    Update.removeRef(["ecDumpPretty"]);
                                 }
                             }
 
@@ -2079,14 +2079,6 @@ PluginComponent {
                                     anchors.centerIn: parent
 
                                     text: EcchanClient.ecDumpPretty
-
-                                    Timer {
-                                        id: memTimer
-                                        interval: 1000
-                                        repeat: true
-                                        triggeredOnStart: true
-                                        onTriggered: EcchanClient.updateEcDumpPretty()
-                                    }
                                 }
                             }
                         }
