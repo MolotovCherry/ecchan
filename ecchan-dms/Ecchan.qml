@@ -757,7 +757,22 @@ PluginComponent {
                                         target: page1
                                         function onVisibleChanged() {
                                             if (page1.visible) {
-                                                Update.addRef(["fan1Rpm", "fan2Rpm", "fan3Rpm", "fan4Rpm"]);
+                                                let fans = [];
+                                                switch (EcchanClient.fanCount) {
+                                                    case 4:
+                                                        fans.push("fan4Rpm");
+                                                        // fallthrough
+                                                    case 3:
+                                                        fans.push("fan3Rpm");
+                                                        // fallthrough
+                                                    case 2:
+                                                        fans.push("fan2Rpm");
+                                                        // fallthrough
+                                                    case 1:
+                                                        fans.push("fan1Rpm");
+                                                }
+
+                                                Update.addRef(fans);
                                             } else {
                                                 Update.removeRef(["fan1Rpm", "fan2Rpm", "fan3Rpm", "fan4Rpm"]);
                                             }
