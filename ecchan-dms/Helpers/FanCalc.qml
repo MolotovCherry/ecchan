@@ -17,9 +17,11 @@ QtObject {
             // fallthrough
             case 2:
                 extraArgs.push("fan2Rpm");
+                extraArgs.push("gpuRtFanSpeed");
             // fallthrough
             case 1:
                 extraArgs.push("fan1Rpm");
+                extraArgs.push("cpuRtFanSpeed");
             // qmlformat on
         }
 
@@ -28,7 +30,7 @@ QtObject {
     }
 
     Component.onDestruction: {
-        Update.removeRef(["fan4Rpm", "fan3Rpm", "fan2Rpm", "fan1Rpm"]);
+        Update.removeRef(["fan4Rpm", "fan3Rpm", "fan2Rpm", "fan1Rpm", "gpuRtFanSpeed", "cpuRtFanSpeed"]);
         fanTimer.stop();
     }
 
@@ -46,10 +48,12 @@ QtObject {
     function calc() {
         const inRange = (num, min, max) => num >= min && num <= max;
 
-        // we could check the current fan %, but that requires a lot more programming
-        // than just converting rpm into % ; we have a formula for this
-        const fan1Perc = EcchanClient.fan1Rpm / 60;
-        const fan2Perc = EcchanClient.fan2Rpm / 60;
+        // use the rpm calculations to get a more realtime view
+        // but for 1 and 2 we prefer rtFanSpeed over rpm calculations because it flucuates less
+        // this could matter when it's just on the boundary, e.g. 34-35; it prevents flip flopping
+        // back and forth
+        const fan1Perc = Math.max(Math.round(EcchanClient.fan1Rpm / 60), EcchanClient.cpuRtFanSpeed);
+        const fan2Perc = Math.max(Math.round(EcchanClient.fan2Rpm / 60), EcchanClient.gpuRtFanSpeed);
         const fan3Perc = EcchanClient.fan3Rpm / 60;
         const fan4Perc = EcchanClient.fan4Rpm / 60;
 
