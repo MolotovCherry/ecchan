@@ -112,11 +112,10 @@ QtObject {
         // use highest percentage
         const perc = Math.max(fanRpmAll, fanRpmMain);
 
-        if (inRange(perc, 0, 40)) {
+        if (inRange(perc, 0, 33)) {
             level = 1;
             text = "Min";
-            return;
-        } else if (inRange(perc, 40, 50)) {
+        } else if (inRange(perc, 33, 50)) {
             level = 2;
             text = "Low";
             return;
