@@ -260,6 +260,19 @@ PluginComponent {
                         anchors.horizontalCenter: parent.horizontalCenter
                         font.pixelSize: Theme.fontSizeSmall
                         text: fanCalc.text
+                        color: {
+                            if (fanCalc.level <= 3) {
+                                return Theme.surfaceText;
+                            }
+
+                            if (fanCalc.level === 4) {
+                                return Theme.warning;
+                            }
+
+                            if (fanCalc.level === 5) {
+                                return Theme.error;
+                            }
+                        }
                     }
                 }
             }
