@@ -10,6 +10,7 @@ import qs.Services
 
 import "./Services"
 import "./Widgets"
+import "./Helpers"
 
 PluginComponent {
     id: root
@@ -233,7 +234,7 @@ PluginComponent {
                 }
             }
 
-            // averaged fan speed
+            // fan speed
             Row {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.spacingXS
@@ -250,15 +251,15 @@ PluginComponent {
                     height: parent.height
                     anchors.verticalCenter: parent.verticalCenter
 
+                    FanCalc {
+                        id: fanCalc
+                    }
+
                     StyledText {
-                        visible: EcchanClient.hasDgpu
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: {
-                            const all = EcchanClient.fan1Rpm + EcchanClient.fan2Rpm + EcchanClient.fan3Rpm + EcchanClient.fan4Rpm;
-                            return Math.trunc(all / EcchanClient.fanCount);
-                        }
                         font.pixelSize: Theme.fontSizeSmall
+                        text: fanCalc.text
                     }
                 }
             }
