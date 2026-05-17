@@ -54,16 +54,14 @@ QtObject {
         // back and forth
         const fan1Perc = Math.max(Math.round(EcchanClient.fan1Rpm / 60), EcchanClient.cpuRtFanSpeed);
         const fan2Perc = Math.max(Math.round(EcchanClient.fan2Rpm / 60), EcchanClient.gpuRtFanSpeed);
-        const fan3Perc = EcchanClient.fan3Rpm / 60;
-        const fan4Perc = EcchanClient.fan4Rpm / 60;
+        const fan3Perc = Math.round(EcchanClient.fan3Rpm / 60);
+        const fan4Perc = Math.round(EcchanClient.fan4Rpm / 60);
 
         // use highest percentage
         // qmlformat off
-        const perc = Math.round(
-            Math.max(
-                Math.max(fan3Perc, fan4Perc),
-                Math.max(fan1Perc, fan2Perc)
-            )
+        const perc = Math.max(
+            Math.max(fan3Perc, fan4Perc),
+            Math.max(fan1Perc, fan2Perc)
         );
         // qmlformat on
 
