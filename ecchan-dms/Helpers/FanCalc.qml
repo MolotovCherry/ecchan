@@ -40,42 +40,10 @@ QtObject {
         onTriggered: root.calc()
     }
 
-    property string text: "Off"
+    property string text: "Min"
     property int level: 0
 
     function calc() {
-        //
-        // <Isoff>
-        //
-        let isOff = true;
-
-        switch (EcchanClient.fanCount) {
-            // qmlformat off
-            case 4:
-                isOff = isOff && EcchanClient.fan4Rpm === 0;
-            // fallthrough
-            case 3:
-                isOff = isOff && EcchanClient.fan3Rpm === 0;
-            // fallthrough
-            case 2:
-                isOff = isOff && EcchanClient.fan2Rpm === 0;
-            // fallthrough
-            case 1:
-                isOff = isOff && EcchanClient.fan1Rpm === 0;
-            // qmlformat on
-        }
-
-        if (isOff) {
-            text = "Off";
-            level = 0;
-            return;
-        }
-
-        //
-        //  </IsOff>
-        //
-
-        const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
         const inRange = (num, min, max) => num >= min && num <= max;
 
         // we could check the current fan %, but that requires a lot more programming
@@ -85,32 +53,15 @@ QtObject {
         const fan3Perc = EcchanClient.fan3Rpm / 60;
         const fan4Perc = EcchanClient.fan4Rpm / 60;
 
-        // average out percentages, both for main (2 main fans), and for all
-        let fanRpmAll = 0;
-        let fanRpmMain = 0;
-        switch (EcchanClient.fanCount) {
-            // qmlformat off
-            case 4:
-                fanRpmAll += fan4Perc;
-                // fallthrough
-            case 3:
-                fanRpmAll += fan3Perc;
-                // fallthrough
-            case 2:
-                fanRpmAll += fan2Perc;
-                fanRpmMain += fan2Perc;
-                // fallthrough
-            case 1:
-                fanRpmAll += fan1Perc;
-                fanRpmMain += fan1Perc;
-            // qmlformat on
-        }
-
-        fanRpmAll /= EcchanClient.fanCount;
-        fanRpmMain /= clamp(EcchanClient.fanCount, 1, 2);
-
         // use highest percentage
-        const perc = Math.round(Math.max(fanRpmAll, fanRpmMain));
+        // qmlformat off
+        const perc = Math.round(
+            Math.max(
+                Math.max(fan3Perc, fan4Perc),
+                Math.max(fan1Perc, fan2Perc)
+            )
+        );
+        // qmlformat on
 
         if (inRange(perc, 0, 35)) {
             level = 1;
