@@ -115,16 +115,16 @@ QtObject {
         if (inRange(perc, 0, 35)) {
             level = 1;
             text = "Min";
-        } else if (inRange(perc, 35, 50)) {
+        } else if (inRange(perc, 35, 45)) {
             level = 2;
             text = "Low";
-        } else if (inRange(perc, 50, 65)) {
+        } else if (inRange(perc, 45, 55)) {
             level = 3;
             text = "Mid";
-        } else if (inRange(perc, 65, 75)) {
+        } else if (inRange(perc, 55, 70)) {
             level = 4;
             text = "High";
-        } else if (inRange(perc, 75, 150)) {
+        } else if (inRange(perc, 70, 150)) {
             level = 5;
             text = "Max";
         }
