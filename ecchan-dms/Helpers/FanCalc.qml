@@ -110,7 +110,7 @@ QtObject {
         fanRpmMain /= clamp(EcchanClient.fanCount, 1, 2);
 
         // use highest percentage
-        const perc = Math.max(fanRpmAll, fanRpmMain);
+        const perc = Math.round(Math.max(fanRpmAll, fanRpmMain));
 
         if (inRange(perc, 0, 33)) {
             level = 1;
@@ -118,19 +118,15 @@ QtObject {
         } else if (inRange(perc, 33, 50)) {
             level = 2;
             text = "Low";
-            return;
         } else if (inRange(perc, 50, 65)) {
             level = 3;
             text = "Mid";
-            return;
         } else if (inRange(perc, 65, 75)) {
             level = 4;
             text = "High";
-            return;
         } else if (inRange(perc, 75, 150)) {
             level = 5;
             text = "Max";
-            return;
         }
     }
 }
