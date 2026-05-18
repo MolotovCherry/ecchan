@@ -390,6 +390,7 @@ PluginComponent {
 
     // --
 
+    signal areaClicked
     property int currentTab: 0
 
     popoutContent: Component {
@@ -401,6 +402,12 @@ PluginComponent {
                 implicitHeight: root.popoutHeight - popout.headerHeight - popout.detailsHeight - Theme.spacingXL
 
                 focus: true
+
+                TapHandler {
+                    target: null
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onTapped: (eventPoint, button) => root.areaClicked()
+                }
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -1848,11 +1855,60 @@ PluginComponent {
                                                     required property var set
                                                     required property bool show
 
-                                                    StyledText {
-                                                        color: Theme.surfaceText
-                                                        text: curveSlider.value + fanTab.item.unit
-                                                        font.pixelSize: Theme.fontSizeSmall
+                                                    Connections {
+                                                        target: root
+                                                        function onAreaClicked() {
+                                                            textInput.focus = false;
+                                                        }
+                                                    }
+
+                                                    TextInput {
+                                                        id: textInput
                                                         Layout.alignment: Qt.AlignCenter
+
+                                                        font.pixelSize: Theme.fontSizeSmall
+                                                        font.family: Theme.fontFamily
+                                                        color: Theme.surfaceText
+                                                        selectionColor: Theme.primaryContainer
+                                                        selectedTextColor: Theme.primary
+                                                        horizontalAlignment: TextInput.AlignLeft
+                                                        verticalAlignment: TextInput.AlignVCenter
+                                                        selectByMouse: true
+                                                        clip: true
+                                                        activeFocusOnTab: true
+                                                        onAccepted: {
+                                                            const val = parseInt(text);
+                                                            curveSlider.value = val;
+                                                            sliderRoot.set(val);
+                                                            focus = false;
+                                                        }
+
+                                                        text: activeFocus
+                                                                  ? String(curveSlider.value)
+                                                                  : curveSlider.value + fanTab.item.unit
+
+                                                        onActiveFocusChanged: {
+                                                            if (activeFocus) {
+                                                                selectAll();
+                                                            } else {
+                                                                let val = parseInt(text);
+                                                                if (!isNaN(val) && val >= fanTab.item.min && val <= fanTab.item.max) {
+                                                                    accepted();
+                                                                }
+                                                            }
+                                                        }
+
+                                                        validator: IntValidator {
+                                                            bottom: fanTab.item.min
+                                                            top: fanTab.item.max
+                                                        }
+
+                                                        MouseArea {
+                                                            anchors.fill: parent
+                                                            hoverEnabled: true
+                                                            cursorShape: Qt.IBeamCursor
+                                                            acceptedButtons: Qt.NoButton
+                                                        }
                                                     }
 
                                                     DankVerticalSlider {
@@ -2033,11 +2089,11 @@ PluginComponent {
 
                                                     anchors.bottom: parent.bottom
                                                     anchors.horizontalCenter: parent.horizontalCenter
-                                                    anchors.bottomMargin: name === "Custom" ? -5 : Theme.spacingS
+                                                    anchors.bottomMargin: Theme.spacingS
+
+                                                    spacing: 2
 
                                                     StyledText {
-                                                        Layout.leftMargin: name === "Custom" ? 40 : 0
-
                                                         text: name === "Custom" ? "Custom:" : name
                                                         font.pixelSize: Theme.fontSizeSmall
                                                         font.weight: Font.Bold
@@ -2046,28 +2102,52 @@ PluginComponent {
                                                         horizontalAlignment: Text.AlignCenter
                                                     }
 
-                                                    DankTextField {
-                                                        Layout.maximumWidth: 55
+                                                    Connections {
+                                                        target: root
+                                                        function onAreaClicked() {
+                                                            batteryTextInput.focus = false;
+                                                        }
+                                                    }
+
+                                                    TextInput {
+                                                        id: batteryTextInput
+
+                                                        property int previousValue: 100
 
                                                         enabled: page5.customChargeModeEnabled
-
-                                                        transform: Translate {
-                                                            x: -14
-                                                        }
-
                                                         visible: name === "Custom"
-                                                        text: String(page5.customChargeModeValue)
-                                                        textColor: page5.customChargeModeEnabled ? Theme.primaryText : Theme.surfaceText
-
-                                                        focusedBorderColor: Qt.rgba(0, 0, 0, 0)
-                                                        normalBorderColor: Qt.rgba(0, 0, 0, 0)
-                                                        backgroundColor: Qt.rgba(0, 0, 0, 0)
 
                                                         font.pixelSize: Theme.fontSizeSmall
+                                                        font.family: Theme.fontFamily
                                                         font.weight: Font.Bold
+                                                        color: page5.customChargeModeEnabled ? Theme.primaryText : Theme.surfaceText
+                                                        selectionColor: Theme.primaryContainer
+                                                        selectedTextColor: Theme.primary
+                                                        horizontalAlignment: TextInput.AlignLeft
+                                                        selectByMouse: true
+                                                        clip: true
+                                                        activeFocusOnTab: true
+                                                        onAccepted: {
+                                                            page5.customChargeModeValue = parseInt(text);
+                                                            setMode();
+                                                        }
 
-                                                        topPadding: 0
-                                                        bottomPadding: 0
+                                                        text: String(page5.customChargeModeValue)
+
+                                                        onActiveFocusChanged: {
+                                                            if (activeFocus) {
+                                                                previousValue = page5.customChargeModeValue;
+                                                                selectAll();
+                                                            } else {
+                                                                let val = parseInt(text);
+                                                                if (!isNaN(val) && val >= 10 && val <= 100) {
+                                                                    accepted();
+                                                                } else {
+                                                                    page5.customChargeModeValue = previousValue;
+                                                                    text = previousValue;
+                                                                }
+                                                            }
+                                                        }
 
                                                         maximumLength: 3
                                                         validator: IntValidator {
@@ -2075,9 +2155,11 @@ PluginComponent {
                                                             top: 100
                                                         }
 
-                                                        onAccepted: {
-                                                            page5.customChargeModeValue = parseInt(text);
-                                                            setMode();
+                                                        MouseArea {
+                                                            anchors.fill: parent
+                                                            hoverEnabled: true
+                                                            cursorShape: Qt.IBeamCursor
+                                                            acceptedButtons: Qt.NoButton
                                                         }
                                                     }
                                                 }
