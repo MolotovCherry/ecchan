@@ -113,6 +113,18 @@ PluginComponent {
         triggeredOnStart: false
         onTriggered: {
             const state = EcchanClient.serialize();
+
+            // we want to always keep our custom curves rather than overwriting them when serializing
+            const curveKeys = [
+                "cpuFanCurveWmi2", "cpuTempCurveWmi2", "cpuHysteresisCurveWmi2",
+                "gpuFanCurveWmi2", "gpuTempCurveWmi2", "gpuHysteresisCurveWmi2"
+            ];
+            curveKeys.forEach(key => {
+                if (root.profile.state && root.profile.state[key] != null) {
+                    state[key] = root.profile.state[key];
+                }
+            });
+
             root.profile.state = state;
             root.profilesChanged();
         }
@@ -481,13 +493,26 @@ PluginComponent {
                                     return;
                                 }
 
-                                EcchanClient.apply(root.profiles[idx].state);
+                                // clone it so we don't alter the real copy
+                                const state = Object.assign({}, root.profiles[idx].state);
+
+                                // when switching profiles DO NOT set custom curves UNLESS
+                                // fanMode is at advanced
+                                if (state.fanMode !== "Advanced") {
+                                    const curveKeys = [
+                                        "cpuFanCurveWmi2", "cpuTempCurveWmi2", "cpuHysteresisCurveWmi2",
+                                        "gpuFanCurveWmi2", "gpuTempCurveWmi2", "gpuHysteresisCurveWmi2"
+                                    ];
+                                    curveKeys.forEach(key => {
+                                        state[key] = root.defaults[key];
+                                    });
+                                }
+
+                                EcchanClient.apply(state);
 
                                 EcchanClient.queue(() => {
                                     // only visibly apply profile once api calls have finished
                                     root.selectedProfile = idx;
-                                    // sliders do not auto adjust since they have their own internal value
-                                    fanTab.resetPage();
                                 });
                             }
 
@@ -1355,8 +1380,6 @@ PluginComponent {
                         ColumnLayout {
                             id: page4
 
-                            property int fanIndex: 0
-
                             visible: root.currentTab === 3
                             Layout.fillWidth: true
                             Layout.fillHeight: true
@@ -1392,7 +1415,15 @@ PluginComponent {
                                                     selected: EcchanClient.fanMode === "Auto",
                                                     color: Theme.primary,
                                                     supported: EcchanClient.fanModes.includes("Auto"),
-                                                    setMode: () => EcchanClient.fanMode = "Auto"
+                                                    setMode: () => {
+                                                        EcchanClient.fanMode = "Auto"
+                                                        EcchanClient.cpuFanCurveWmi2 = root.defaults.cpuFanCurveWmi2;
+                                                        EcchanClient.cpuTempCurveWmi2 = root.defaults.cpuTempCurveWmi2;
+                                                        EcchanClient.cpuHysteresisCurveWmi2 = root.defaults.cpuHysteresisCurveWmi2;
+                                                        EcchanClient.gpuFanCurveWmi2 = root.defaults.gpuFanCurveWmi2;
+                                                        EcchanClient.gpuTempCurveWmi2 = root.defaults.gpuTempCurveWmi2;
+                                                        EcchanClient.gpuHysteresisCurveWmi2 = root.defaults.gpuHysteresisCurveWmi2;
+                                                    }
                                                 },
                                                 {
                                                     name: "Advanced",
@@ -1400,7 +1431,15 @@ PluginComponent {
                                                     selected: EcchanClient.fanMode === "Advanced",
                                                     color: Theme.primary,
                                                     supported: EcchanClient.fanModes.includes("Advanced"),
-                                                    setMode: () => EcchanClient.fanMode = "Advanced"
+                                                    setMode: () => {
+                                                        EcchanClient.fanMode = "Advanced";
+                                                        EcchanClient.cpuFanCurveWmi2 = root.profile.state.cpuFanCurveWmi2;
+                                                        EcchanClient.cpuTempCurveWmi2 = root.profile.state.cpuTempCurveWmi2;
+                                                        EcchanClient.cpuHysteresisCurveWmi2 = root.profile.state.cpuHysteresisCurveWmi2;
+                                                        EcchanClient.gpuFanCurveWmi2 = root.profile.state.gpuFanCurveWmi2;
+                                                        EcchanClient.gpuTempCurveWmi2 = root.profile.state.gpuTempCurveWmi2;
+                                                        EcchanClient.gpuHysteresisCurveWmi2 = root.profile.state.gpuHysteresisCurveWmi2;
+                                                    }
                                                 },
                                                 {
                                                     name: "Silent",
@@ -1408,7 +1447,15 @@ PluginComponent {
                                                     selected: EcchanClient.fanMode === "Silent",
                                                     color: Theme.primary,
                                                     supported: EcchanClient.fanModes.includes("Silent"),
-                                                    setMode: () => EcchanClient.fanMode = "Silent"
+                                                    setMode: () => {
+                                                        EcchanClient.fanMode = "Silent";
+                                                        EcchanClient.cpuFanCurveWmi2 = root.defaults.cpuFanCurveWmi2;
+                                                        EcchanClient.cpuTempCurveWmi2 = root.defaults.cpuTempCurveWmi2;
+                                                        EcchanClient.cpuHysteresisCurveWmi2 = root.defaults.cpuHysteresisCurveWmi2;
+                                                        EcchanClient.gpuFanCurveWmi2 = root.defaults.gpuFanCurveWmi2;
+                                                        EcchanClient.gpuTempCurveWmi2 = root.defaults.gpuTempCurveWmi2;
+                                                        EcchanClient.gpuHysteresisCurveWmi2 = root.defaults.gpuHysteresisCurveWmi2;
+                                                    }
                                                 },
                                                 {
                                                     name: "Cooler Boost",
@@ -1475,37 +1522,55 @@ PluginComponent {
                                         Layout.alignment: Qt.AlignTop
                                         Layout.fillWidth: true
 
-                                        currentIndex: page4.fanIndex
-
                                         tabColor: item.color
 
-                                        readonly property var item: model[page4.fanIndex] || modelConfig[0]
-                                        readonly property var values: model[page4.fanIndex]?.values || [0, 0, 0, 0, 0, 0, 0]
-
                                         onTabClicked: index => {
-                                            page4.fanIndex = index;
-
-                                            fanSlider1.value = values[0];
-                                            fanSlider2.value = values[1];
-                                            fanSlider3.value = values[2];
-                                            fanSlider4.value = values[3];
-                                            fanSlider5.value = values[4];
-                                            fanSlider6.value = values[5];
-                                            fanSlider7.value = values[6] ?? 0;
+                                            currentIndex = index;
+                                            setNodes(getCurves());
                                         }
 
-                                        function resetPage() {
-                                            fanTab.reset(fanTab.values);
+                                        function getCurves() {
+                                            return root.profile.state[item.key];
                                         }
 
-                                        function reset(obj) {
-                                            fanSlider1.value = obj[0];
-                                            fanSlider2.value = obj[1];
-                                            fanSlider3.value = obj[2];
-                                            fanSlider4.value = obj[3];
-                                            fanSlider5.value = obj[4];
-                                            fanSlider6.value = obj[5];
-                                            fanSlider7.value = obj[6] ?? 0;
+                                        readonly property var item: model[currentIndex] || modelConfig[0]
+                                        property int n1: 0
+                                        property int n2: 0
+                                        property int n3: 0
+                                        property int n4: 0
+                                        property int n5: 0
+                                        property int n6: 0
+                                        property int n7: 0
+
+                                        function setNodes(arr) {
+                                            n1 = arr[0];
+                                            n2 = arr[1];
+                                            n3 = arr[2];
+                                            n4 = arr[3];
+                                            n5 = arr[4];
+                                            n6 = arr[5];
+                                            n7 = arr[6] || 0;
+                                        }
+
+                                        function getNodes() {
+                                            return [n1, n2, n3, n4, n5, n6, n7];
+                                        }
+
+                                        Connections {
+                                            target: root
+
+                                            property bool init: true
+
+                                            function onSelectedProfileChanged() {
+                                                fanTab.setNodes(fanTab.getCurves());
+                                            }
+
+                                            function onProfilesChanged() {
+                                                if (init) {
+                                                    init = false;
+                                                    fanTab.setNodes(fanTab.getCurves());
+                                                }
+                                            }
                                         }
 
                                         property var modelConfig: [
@@ -1514,16 +1579,26 @@ PluginComponent {
                                                 supported: EcchanClient.wmiVer == 2 && EcchanClient.fanMax > 0,
                                                 icon: "memory",
                                                 text: "Fan",
+                                                key: "cpuFanCurveWmi2",
                                                 unit: "%",
                                                 min: 0,
                                                 max: EcchanClient.fanMax,
                                                 color: Theme.primary,
                                                 sliders: 7,
-                                                values: EcchanClient.cpuFanCurveWmi2,
-                                                set: value => EcchanClient.cpuFanCurveWmi2 = value,
+                                                set: () => {
+                                                    root.profile.state.cpuFanCurveWmi2 = fanTab.getNodes();
+                                                    root.profilesChanged();
+
+                                                    if (EcchanClient.fanMode === "Advanced") {
+                                                        EcchanClient.cpuFanCurveWmi2 = fanTab.getNodes();
+                                                    }
+                                                },
                                                 reset: () => {
-                                                    EcchanClient.cpuFanCurveWmi2 = root.defaults.cpuFanCurveWmi2;
-                                                    fanTab.reset(root.defaults.cpuFanCurveWmi2);
+                                                    const defaults = root.defaults.cpuFanCurveWmi2;
+                                                    fanTab.setNodes(defaults);
+                                                    EcchanClient.cpuFanCurveWmi2 = defaults;
+                                                    root.profile.state.cpuFanCurveWmi2 = defaults;
+                                                    root.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1531,16 +1606,26 @@ PluginComponent {
                                                 supported: EcchanClient.wmiVer == 2,
                                                 icon: "memory",
                                                 text: "Temp",
+                                                key: "cpuTempCurveWmi2",
                                                 unit: "°C",
                                                 min: 0,
                                                 max: 100,
                                                 color: Theme.primary,
                                                 sliders: 7,
-                                                values: EcchanClient.cpuTempCurveWmi2,
-                                                set: value => EcchanClient.cpuTempCurveWmi2 = value,
+                                                set: () => {
+                                                    root.profile.state.cpuTempCurveWmi2 = fanTab.getNodes();
+                                                    root.profilesChanged();
+
+                                                    if (EcchanClient.fanMode === "Advanced") {
+                                                        EcchanClient.cpuTempCurveWmi2 = fanTab.getNodes();
+                                                    }
+                                                },
                                                 reset: () => {
-                                                    EcchanClient.cpuTempCurveWmi2 = root.defaults.cpuTempCurveWmi2;
-                                                    fanTab.reset(root.defaults.cpuTempCurveWmi2);
+                                                    const defaults = root.defaults.cpuTempCurveWmi2;
+                                                    fanTab.setNodes(defaults);
+                                                    EcchanClient.cpuTempCurveWmi2 = defaults;
+                                                    root.profile.state.cpuTempCurveWmi2 = defaults;
+                                                    root.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1548,16 +1633,26 @@ PluginComponent {
                                                 supported: EcchanClient.wmiVer == 2,
                                                 icon: "memory",
                                                 text: "Hysteresis",
+                                                key: "cpuHysteresisCurveWmi2",
                                                 unit: "°C",
                                                 min: 0,
                                                 max: 10,
                                                 color: Theme.primary,
                                                 sliders: 6,
-                                                values: EcchanClient.cpuHysteresisCurveWmi2,
-                                                set: value => EcchanClient.cpuHysteresisCurveWmi2 = value,
+                                                set: () => {
+                                                    root.profile.state.cpuHysteresisCurveWmi2 = fanTab.getNodes();
+                                                    root.profilesChanged();
+
+                                                    if (EcchanClient.fanMode === "Advanced") {
+                                                        EcchanClient.cpuHysteresisCurveWmi2 = fanTab.getNodes();
+                                                    }
+                                                },
                                                 reset: () => {
-                                                    EcchanClient.cpuHysteresisCurveWmi2 = root.defaults.cpuHysteresisCurveWmi2;
-                                                    fanTab.reset(root.defaults.cpuHysteresisCurveWmi2);
+                                                    const defaults = root.defaults.cpuHysteresisCurveWmi2;
+                                                    fanTab.setNodes(defaults);
+                                                    EcchanClient.cpuHysteresisCurveWmi2 = defaults;
+                                                    root.profile.state.cpuHysteresisCurveWmi2 = defaults;
+                                                    root.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1565,16 +1660,26 @@ PluginComponent {
                                                 supported: EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu && EcchanClient.fanMax > 0,
                                                 icon: "developer_board",
                                                 text: "DFan",
+                                                key: "gpuFanCurveWmi2",
                                                 unit: "%",
                                                 min: 0,
                                                 max: EcchanClient.fanMax,
                                                 color: Theme.secondary,
                                                 sliders: 7,
-                                                values: EcchanClient.gpuFanCurveWmi2,
-                                                set: value => EcchanClient.gpuFanCurveWmi2 = value,
+                                                set: () => {
+                                                    root.profile.state.gpuFanCurveWmi2 = fanTab.getNodes();
+                                                    root.profilesChanged();
+
+                                                    if (EcchanClient.fanMode === "Advanced") {
+                                                        EcchanClient.gpuFanCurveWmi2 = fanTab.getNodes();
+                                                    }
+                                                },
                                                 reset: () => {
-                                                    EcchanClient.gpuFanCurveWmi2 = root.defaults.gpuFanCurveWmi2;
-                                                    fanTab.reset(root.defaults.gpuFanCurveWmi2);
+                                                    const defaults = root.defaults.gpuFanCurveWmi2;
+                                                    fanTab.setNodes(defaults);
+                                                    EcchanClient.gpuFanCurveWmi2 = defaults;
+                                                    root.profile.state.gpuFanCurveWmi2 = defaults;
+                                                    root.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1582,16 +1687,26 @@ PluginComponent {
                                                 supported: EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
                                                 icon: "developer_board",
                                                 text: "DTemp",
+                                                key: "gpuTempCurveWmi2",
                                                 unit: "°C",
                                                 min: 0,
                                                 max: 100,
                                                 color: Theme.secondary,
                                                 sliders: 7,
-                                                values: EcchanClient.gpuTempCurveWmi2,
-                                                set: value => EcchanClient.gpuTempCurveWmi2 = value,
+                                                set: () => {
+                                                    root.profile.state.gpuTempCurveWmi2 = fanTab.getNodes();
+                                                    root.profilesChanged();
+
+                                                    if (EcchanClient.fanMode === "Advanced") {
+                                                        EcchanClient.gpuTempCurveWmi2 = fanTab.getNodes();
+                                                    }
+                                                },
                                                 reset: () => {
-                                                    EcchanClient.gpuTempCurveWmi2 = root.defaults.gpuTempCurveWmi2;
-                                                    fanTab.reset(root.defaults.gpuTempCurveWmi2);
+                                                    const defaults = root.defaults.gpuTempCurveWmi2;
+                                                    fanTab.setNodes(defaults);
+                                                    EcchanClient.gpuTempCurveWmi2 = defaults;
+                                                    root.profile.state.gpuTempCurveWmi2 = defaults;
+                                                    root.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1599,16 +1714,26 @@ PluginComponent {
                                                 supported: EcchanClient.wmiVer == 2 && EcchanClient.hasDgpu,
                                                 icon: "developer_board",
                                                 text: "DHysteresis",
+                                                key: "gpuHysteresisCurveWmi2",
                                                 unit: "°C",
                                                 min: 0,
                                                 max: 10,
                                                 color: Theme.secondary,
                                                 sliders: 6,
-                                                values: EcchanClient.gpuHysteresisCurveWmi2,
-                                                set: value => EcchanClient.gpuHysteresisCurveWmi2 = value,
+                                                set: value => () => {
+                                                    root.profile.state.gpuHysteresisCurveWmi2 = fanTab.getNodes();
+                                                    root.profilesChanged();
+
+                                                    if (EcchanClient.fanMode === "Advanced") {
+                                                        EcchanClient.gpuHysteresisCurveWmi2 = fanTab.getNodes();
+                                                    }
+                                                },
                                                 reset: () => {
-                                                    EcchanClient.gpuHysteresisCurveWmi2 = root.defaults.gpuHysteresisCurveWmi2;
-                                                    fanTab.reset(root.defaults.gpuHysteresisCurveWmi2);
+                                                    const defaults = root.defaults.gpuHysteresisCurveWmi2;
+                                                    fanTab.setNodes(defaults);
+                                                    EcchanClient.gpuHysteresisCurveWmi2 = defaults;
+                                                    root.profile.state.gpuHysteresisCurveWmi2 = defaults;
+                                                    root.profilesChanged();
                                                 }
                                             },
                                         ]
@@ -1617,43 +1742,11 @@ PluginComponent {
                                     }
 
                                     RowLayout {
-                                        id: fanRow
-
                                         visible: EcchanClient.wmiVer === 2
 
                                         Layout.fillHeight: true
                                         Layout.fillWidth: true
                                         Layout.topMargin: Theme.spacingM
-
-                                        function update() {
-                                            // qmlformat off
-                                            const values = [
-                                                fanSlider1.value,
-                                                fanSlider2.value,
-                                                fanSlider3.value,
-                                                fanSlider4.value,
-                                                fanSlider5.value,
-                                                fanSlider6.value
-                                            ];
-                                            // qmlformat on
-
-                                            if (fanTab.item.sliders === 7) {
-                                                values.push(fanSlider7.value);
-                                            }
-
-                                            fanTab.item.set(values);
-                                            EcchanClient.queue(() => {
-                                                // update values after call; this is important, if
-                                                // e.g. the call fails, the values need to always reflect the actual values
-                                                fanSlider1.value = fanTab.values[0];
-                                                fanSlider2.value = fanTab.values[1];
-                                                fanSlider3.value = fanTab.values[2];
-                                                fanSlider4.value = fanTab.values[3];
-                                                fanSlider5.value = fanTab.values[4];
-                                                fanSlider6.value = fanTab.values[5];
-                                                fanSlider7.value = fanTab.values[6] ?? 0;
-                                            });
-                                        }
 
                                         Item {
                                             Layout.fillWidth: true
@@ -1685,179 +1778,99 @@ PluginComponent {
 
                                             spacing: Theme.spacingXL
 
-                                            ColumnLayout {
-                                                Layout.fillHeight: true
+                                            Repeater {
+                                                model: [
+                                                    {
+                                                        value: fanTab.n1,
+                                                        set: value => {
+                                                            fanTab.n1 = value;
+                                                            fanTab.item.set();
+                                                        },
+                                                        show: fanTab.item.sliders >= 1
+                                                    },
+                                                    {
+                                                        value: fanTab.n2,
+                                                        set: value => {
+                                                            fanTab.n2 = value;
+                                                            fanTab.item.set();
+                                                        },
+                                                        show: fanTab.item.sliders >= 2
+                                                    },
+                                                    {
+                                                        value: fanTab.n3,
+                                                        set: value => {
+                                                            fanTab.n3 = value;
+                                                            fanTab.item.set();
+                                                        },
+                                                        show: fanTab.item.sliders >= 3
+                                                    },
+                                                    {
+                                                        value: fanTab.n4,
+                                                        set: value => {
+                                                            fanTab.n4 = value;
+                                                            fanTab.item.set();
+                                                        },
+                                                        show: fanTab.item.sliders >= 4
+                                                    },
+                                                    {
+                                                        value: fanTab.n5,
+                                                        set: value => {
+                                                            fanTab.n5 = value;
+                                                            fanTab.item.set();
+                                                        },
+                                                        show: fanTab.item.sliders >= 5
+                                                    },
+                                                    {
+                                                        value: fanTab.n6,
+                                                        set: value => {
+                                                            fanTab.n6 = value;
+                                                            fanTab.item.set();
+                                                        },
+                                                        show: fanTab.item.sliders >= 6
+                                                    },
+                                                    {
+                                                        value: fanTab.n7,
+                                                        set: value => {
+                                                            fanTab.n7 = value;
+                                                            fanTab.item.set();
+                                                        },
+                                                        show: fanTab.item.sliders >= 7
+                                                    }
+                                                ]
 
-                                                StyledText {
-                                                    id: sliderValueText1
-                                                    color: Theme.surfaceText
-                                                    text: fanSlider1.value + fanTab.item.unit
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    Layout.alignment: Qt.AlignCenter
-                                                }
-
-                                                DankVerticalSlider {
-                                                    id: fanSlider1
+                                                ColumnLayout {
+                                                    id: sliderRoot
                                                     Layout.fillHeight: true
 
-                                                    value: fanTab.values[0]
-                                                    unit: fanTab.item.unit
-                                                    minimum: fanTab.item.min
-                                                    maximum: fanTab.item.max
-                                                    showValue: false
+                                                    visible: show
 
-                                                    onSliderDragFinished: () => fanRow.update()
-                                                }
-                                            }
+                                                    required property int value
+                                                    required property var set
+                                                    required property bool show
 
-                                            ColumnLayout {
-                                                Layout.fillHeight: true
+                                                    StyledText {
+                                                        color: Theme.surfaceText
+                                                        text: curveSlider.value + fanTab.item.unit
+                                                        font.pixelSize: Theme.fontSizeSmall
+                                                        Layout.alignment: Qt.AlignCenter
+                                                    }
 
-                                                StyledText {
-                                                    id: sliderValueText2
-                                                    color: Theme.surfaceText
-                                                    text: fanSlider2.value + fanTab.item.unit
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    Layout.alignment: Qt.AlignCenter
-                                                }
+                                                    DankVerticalSlider {
+                                                        id: curveSlider
+                                                        Layout.fillHeight: true
 
-                                                DankVerticalSlider {
-                                                    id: fanSlider2
-                                                    Layout.fillHeight: true
+                                                        unit: fanTab.item.unit
+                                                        minimum: fanTab.item.min
+                                                        maximum: fanTab.item.max
+                                                        showValue: false
 
-                                                    value: fanTab.values[1]
-                                                    unit: fanTab.item.unit
-                                                    minimum: fanTab.item.min
-                                                    maximum: fanTab.item.max
-                                                    showValue: false
+                                                        onSliderDragFinished: value => sliderRoot.set(value)
 
-                                                    onSliderDragFinished: () => fanRow.update()
-                                                }
-                                            }
-
-                                            ColumnLayout {
-                                                Layout.fillHeight: true
-
-                                                StyledText {
-                                                    id: sliderValueText3
-                                                    color: Theme.surfaceText
-                                                    text: fanSlider3.value + fanTab.item.unit
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    Layout.alignment: Qt.AlignCenter
-                                                }
-
-                                                DankVerticalSlider {
-                                                    id: fanSlider3
-                                                    Layout.fillHeight: true
-
-                                                    value: fanTab.values[2]
-                                                    unit: fanTab.item.unit
-                                                    minimum: fanTab.item.min
-                                                    maximum: fanTab.item.max
-                                                    showValue: false
-
-                                                    onSliderDragFinished: () => fanRow.update()
-                                                }
-                                            }
-
-                                            ColumnLayout {
-                                                Layout.fillHeight: true
-
-                                                StyledText {
-                                                    id: sliderValueText4
-                                                    color: Theme.surfaceText
-                                                    text: fanSlider4.value + fanTab.item.unit
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    Layout.alignment: Qt.AlignCenter
-                                                }
-
-                                                DankVerticalSlider {
-                                                    id: fanSlider4
-                                                    Layout.fillHeight: true
-
-                                                    value: fanTab.values[3]
-                                                    unit: fanTab.item.unit
-                                                    minimum: fanTab.item.min
-                                                    maximum: fanTab.item.max
-                                                    showValue: false
-
-                                                    onSliderDragFinished: () => fanRow.update()
-                                                }
-                                            }
-
-                                            ColumnLayout {
-                                                Layout.fillHeight: true
-
-                                                StyledText {
-                                                    id: sliderValueText5
-                                                    color: Theme.surfaceText
-                                                    text: fanSlider5.value + fanTab.item.unit
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    Layout.alignment: Qt.AlignCenter
-                                                }
-
-                                                DankVerticalSlider {
-                                                    id: fanSlider5
-                                                    Layout.fillHeight: true
-
-                                                    value: fanTab.values[4]
-                                                    unit: fanTab.item.unit
-                                                    minimum: fanTab.item.min
-                                                    maximum: fanTab.item.max
-                                                    showValue: false
-
-                                                    onSliderDragFinished: () => fanRow.update()
-                                                }
-                                            }
-
-                                            ColumnLayout {
-                                                Layout.fillHeight: true
-
-                                                StyledText {
-                                                    id: sliderValueText6
-                                                    color: Theme.surfaceText
-                                                    text: fanSlider6.value + fanTab.item.unit
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    Layout.alignment: Qt.AlignCenter
-                                                }
-
-                                                DankVerticalSlider {
-                                                    id: fanSlider6
-                                                    Layout.fillHeight: true
-
-                                                    value: fanTab.values[5]
-                                                    unit: fanTab.item.unit
-                                                    minimum: fanTab.item.min
-                                                    maximum: fanTab.item.max
-                                                    showValue: false
-
-                                                    onSliderDragFinished: () => fanRow.update()
-                                                }
-                                            }
-
-                                            ColumnLayout {
-                                                visible: fanTab.item.sliders === 7
-                                                Layout.fillHeight: true
-
-                                                StyledText {
-                                                    id: sliderValueText7
-                                                    color: Theme.surfaceText
-                                                    text: fanSlider7.value + fanTab.item.unit
-                                                    font.pixelSize: Theme.fontSizeSmall
-                                                    Layout.alignment: Qt.AlignCenter
-                                                }
-
-                                                DankVerticalSlider {
-                                                    id: fanSlider7
-                                                    Layout.fillHeight: true
-
-                                                    value: fanTab.values[6] ?? 0
-                                                    unit: fanTab.item.unit
-                                                    minimum: fanTab.item.min
-                                                    maximum: fanTab.item.max
-                                                    showValue: false
-
-                                                    onSliderDragFinished: () => fanRow.update()
+                                                        Binding on value {
+                                                            value: sliderRoot.value
+                                                            when: !curveSlider.pressed
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
