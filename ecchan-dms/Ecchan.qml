@@ -1889,7 +1889,7 @@ PluginComponent {
 
                                                         onActiveFocusChanged: {
                                                             if (activeFocus) {
-                                                                selectAll();
+                                                                Qt.callLater(() => selectAll());
                                                             } else {
                                                                 let val = parseInt(text);
                                                                 if (!isNaN(val) && val >= fanTab.item.min && val <= fanTab.item.max) {
