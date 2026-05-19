@@ -48,8 +48,6 @@ PluginComponent {
                 // if they don't exist, we want to save the default fan curves on
                 // the very very first startup so we can revert
                 // this must be done before the first apply is done
-                //
-                // https://stackoverflow.com/a/32108184/9423933
                 root.saveDefaults();
 
                 EcchanClient.apply(root.profile.state);
@@ -86,6 +84,7 @@ PluginComponent {
     }
 
     function saveDefaults() {
+        // https://stackoverflow.com/a/32108184/9423933
         let isEmpty = true;
         for (var prop in defaults) {
             if (Object.prototype.hasOwnProperty.call(defaults, prop)) {
