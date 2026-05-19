@@ -5,33 +5,35 @@ import "../Services"
 QtObject {
     id: root
 
-    Component.onCompleted: {
-        let extraArgs = [];
-        switch (EcchanClient.fanCount) {
-            // qmlformat off
-            case 4:
-                extraArgs.push("fan4Rpm");
-            // fallthrough
-            case 3:
-                extraArgs.push("fan3Rpm");
-            // fallthrough
-            case 2:
-                extraArgs.push("fan2Rpm");
-                extraArgs.push("gpuRtFanSpeed");
-            // fallthrough
-            case 1:
-                extraArgs.push("fan1Rpm");
-                extraArgs.push("cpuRtFanSpeed");
-            // qmlformat on
+    property var _c: Connections {
+        target: EcchanClient
+        function onInitStateChanged(state) {
+            const finished = !state;
+
+            if (finished) {
+                let extraArgs = [];
+                switch (EcchanClient.fanCount) {
+                    // qmlformat off
+                    case 4:
+                        extraArgs.push("fan4Rpm");
+                    // fallthrough
+                    case 3:
+                        extraArgs.push("fan3Rpm");
+                    // fallthrough
+                    case 2:
+                        extraArgs.push("fan2Rpm");
+                        extraArgs.push("gpuRtFanSpeed");
+                    // fallthrough
+                    case 1:
+                        extraArgs.push("fan1Rpm");
+                        extraArgs.push("cpuRtFanSpeed");
+                    // qmlformat on
+                }
+
+                Update.addRef(extraArgs);
+                fanTimer.start();
+            }
         }
-
-        Update.addRef(extraArgs);
-        fanTimer.start();
-    }
-
-    Component.onDestruction: {
-        Update.removeRef(["fan4Rpm", "fan3Rpm", "fan2Rpm", "fan1Rpm", "gpuRtFanSpeed", "cpuRtFanSpeed"]);
-        fanTimer.stop();
     }
 
     property Timer timer: Timer {
