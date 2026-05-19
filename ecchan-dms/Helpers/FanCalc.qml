@@ -7,10 +7,15 @@ QtObject {
 
     property var _c: Connections {
         target: EcchanClient
+
+        property bool init: true
+
         function onInitStateChanged(state) {
             const finished = !state;
 
-            if (finished) {
+            if (finished && init) {
+                init = false;
+
                 let extraArgs = [];
                 switch (EcchanClient.fanCount) {
                     // qmlformat off
