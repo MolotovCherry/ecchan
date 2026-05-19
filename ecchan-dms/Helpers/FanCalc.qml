@@ -55,22 +55,29 @@ QtObject {
     function calc() {
         const inRange = (num, min, max) => num >= min && num <= max;
 
-        // use the rpm calculations to get a more realtime view
-        // but for 1 and 2 we prefer rtFanSpeed over rpm calculations because it flucuates less
-        // this could matter when it's just on the boundary, e.g. 34-35; it prevents flip flopping
-        // back and forth
-        const fan1Perc = Math.max(Math.round(EcchanClient.fan1Rpm / 60), EcchanClient.cpuRtFanSpeed);
-        const fan2Perc = Math.max(Math.round(EcchanClient.fan2Rpm / 60), EcchanClient.gpuRtFanSpeed);
+        // use the rpm calculations to get an accurate realtime view
+        //
+        // these are the "source of truth" calculations for true fan speed percentage.
+        const fan1Perc = Math.round(EcchanClient.fan1Rpm / 60);
+        const fan2Perc = Math.round(EcchanClient.fan2Rpm / 60);
         const fan3Perc = Math.round(EcchanClient.fan3Rpm / 60);
         const fan4Perc = Math.round(EcchanClient.fan4Rpm / 60);
 
         // use highest percentage
         // qmlformat off
-        const perc = Math.max(
+        let perc = Math.max(
             Math.max(fan3Perc, fan4Perc),
             Math.max(fan1Perc, fan2Perc)
         );
         // qmlformat on
+
+        // once fan rpms hit the target percent, they fluctuate -1%-0% of the target,
+        // leaving a slight bit of volatility. this could matter when a node (35) is just on the
+        // boundary, e.g. 34-35. In this case, we prefer stability of the target percentage when at rest
+        const targetFan = Math.max(EcchanClient.cpuRtFanSpeed, EcchanClient.gpuRtFanSpeed);
+        if (perc - targetFan === -1) {
+            perc = targetFan;
+        }
 
         if (inRange(perc, 0, 35)) {
             level = 1;
