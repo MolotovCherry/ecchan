@@ -200,7 +200,11 @@ PluginComponent {
                 DankIcon {
                     name: "memory"
                     size: root.iconSize
-                    color: Theme.surfaceText
+                    color: {
+                        if (EcchanClient.cpuRtTemp > 85) return Theme.tempDanger
+                        if (EcchanClient.cpuRtTemp > 70) return Theme.tempWarning
+                        return Theme.surfaceText;
+                    }
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
@@ -227,7 +231,11 @@ PluginComponent {
                     visible: EcchanClient.hasDgpu
                     name: "developer_board"
                     size: root.iconSize
-                    color: Theme.surfaceText
+                    color: {
+                        if (EcchanClient.gpuRtTemp > 80) return Theme.tempDanger
+                        if (EcchanClient.gpuRtTemp > 70) return Theme.tempWarning
+                        return Theme.surfaceText;
+                    }
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
@@ -254,7 +262,19 @@ PluginComponent {
                 DankIcon {
                     name: "mode_fan"
                     size: root.iconSize
-                    color: Theme.surfaceText
+                    color: {
+                        if (fanCalc.level <= 3) {
+                            return Theme.surfaceText;
+                        }
+
+                        if (fanCalc.level === 4) {
+                            return Theme.tempWarning;
+                        }
+
+                        if (fanCalc.level === 5) {
+                            return Theme.tempDanger;
+                        }
+                    }
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
@@ -272,19 +292,7 @@ PluginComponent {
                         anchors.horizontalCenter: parent.horizontalCenter
                         font.pixelSize: Theme.fontSizeSmall
                         text: fanCalc.text
-                        color: {
-                            if (fanCalc.level <= 3) {
-                                return Theme.surfaceText;
-                            }
-
-                            if (fanCalc.level === 4) {
-                                return Theme.warning;
-                            }
-
-                            if (fanCalc.level === 5) {
-                                return Theme.error;
-                            }
-                        }
+                        color: Theme.surfaceText
                     }
                 }
             }
@@ -368,7 +376,7 @@ PluginComponent {
                     visible: EcchanClient.coolerBoostSupported
                     name: EcchanClient.coolerBoost ? "mode_cool" : "mode_cool_off"
                     size: root.iconSize
-                    color: Theme.surfaceText
+                    color: EcchanClient.coolerBoost ? Theme.secondary : Theme.surfaceText
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
