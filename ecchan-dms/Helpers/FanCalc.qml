@@ -36,6 +36,11 @@ QtObject {
         }
     }
 
+    Component.onDestruction: {
+        Update.removeRef(["fan4Rpm", "fan3Rpm", "fan2Rpm", "fan1Rpm", "gpuRtFanSpeed", "cpuRtFanSpeed"]);
+        fanTimer.stop();
+    }
+
     property Timer timer: Timer {
         id: fanTimer
         interval: 500
