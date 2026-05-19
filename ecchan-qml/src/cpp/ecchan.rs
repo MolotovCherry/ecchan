@@ -241,7 +241,7 @@ pub mod qobject {
         #[qinvokable]
         fn init_state(self: Pin<&mut Self>);
         #[qinvokable]
-        fn queue(self: Pin<&mut Self>, cb: &QJSValue);
+        fn call_later(self: Pin<&mut Self>, cb: &QJSValue);
         #[qinvokable]
         fn serialize(self: Pin<&mut Self>) -> QVariant;
         #[qinvokable]
@@ -1974,9 +1974,9 @@ impl qobject::EcchanClient {
         });
     }
 
-    fn queue(self: Pin<&mut Self>, cb: &QJSValue) {
+    fn call_later(self: Pin<&mut Self>, cb: &QJSValue) {
         if !cb.is_callable() {
-            q_warning!("queue: passed in value is not a callable");
+            q_warning!("call_later: passed in value is not a callable");
             return;
         }
 

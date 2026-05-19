@@ -51,7 +51,7 @@ PluginComponent {
                 root.saveDefaults();
 
                 EcchanClient.apply(root.profile.state);
-                EcchanClient.queue(() => {
+                EcchanClient.callLater(() => {
                     blocked = false;
                     root.profile.state = EcchanClient.serialize();
                     profileWriteTimer.restart();
@@ -524,7 +524,7 @@ PluginComponent {
 
                                 EcchanClient.apply(state);
 
-                                EcchanClient.queue(() => {
+                                EcchanClient.callLater(() => {
                                     // only visibly apply profile once api calls have finished
                                     root.selectedProfile = idx;
                                 });
@@ -2085,7 +2085,7 @@ PluginComponent {
                                                     if (name === "Custom") {
                                                         page5.customChargeModeEnabled = true;
                                                     } else if (page5.customChargeModeEnabled) {
-                                                        EcchanClient.queue(() => {
+                                                        EcchanClient.callLater(() => {
                                                             page5.customChargeModeEnabled = false;
                                                         });
                                                     }

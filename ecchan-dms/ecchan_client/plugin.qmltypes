@@ -752,7 +752,7 @@ Module {
         }
         Method { name: "initState"; lineNumber: 1100 }
         Method {
-            name: "queue"
+            name: "callLater"
             lineNumber: 1101
             Parameter { name: "cb"; type: "QJSValue" }
         }
