@@ -282,9 +282,9 @@ Item {
             if (root.options.length === 0 && root.emptyText !== "") {
                 h += 32;
             } else {
-                h += Math.min(filteredOptions.length, 10) * 36;
+                h += Math.min(filteredOptions.length, 10) * 34;
             }
-            return Math.min(root.maxPopupHeight, h + 16);
+            return Math.min(root.maxPopupHeight, h + 15);
         }
         padding: 0
         modal: true
