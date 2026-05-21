@@ -78,13 +78,18 @@ No AI was used in the programming of this library. It is entirely human produced
 
 # Contributions
 
-Contributions to further improve and expand ec version and model support are welcome. As per the AI policy, AI is not allowed to be used in the making of your contribution, and any such PRs and issues will immediately be rejected. If you used AI, please do not contribute.
+Contributions to further improve and expand ec fw and model support are welcome. As per the AI policy, AI is not allowed to be used in the making of your contribution, and any such PRs and issues will immediately be rejected. If you used AI, please do not contribute.
 
-AI assistance is allowed in a minimal sense. If you have gotten ideas and help from it, that's fine, but ultimately you must know in detail how your entire contribution works, and must have programmed it yourself (AI written code is not allowed).
+However, AI assistance is allowed in a minimal sense for non-fw/model submissions. If you have gotten ideas and help from it, that's fine, but ultimately you must know in detail how your entire contribution works, and must have programmed it yourself (AI written code is not allowed).
+
+Contibutions for new fw/models must have fully verified ec memory addresses and values. Since even a single incorrect memory write can brick hardware, there is zero tolerance for a single bug.
+- Do not use AI to research or verify addresses, not even as an assistant.
+- Thoroughly research addresses and values, then test them on your own hardware before submitting. If the values came from the msi-ec project, you are exempt from this requirement, but you must carefully ensure they match the project.
+- Explicitly state your sources and the exact method used to find the addresses.
 
 # Support
 
-I do not plan to develop this ui and library past my current needs, i.e. I made this purely for myself. As stated, contributions such as bug fixes or features are welcome, but I am very unlikely to go out of my way to support anyone else's needs or requests. My level of support is purely on a "it works on my machine" basis. That being said, the library and ui has been designed to support other laptop models, so you should be able to fairly easily make support for your own firmware / models.
+I do not plan to develop this ui and library past my current needs, i.e. I made this purely for myself. As stated, contributions such as bug fixes or features are welcome, but I am very unlikely to go out of my way to support anyone else's needs or requests. My level of support is purely on a "it works on my machine" basis. That being said, the library and ui has been intentionally designed to support other laptop models, so you should be able to fairly easily make support for your own firmware / models.
 
 # FAQ
 
