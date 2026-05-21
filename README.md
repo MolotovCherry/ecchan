@@ -86,8 +86,31 @@ AI assistance is allowed in a minimal sense. If you have gotten ideas and help f
 
 I do not plan to develop this ui and library past my current needs, i.e. I made this purely for myself. As stated, contributions such as bug fixes or features are welcome, but I am very unlikely to go out of my way to support anyone else's needs or requests. My level of support is purely on a "it works on my machine" basis. That being said, the library and ui has been designed to support other laptop models, so you should be able to fairly easily make support for your own firmware / models.
 
+# FAQ
+
+## What is "Extreme Performance" shift mode? This wasn't available in MSI Center
+
+This mode is thought to be the same as "Turbo" mode, but the official software never actually uses or exposes this mode, so I avoid it. It's here for completeness sake though.
+
+## What does the number in custom battery mode mean?
+
+This is the "ending" battery percentage for battery charging.
+60 means charge 50-60%
+80 means charge 70-80%
+100 means charge 100%
+
+Except for 100%, every percentage you set it to will charge to N-10 to N. 10 is the lowest possible value as your battery would never charge otherwise.
+
+## Wow there's a lot of fan curves exposed
+
+Yes there are! All curve nodes are exposed for each fan curve (unlike official software), and 2 extra hidden fan curves are available (temperature and hysteresis)! Unlike most software, every single node is exposed. As a result, take care to set these to reasonable values, or your hardware may get damaged.
+
+## What is hysteresis curve?
+
+This requires a temperature change of ±N before the fw up/down ramps the fan. This promotes fan stability by keeping the fans from fluctuating as it crosses the threshold. Recommended to leave them alone, but they're there if you wanna change it.
+
 # Disclaimer
 
-This software is a hobby project. Every best effort has been made to ensure everything works properly, however it is still technically possible - even though highly unlikely - that something goes wrong. An extensive test suite was made precisely to ensure safety. If you are wary of a product that edits your ecram, you are encouraged to read, understand, and verify the memory addresses and values for your particular ec version and computer model.
+This software is a hobby project. Every best effort has been made to ensure everything works properly, however it is still technically possible - even though highly unlikely - that something goes wrong. An extensive test suite was made precisely to ensure safety. If you are wary of a product that edits your ecram, you are encouraged to read, understand, and verify the memory addresses and values for your particular ec version and computer model (see point 4 under adding support for your model). I take no responsibility for ruined or damaged hardware. Use this at your own risk.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
