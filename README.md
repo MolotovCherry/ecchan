@@ -28,7 +28,7 @@ Currently only supports WMI2 models.
 
 # Showcase
 
-https://github.com/user-attachments/assets/591abba7-8da1-4666-b010-5ab7daec18c4
+https://github.com/user-attachments/assets/2dd5c60e-3aff-40c0-a18a-4cf9b81e8308
 
 # Using
 
