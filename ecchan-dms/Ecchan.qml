@@ -825,24 +825,26 @@ PluginComponent {
                                     }
 
                                     CircleGauge {
-                                        property double percentage: EcchanClient.gpuMemoryInfo.total == 0 ? 0 : EcchanClient.gpuMemoryInfo.used / EcchanClient.gpuMemoryInfo.total
+                                        property var info: EcchanClient.gpuMemoryInfo
+                                        property double used: info.used + info.reserved
+                                        property double percentage: used == 0 ? 0 : used / info.total
 
                                         anchors.centerIn: parent
                                         width: 180
                                         height: 180
                                         value: Math.min(1, percentage)
-                                        label: compactMem(EcchanClient.gpuMemoryInfo.used / 1024)
+                                        label: compactMem(used / 1024)
                                         sublabel: "VRAM"
-                                        detail: compactMem(EcchanClient.gpuMemoryInfo.total / 1024)
+                                        detail: compactMem(info.total / 1024)
                                         accentColor: percentage > 90 ? Theme.error : (percentage > 70 ? Theme.warning : Theme.secondary)
 
                                         function compactMem(kb) {
                                             if (kb < 1024 * 1024) {
                                                 const mb = kb / 1024;
-                                                return mb.toFixed(1) + " MB";
+                                                return mb.toFixed(1) + " MiB";
                                             }
                                             const gb = kb / (1024 * 1024);
-                                            return gb.toFixed(1) + " GB";
+                                            return gb.toFixed(1) + " GiB";
                                         }
                                     }
                                 }
