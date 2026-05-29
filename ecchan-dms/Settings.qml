@@ -19,7 +19,7 @@ PluginSettings {
     StringSetting {
         settingKey: "gpuPciBusId"
         label: "GPU PCI Bus ID"
-        description: "Required for certain GPU function such as vram stats"
+        description: "Required for certain GPU functions such as vram stats"
         placeholder: ""
         defaultValue: ""
     }
