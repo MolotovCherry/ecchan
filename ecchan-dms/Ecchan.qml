@@ -832,7 +832,7 @@ PluginComponent {
                                         height: 180
                                         value: Math.min(1, percentage)
                                         label: compactMem(EcchanClient.gpuMemoryInfo.used / 1024)
-                                        sublabel: "Vram"
+                                        sublabel: "VRAM"
                                         detail: compactMem(EcchanClient.gpuMemoryInfo.total / 1024)
                                         accentColor: percentage > 90 ? Theme.error : (percentage > 70 ? Theme.warning : Theme.secondary)
 
