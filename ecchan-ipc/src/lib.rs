@@ -1,8 +1,8 @@
 pub mod method;
 pub mod ret;
 pub use ec::{
-    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, Method,
-    MethodData, MethodOp, ShiftMode, SuperBattery, Webcam, WmiVer,
+    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MemoryInfo,
+    Method, MethodData, MethodOp, ShiftMode, SuperBattery, Utilization, Webcam, WmiVer,
 };
 
 pub const SOCK: &str = "/run/ecchan.sock";

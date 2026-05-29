@@ -34,12 +34,13 @@ PluginComponent {
     property var profiles: []
     property var defaults: ({})
     property var profile: profiles[selectedProfile]
+    property string gpuPciBusId: ""
 
     Connections {
         target: EcchanClient
 
         property bool blocked: true
-        property var init: true
+        property bool init: true
 
         function onInitStateChanged(state) {
             const finished = !state;
@@ -132,6 +133,11 @@ PluginComponent {
     onPluginServiceChanged: {
         if (!pluginService) {
             return;
+        }
+
+        gpuPciBusId = _loadPluginData("gpuPciBusId", "");
+        if (gpuPciBusId.length > 0) {
+            EcchanClient.gpuInit(gpuPciBusId);
         }
 
         selectedProfile = _loadPluginData("selectedProfile", 0);
@@ -698,7 +704,7 @@ PluginComponent {
                                         }
 
                                         value: DgopService.dgopAvailable ? (DgopService.cpuUsage / 100) : Math.min(1, EcchanClient.cpuRtTemp / 100)
-                                        label: DgopService.dgopAvailable ? (DgopService.cpuUsage.toFixed(1) + "%") : (EcchanClient.cpuRtTemp + "°C")
+                                        label: DgopService.dgopAvailable ? (DgopService.cpuUsage.toFixed(0) + "%") : (EcchanClient.cpuRtTemp + "°C")
                                         detail: DgopService.dgopAvailable ? (EcchanClient.cpuRtTemp > 0 ? (EcchanClient.cpuRtTemp + "°C") : "") : ""
                                         sublabel: "CPU"
                                         accentColor: {
@@ -717,14 +723,22 @@ PluginComponent {
                                     implicitWidth: 180
 
                                     visible: EcchanClient.hasDgpu
+                                    property bool isUtilization: false
 
                                     Connections {
                                         target: page1
                                         function onVisibleChanged() {
+                                            const refs = ["gpuRtTemp"];
+
+                                            if (root.gpuPciBusId.length > 0) {
+                                                gpuGauge.isUtilization = true;
+                                                refs.push("gpuUtilizationRates");
+                                            }
+
                                             if (page1.visible && EcchanClient.hasDgpu) {
-                                                Update.addRef(["gpuRtTemp"]);
+                                                Update.addRef(refs);
                                             } else {
-                                                Update.removeRef(["gpuRtTemp"]);
+                                                Update.removeRef(refs);
                                             }
                                         }
                                     }
@@ -737,23 +751,26 @@ PluginComponent {
                                             return Theme.success;
                                         }
 
-                                        value: Math.min(1, EcchanClient.gpuRtTemp / 100)
-                                        label: EcchanClient.gpuRtTemp > 0 ? (EcchanClient.gpuRtTemp + "°C") : "--"
+                                        value: Math.min(1, EcchanClient.gpuUtilizationRates.gpu / 100)
+                                        label: EcchanClient.gpuUtilizationRates.gpu + "%"
+                                        detail: EcchanClient.gpuRtTemp > 0 ? (EcchanClient.gpuRtTemp + "°C") : "--"
                                         sublabel: "GPU"
                                         accentColor: {
-                                            const temp = EcchanClient.gpuRtTemp;
+                                            const temp = EcchanClient.gpuUtilizationRates.gpu;
                                             if (temp > 85)
                                                 return Theme.error;
                                             if (temp > 70)
                                                 return Theme.warning;
                                             return vendorColor;
                                         }
+
+                                        detailColor: EcchanClient.gpuRtTemp > 85 ? Theme.error : (EcchanClient.gpuRtTemp > 70 ? Theme.warning : Theme.surfaceVariantText)
                                     }
                                 }
 
                                 Item {
                                     width: 180
-                                    height: EcchanClient.hasDgpu ? 180 * 2 : 180
+                                    height: 180
                                     Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignCenter
 
@@ -778,6 +795,46 @@ PluginComponent {
                                         sublabel: "Memory"
                                         detail: DgopService.totalSwapKB > 0 ? ("+" + compactMem(DgopService.usedSwapKB)) : ""
                                         accentColor: DgopService.memoryUsage > 90 ? Theme.error : (DgopService.memoryUsage > 70 ? Theme.warning : Theme.secondary)
+
+                                        function compactMem(kb) {
+                                            if (kb < 1024 * 1024) {
+                                                const mb = kb / 1024;
+                                                return mb.toFixed(1) + " MB";
+                                            }
+                                            const gb = kb / (1024 * 1024);
+                                            return gb.toFixed(1) + " GB";
+                                        }
+                                    }
+                                }
+
+                                Item {
+                                    width: 180
+                                    height: 180
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignCenter
+
+                                    Connections {
+                                        target: page1
+                                        function onVisibleChanged() {
+                                            if (page1.visible) {
+                                                Update.addRef(["gpuMemoryInfo"]);
+                                            } else {
+                                                Update.removeRef(["gpuMemoryInfo"]);
+                                            }
+                                        }
+                                    }
+
+                                    CircleGauge {
+                                        property double percentage: EcchanClient.gpuMemoryInfo.total == 0 ? 0 : EcchanClient.gpuMemoryInfo.used / EcchanClient.gpuMemoryInfo.total
+
+                                        anchors.centerIn: parent
+                                        width: 180
+                                        height: 180
+                                        value: Math.min(1, percentage)
+                                        label: compactMem(EcchanClient.gpuMemoryInfo.used / 1024)
+                                        sublabel: "Vram"
+                                        detail: compactMem(EcchanClient.gpuMemoryInfo.total / 1024)
+                                        accentColor: percentage > 90 ? Theme.error : (percentage > 70 ? Theme.warning : Theme.secondary)
 
                                         function compactMem(kb) {
                                             if (kb < 1024 * 1024) {

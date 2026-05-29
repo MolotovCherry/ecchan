@@ -118,6 +118,8 @@ QtObject {
         "gpuHysteresisCurveWmi2": Plugin.Method.GpuHysteresisCurveWmi2,
         "ecDumpRaw": Plugin.Method.EcDumpRaw,
         "ecDumpPretty": Plugin.Method.EcDumpPretty,
-        "methods": Plugin.Method.Methods
+        "methods": Plugin.Method.Methods,
+        "gpuMemoryInfo": Plugin.Method.GpuMemoryInfo,
+        "gpuUtilizationRates": Plugin.Method.GpuUtilizationRates
     }
 }

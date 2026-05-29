@@ -16,8 +16,8 @@ use std::{
 use cxx_qt::{Constructor, CxxQtType, Threading};
 use cxx_qt_lib::{QMetaTypeType, QQmlEngine, QString, QStringList, QVariant};
 use ecchan_ipc::{
-    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MethodData,
-    MethodOp, ShiftMode, SuperBattery, Webcam, WmiVer,
+    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MemoryInfo,
+    MethodData, MethodOp, ShiftMode, SuperBattery, Utilization, Webcam, WmiVer,
     method::{Method, MethodTy},
     ret::{Bin, RetVal},
 };
@@ -131,6 +131,9 @@ pub mod qobject {
         // dump
         #[qproperty(QVariant, ec_dump, READ = get_ec_dump, NOTIFY, FINAL)]
         #[qproperty(QString, ec_dump_pretty, READ = get_ec_dump_pretty, NOTIFY, FINAL)]
+        // gpu
+        #[qproperty(QVariant, gpu_memory_info, READ = get_gpu_memory_info, NOTIFY, FINAL)]
+        #[qproperty(QVariant, gpu_utilization_rates, READ = get_gpu_utilization_rates, NOTIFY, FINAL)]
         #[namespace = "ecchan_client"]
         type EcchanClient = super::EcchanClientRust;
 
@@ -220,6 +223,9 @@ pub mod qobject {
 
         fn get_ec_dump(&self) -> QVariant;
         fn get_ec_dump_pretty(&self) -> &QString;
+
+        fn get_gpu_memory_info(&self) -> QVariant;
+        fn get_gpu_utilization_rates(&self) -> QVariant;
 
         //
         // Signals
@@ -365,6 +371,13 @@ pub mod qobject {
         fn update_ec_dump_pretty(self: Pin<&mut Self>);
 
         #[qinvokable]
+        fn gpu_init(self: Pin<&mut Self>, pci_bus_id: &QString);
+        #[qinvokable]
+        fn update_gpu_memory_info(self: Pin<&mut Self>);
+        #[qinvokable]
+        fn update_gpu_utilization_rates(self: Pin<&mut Self>);
+
+        #[qinvokable]
         fn update(self: Pin<&mut Self>, method: Method);
     }
 
@@ -453,6 +466,9 @@ pub mod qobject {
 
         // Methods
         Methods,
+
+        GpuMemoryInfo,
+        GpuUtilizationRates,
     }
 }
 
@@ -542,6 +558,8 @@ impl From<qobject::Method> for MethodTy {
             48 => MethodTy::EcDumpRaw,
             49 => MethodTy::EcDumpPretty,
             50 => MethodTy::MethodRead, // there's no other useful variant, so use this as a sentinel for Methods
+            51 => MethodTy::GpuMemoryInfo,
+            52 => MethodTy::GpuUtilizationRates,
             _ => unreachable!(),
         }
     }
@@ -650,6 +668,9 @@ pub struct EcchanClientRust {
 
     ec_dump: Box<Bin>,
     ec_dump_pretty: QString,
+
+    gpu_memory_info: MemoryInfo,
+    gpu_utilization_rates: Utilization,
 }
 
 struct Methods {
@@ -741,6 +762,9 @@ impl Default for EcchanClientRust {
 
             ec_dump: Box::default(),
             ec_dump_pretty: "|      | _0 _1 _2 _3 _4 _5 _6 _7 _8 _9 _A _B _C _D _E _F\n|------+------------------------------------------------\n| 0x0_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x1_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x2_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x3_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x4_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x5_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x6_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x7_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x8_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0x9_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xA_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xB_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xC_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xD_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xE_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n| 0xF_ | 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|\n".into(),
+
+            gpu_memory_info: MemoryInfo { free: 0, reserved: 0, total: 0, used: 0, version: 0 },
+            gpu_utilization_rates: Utilization { gpu: 0, memory: 0 }
         }
     }
 }
@@ -1890,6 +1914,45 @@ impl qobject::EcchanClient {
                 });
             }
 
+            MethodTy::GpuMemoryInfo => {
+                self.as_mut().call(Method::GpuMemoryInfo, |mut ctx, res| {
+                    let Ok(res) = res else {
+                        return;
+                    };
+
+                    let val = res.memory_info().unwrap();
+
+                    if val == ctx.gpu_memory_info {
+                        return;
+                    }
+
+                    ctx.as_mut().rust_mut().gpu_memory_info = val;
+                    ctx.as_mut().gpu_memory_info_changed();
+
+                    ctx.state_changed("gpuMemoryInfo".into());
+                });
+            }
+
+            MethodTy::GpuUtilizationRates => {
+                self.as_mut()
+                    .call(Method::GpuUtilizationRates, |mut ctx, res| {
+                        let Ok(res) = res else {
+                            return;
+                        };
+
+                        let val = res.utilization().unwrap();
+
+                        if val == ctx.gpu_utilization_rates {
+                            return;
+                        }
+
+                        ctx.as_mut().rust_mut().gpu_utilization_rates = val;
+                        ctx.as_mut().gpu_utilization_rates_changed();
+
+                        ctx.state_changed("gpuUtilizationRates".into());
+                    });
+            }
+
             x => q_warning!("Unsupported update type {x:?}"),
         }
     }
@@ -2340,6 +2403,15 @@ impl qobject::EcchanClient {
         }
     }
 
+    fn gpu_init(self: Pin<&mut Self>, pci_bus_id: &QString) {
+        self.call(
+            Method::GpuInit {
+                pci_bus_id: Cow::Owned(pci_bus_id.to_string()),
+            },
+            |_, _| (),
+        );
+    }
+
     fn update(self: Pin<&mut Self>, method: qobject::Method) {
         self._update(method.into());
     }
@@ -2409,7 +2481,10 @@ impl qobject::EcchanClient {
         update_methods, MethodRead, // sentinel for Methods
 
         update_ec_dump, EcDumpRaw,
-        update_ec_dump_pretty, EcDumpPretty
+        update_ec_dump_pretty, EcDumpPretty,
+
+        update_gpu_memory_info, GpuMemoryInfo,
+        update_gpu_utilization_rates, GpuUtilizationRates
     }
 }
 
@@ -3554,5 +3629,59 @@ impl qobject::EcchanClient {
 
     fn get_ec_dump_pretty(&self) -> &QString {
         &self.ec_dump_pretty
+    }
+
+    fn get_gpu_memory_info(&self) -> QVariant {
+        let Some(engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
+        let mut obj = engine.new_object();
+        let mut obj = obj.pin_mut();
+
+        obj.as_mut().set_property(
+            &"free".into(),
+            &QJSValue::from_f64(self.gpu_memory_info.free as _),
+        );
+
+        obj.as_mut().set_property(
+            &"reserved".into(),
+            &QJSValue::from_f64(self.gpu_memory_info.reserved as _),
+        );
+
+        obj.as_mut().set_property(
+            &"total".into(),
+            &QJSValue::from_f64(self.gpu_memory_info.total as _),
+        );
+
+        obj.as_mut().set_property(
+            &"used".into(),
+            &QJSValue::from_f64(self.gpu_memory_info.used as _),
+        );
+
+        obj.to_qvariant()
+    }
+
+    fn get_gpu_utilization_rates(&self) -> QVariant {
+        let Some(engine) = QQmlEngine::js_engine(self) else {
+            q_critical!("js engine was null");
+            return QVariant::default();
+        };
+
+        let mut obj = engine.new_object();
+        let mut obj = obj.pin_mut();
+
+        obj.as_mut().set_property(
+            &"gpu".into(),
+            &QJSValue::from_uint(self.gpu_utilization_rates.gpu),
+        );
+
+        obj.as_mut().set_property(
+            &"memory".into(),
+            &QJSValue::from_uint(self.gpu_utilization_rates.memory),
+        );
+
+        obj.to_qvariant()
     }
 }

@@ -12,3 +12,4 @@ pub use fw::{
     SuperBattery, Webcam, WmiVer,
 };
 pub use models::{Fans, MethodOp};
+pub use nvml_wrapper::struct_wrappers::device::{MemoryInfo, Utilization};

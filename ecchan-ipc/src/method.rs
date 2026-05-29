@@ -9,6 +9,7 @@ use strum::{EnumDiscriminants, EnumIter};
 
 /// A ipc call. Make a value of this and json serialize it to call.
 /// Returns an equivalent return type in Ret (see original fn for type)
+#[non_exhaustive]
 #[derive(Clone, Debug, Serialize, Deserialize, EnumDiscriminants)]
 #[strum_discriminants(name(MethodTy))]
 #[strum_discriminants(derive(EnumIter))]
@@ -157,4 +158,11 @@ pub enum Method<'a> {
         op: MethodOp,
         data: MethodData,
     },
+
+    // GPU
+    GpuInit {
+        pci_bus_id: Cow<'a, str>,
+    },
+    GpuMemoryInfo,
+    GpuUtilizationRates,
 }

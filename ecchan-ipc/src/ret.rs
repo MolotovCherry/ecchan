@@ -1,6 +1,6 @@
 use ec::{
-    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, Method,
-    MethodData, ShiftMode, SuperBattery, Webcam, WmiVer,
+    BatteryChargeMode, CoolerBoost, Curve6, Curve7, FanMode, Fans, KeyDirection, Led, MemoryInfo,
+    Method, MethodData, ShiftMode, SuperBattery, Utilization, Webcam, WmiVer,
 };
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
@@ -56,6 +56,7 @@ impl Default for Bin {
 }
 
 /// A ipc call return value
+#[non_exhaustive]
 #[derive(Debug, Serialize, Deserialize, IntoStaticStr, Display)]
 pub enum RetVal<'a> {
     Pong,
@@ -63,6 +64,7 @@ pub enum RetVal<'a> {
     Unit,
     Byte(u8),
     Word(u16),
+    QuadWord(u64),
     State(bool),
     Str(String),
     Fans(Fans),
@@ -83,6 +85,8 @@ pub enum RetVal<'a> {
     #[serde(borrow)]
     Methods(Vec<Method<'a>>),
     MethodData(MethodData),
+    MemoryInfo(MemoryInfo),
+    Utilization(Utilization),
 }
 
 impl RetVal<'static> {
@@ -178,5 +182,13 @@ impl RetVal<'_> {
 
     pub fn method_data(self) -> Result<MethodData, RetValError> {
         extract_val!(self, RetVal::MethodData(v), "MethodData", v)
+    }
+
+    pub fn memory_info(self) -> Result<MemoryInfo, RetValError> {
+        extract_val!(self, RetVal::MemoryInfo(v), "MemoryInfo", v)
+    }
+
+    pub fn utilization(self) -> Result<Utilization, RetValError> {
+        extract_val!(self, RetVal::Utilization(v), "Utilization", v)
     }
 }

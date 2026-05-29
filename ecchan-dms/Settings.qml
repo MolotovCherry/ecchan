@@ -15,4 +15,12 @@ PluginSettings {
         placeholder: root.socket
         defaultValue: root.socket
     }
+
+    StringSetting {
+        settingKey: "gpuPciBusId"
+        label: "GPU PCI Bus ID"
+        description: "Required for certain GPU function such as vram stats"
+        placeholder: ""
+        defaultValue: ""
+    }
 }

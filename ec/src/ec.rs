@@ -1,9 +1,11 @@
 mod ec_drv;
 mod ec_sys;
+mod gpu;
 
 use std::{borrow::Cow, ops::RangeInclusive};
 
 use nix::{errno::Errno, libc::geteuid};
+use nvml_wrapper::error::NvmlError;
 use serde::{Deserialize, Serialize};
 use snafu::prelude::*;
 use strum::IntoDiscriminant;
@@ -49,16 +51,13 @@ pub enum EcError {
     #[snafu(display("ec requires root privileges"))]
     RootRequired,
     #[snafu(display("{name}() is unsupported"))]
-    Unsupported {
-        name: String,
-    },
+    Unsupported { name: String },
     #[snafu(transparent)]
-    EcSys {
-        source: EcSysError,
-    },
-    Sock {
-        source: Errno,
-    },
+    EcSys { source: EcSysError },
+    #[snafu(display("{source}"))]
+    Sock { source: Errno },
+    #[snafu(display("{source}"))]
+    Nvml { source: NvmlError },
     #[snafu(whatever, display("{message}"))]
     Whatever {
         message: String,

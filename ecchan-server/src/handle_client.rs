@@ -5,7 +5,7 @@ use ecchan_ipc::{
     method::Method,
     ret::{Bin, Ret, RetVal},
 };
-use snafu::{OptionExt, ResultExt, Snafu};
+use snafu::{OptionExt, ResultExt, Snafu, whatever};
 use tokio::{io::AsyncWriteExt as _, net::UnixStream, select};
 
 use crate::{Args, signal::ShutdownSignal};
@@ -496,6 +496,23 @@ fn call(ty: Method, ec: &mut Ec) -> Result<RetVal<'static>, ClientError> {
             ec.method_write(&method, op, data).context(EcSnafu)?;
             RetVal::Unit
         }
+
+        Method::GpuInit { pci_bus_id } => {
+            ec.gpu_init(&pci_bus_id).context(EcSnafu)?;
+            RetVal::Unit
+        }
+
+        Method::GpuMemoryInfo => {
+            let mem = ec.gpu_memory_info().context(EcSnafu)?;
+            RetVal::MemoryInfo(mem)
+        }
+
+        Method::GpuUtilizationRates => {
+            let utilization = ec.gpu_utilization_rates().context(EcSnafu)?;
+            RetVal::Utilization(utilization)
+        }
+
+        m => whatever!("Unsupported method {m:?}"),
     };
 
     Ok(val)
