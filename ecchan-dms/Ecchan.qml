@@ -751,8 +751,8 @@ PluginComponent {
                                             return Theme.success;
                                         }
 
-                                        value: Math.max(0.01, Math.min(1, EcchanClient.gpuUtilizationRates.gpu / 100))
-                                        label: Math.max(1, EcchanClient.gpuUtilizationRates.gpu) + "%"
+                                        value: Math.min(1, EcchanClient.gpuUtilizationRates.gpu / 100)
+                                        label: EcchanClient.gpuUtilizationRates.gpu + "%"
                                         detail: EcchanClient.gpuRtTemp > 0 ? (EcchanClient.gpuRtTemp + "°C") : "--"
                                         sublabel: "GPU"
                                         accentColor: {
