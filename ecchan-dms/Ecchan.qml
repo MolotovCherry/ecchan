@@ -705,7 +705,7 @@ PluginComponent {
 
                                         value: DgopService.dgopAvailable ? (DgopService.cpuUsage / 100) : Math.min(1, EcchanClient.cpuRtTemp / 100)
                                         label: DgopService.dgopAvailable ? (DgopService.cpuUsage.toFixed(0) + "%") : (EcchanClient.cpuRtTemp + "°C")
-                                        detail: DgopService.dgopAvailable ? (EcchanClient.cpuRtTemp > 0 ? (EcchanClient.cpuRtTemp + "°C") : "") : ""
+                                        detail: DgopService.dgopAvailable ? (EcchanClient.cpuRtTemp > 0 ? (EcchanClient.cpuRtTemp + "°") : "") : ""
                                         sublabel: "CPU"
                                         accentColor: {
                                             const dgop = DgopService.cpuUsage > 80 ? Theme.error : (DgopService.cpuUsage > 50 ? Theme.warning : Theme.primary);
@@ -753,7 +753,7 @@ PluginComponent {
 
                                         value: Math.min(1, EcchanClient.gpuUtilizationRates.gpu / 100)
                                         label: EcchanClient.gpuUtilizationRates.gpu + "%"
-                                        detail: EcchanClient.gpuRtTemp > 0 ? (EcchanClient.gpuRtTemp + "°C") : "--"
+                                        detail: EcchanClient.gpuRtTemp > 0 ? (EcchanClient.gpuRtTemp + "°") : "--"
                                         sublabel: "GPU"
                                         accentColor: {
                                             const temp = EcchanClient.gpuUtilizationRates.gpu;
