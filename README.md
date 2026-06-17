@@ -104,7 +104,7 @@ This is the "ending" battery percentage for battery charging.
 80 means charge 70-80%
 100 means charge 100%
 
-Except for 100%, every percentage you set it to will charge to N-10 to N. 10 is the lowest possible value as your battery would never charge otherwise.
+Except for 100%, every percentage you set it to will charge from N-10 to N. 10 is the lowest possible value as your battery would never charge otherwise.
 
 ## Wow there's a lot of fan curves exposed
 
