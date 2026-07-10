@@ -275,7 +275,7 @@ Item {
             root.editingIdx = -1;
         }
 
-        parent: Overlay.overlay
+        parent: root.Overlay.overlay
         width: root.popupWidth === -1 ? undefined : (root.popupWidth > 0 ? root.popupWidth : (dropdown.width + root.popupWidthOffset))
         height: {
             let h = root.enableFuzzySearch ? 54 : 0;
