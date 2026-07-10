@@ -15,27 +15,6 @@ QtObject {
 
             if (finished && init) {
                 init = false;
-
-                let extraArgs = [];
-                switch (EcchanClient.fanCount) {
-                    // qmlformat off
-                    case 4:
-                        extraArgs.push("fan4Rpm");
-                    // fallthrough
-                    case 3:
-                        extraArgs.push("fan3Rpm");
-                    // fallthrough
-                    case 2:
-                        extraArgs.push("fan2Rpm");
-                        extraArgs.push("gpuRtFanSpeed");
-                    // fallthrough
-                    case 1:
-                        extraArgs.push("fan1Rpm");
-                        extraArgs.push("cpuRtFanSpeed");
-                    // qmlformat on
-                }
-
-                Update.addRef(extraArgs);
                 fanTimer.start();
             }
         }

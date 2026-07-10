@@ -106,14 +106,34 @@ PluginComponent {
                     profileWriteTimer.restart();
 
                     if (init) {
-                        // should be started after we have the data
-                        Update.addRef(["cpuRtTemp"]);
+                        init = false;
+
+                        let refs = ["cpuRtTemp"];
 
                         if (EcchanClient.hasDgpu) {
-                            Update.addRef(["gpuRtTemp"]);
+                            refs.push("gpuRtTemp");
                         }
 
-                        init = false;
+                        switch (EcchanClient.fanCount) {
+                            // qmlformat off
+                            case 4:
+                                refs.push("fan4Rpm");
+                            // fallthrough
+                            case 3:
+                                refs.push("fan3Rpm");
+                            // fallthrough
+                            case 2:
+                                refs.push("fan2Rpm");
+                                refs.push("gpuRtFanSpeed");
+                            // fallthrough
+                            case 1:
+                                refs.push("fan1Rpm");
+                                refs.push("cpuRtFanSpeed");
+                            // qmlformat on
+                        }
+
+                        // should be started after we have the data
+                        Update.addRef(refs);
                     }
                 });
             }
