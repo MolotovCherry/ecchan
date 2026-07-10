@@ -63,8 +63,10 @@ PluginComponent {
                 return;
             }
 
-            EcchanClient.path = root.pluginData.socket;
-            EcchanClient.connect();
+            EcchanClient.path = root._loadPluginData("socket", "");
+            if (EcchanClient.path !== "") {
+                EcchanClient.connect();
+            }
 
             root.selectedProfile = root._loadPluginData("selectedProfile", 0);
             root.selectedProfileChanged();
