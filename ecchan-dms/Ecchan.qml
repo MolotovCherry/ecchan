@@ -36,9 +36,6 @@ PluginComponent {
                 return;
             }
 
-            // TODO: Handle GPU PCI Bus ID change
-            // also needs to be done in ec lib
-
             const socket = root._loadPluginData("socket", "");
 
             const shouldDisconnect = socket !== EcchanClient.path;
@@ -53,6 +50,12 @@ PluginComponent {
             if (shouldReconnect) {
                 EcchanClient.connect();
             }
+
+            const gpuPciBusId = root._loadPluginData("gpuPciBusId", "");
+            const shouldReInitGpu = gpuPciBusId !== root.gpuPciBusId && gpuPciBusId.length > 0;
+            if (shouldReInitGpu) {
+                EcchanClient.gpuInit(root.gpuPciBusId);
+            }
         }
 
         function onPluginLoaded(pluginId) {
@@ -63,14 +66,19 @@ PluginComponent {
             EcchanClient.path = root.pluginData.socket;
             EcchanClient.connect();
 
-            EcchanClient.callLater(() => {
-                if (EcchanClient.connected) {
-                    const gpuPciBusId = root._loadPluginData("gpuPciBusId", "");
-                    if (gpuPciBusId.length > 0) {
-                        EcchanClient.gpuInit(gpuPciBusId);
-                    }
+            root.selectedProfile = root._loadPluginData("selectedProfile", 0);
+            root.selectedProfileChanged();
+
+            root.defaults = root._loadPluginData("defaults", {});
+            root.defaultsChanged();
+
+            root.profiles = root._loadPluginData("profiles", [
+                {
+                    name: "Default",
+                    state: {}
                 }
-            });
+            ]);
+            root.profilesChanged();
         }
     }
 
@@ -120,6 +128,17 @@ PluginComponent {
 
             profileWriteTimer.restart();
         }
+
+        function onConnectedChanged() {
+            if (!EcchanClient.connected) {
+                return;
+            }
+
+            root.gpuPciBusId = root._loadPluginData("gpuPciBusId", "");
+            if (root.gpuPciBusId.length > 0) {
+                EcchanClient.gpuInit(root.gpuPciBusId);
+            }
+        }
     }
 
     function saveDefaults() {
@@ -168,31 +187,6 @@ PluginComponent {
         }
     }
 
-    onPluginServiceChanged: {
-        if (!pluginService) {
-            return;
-        }
-
-        gpuPciBusId = _loadPluginData("gpuPciBusId", "");
-        if (gpuPciBusId.length > 0) {
-            EcchanClient.gpuInit(gpuPciBusId);
-        }
-
-        selectedProfile = _loadPluginData("selectedProfile", 0);
-        selectedProfileChanged();
-
-        defaults = _loadPluginData("defaults", {});
-        defaultsChanged();
-
-        profiles = _loadPluginData("profiles", [
-            {
-                name: "Default",
-                state: {}
-            }
-        ]);
-        profilesChanged();
-    }
-
     onProfilesChanged: {
         profilesModel = profiles.map(item => item.name);
 
@@ -216,19 +210,19 @@ PluginComponent {
     // Settings fns
 
     function _loadPluginData(key, defaultValue) {
-        return pluginService.loadPluginData("ecchan", key, defaultValue);
+        return root.pluginService.loadPluginData("ecchan", key, defaultValue);
     }
 
     function _savePluginData(key, value) {
-        pluginService.savePluginData("ecchan", key, value);
+        root.pluginService.savePluginData("ecchan", key, value);
     }
 
     function _getGlobalVar(key, defaultValue) {
-        return pluginService.setGlobalVar("ecchan", key, defaultValue);
+        return root.pluginService.setGlobalVar("ecchan", key, defaultValue);
     }
 
     function _setGlobalVar(key, value) {
-        pluginService.setGlobalVar("ecchan", key, value);
+        root.pluginService.setGlobalVar("ecchan", key, value);
     }
 
     horizontalBarPill: Component {
