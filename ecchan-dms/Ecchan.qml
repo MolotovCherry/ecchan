@@ -17,14 +17,6 @@ PluginComponent {
 
     layerNamespacePlugin: "ecchan"
 
-    onPluginDataChanged: {
-        const socket = pluginData.socket;
-        if (typeof (socket) === "string" && !EcchanClient.connected) {
-            EcchanClient.path = socket;
-            EcchanClient.connect();
-        }
-    }
-
     Component.onDestruction: {
         EcchanClient.disconnect();
     }
@@ -35,6 +27,52 @@ PluginComponent {
     property var defaults: ({})
     property var profile: profiles[selectedProfile]
     property string gpuPciBusId: ""
+
+    Connections {
+        target: root.pluginService
+
+        function onPluginDataChanged(changedId) {
+            if (changedId !== root.layerNamespacePlugin) {
+                return;
+            }
+
+            // TODO: Handle GPU PCI Bus ID change
+            // also needs to be done in ec lib
+
+            const socket = root._loadPluginData("socket", "");
+
+            const shouldDisconnect = socket !== EcchanClient.path;
+            const shouldReconnect = shouldDisconnect && socket !== "";
+
+            EcchanClient.path = socket;
+
+            if (shouldDisconnect) {
+                EcchanClient.disconnect();
+            }
+
+            if (shouldReconnect) {
+                EcchanClient.connect();
+            }
+        }
+
+        function onPluginLoaded(pluginId) {
+            if (pluginId !== root.layerNamespacePlugin) {
+                return;
+            }
+
+            EcchanClient.path = root.pluginData.socket;
+            EcchanClient.connect();
+
+            EcchanClient.callLater(() => {
+                if (EcchanClient.connected) {
+                    const gpuPciBusId = root._loadPluginData("gpuPciBusId", "");
+                    if (gpuPciBusId.length > 0) {
+                        EcchanClient.gpuInit(gpuPciBusId);
+                    }
+                }
+            });
+        }
+    }
 
     Connections {
         target: EcchanClient
