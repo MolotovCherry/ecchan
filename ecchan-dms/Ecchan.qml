@@ -717,6 +717,10 @@ PluginComponent {
                         RowLayout {
                             id: page1
 
+                            // first load doesn't fire onVisibleChanged
+                            // which removes refs that were already added
+                            Component.onCompleted: page1.visibleChanged()
+
                             visible: root.currentTab === 0
                             Layout.fillWidth: true
                             Layout.fillHeight: true
