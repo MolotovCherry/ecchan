@@ -215,12 +215,16 @@ PluginComponent {
         if (root.pluginService) {
             _savePluginData("profiles", profiles);
         }
+
+        root.profileChanged();
     }
 
     onSelectedProfileChanged: {
         if (root.pluginService) {
             _savePluginData("selectedProfile", selectedProfile);
         }
+
+        root.profileChanged();
     }
 
     onDefaultsChanged: {
