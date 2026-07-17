@@ -1683,7 +1683,13 @@ PluginComponent {
                                         }
 
                                         function getNodes() {
-                                            return [n1, n2, n3, n4, n5, n6, n7];
+                                            const arr = [n1, n2, n3, n4, n5, n6];
+
+                                            if (item.sliders === 7) {
+                                                arr.push(n7);
+                                            }
+
+                                            return arr;
                                         }
 
                                         Connections {
@@ -1691,6 +1697,23 @@ PluginComponent {
 
                                             function onSelectedProfileChanged() {
                                                 fanTab.setNodes(fanTab.curves);
+                                            }
+                                        }
+
+                                        function resetNodes() {
+                                            const defaults = Data.defaults[item.key];
+                                            setNodes(defaults);
+                                            EcchanClient[item.key] = defaults;
+                                            Data.profile.state[item.key] = defaults;
+                                            Data.profilesChanged();
+                                        }
+
+                                        function persistNodes() {
+                                            Data.profile.state[item.key] = fanTab.getNodes();
+                                            Data.profilesChanged();
+
+                                            if (EcchanClient.fanMode === "Advanced") {
+                                                EcchanClient[item.key] = fanTab.getNodes();
                                             }
                                         }
 
@@ -1705,22 +1728,7 @@ PluginComponent {
                                                 min: 0,
                                                 max: EcchanClient.fanMax,
                                                 color: Theme.primary,
-                                                sliders: 7,
-                                                set: () => {
-                                                    Data.profile.state.cpuFanCurveWmi2 = fanTab.getNodes();
-                                                    Data.profilesChanged();
-
-                                                    if (EcchanClient.fanMode === "Advanced") {
-                                                        EcchanClient.cpuFanCurveWmi2 = fanTab.getNodes();
-                                                    }
-                                                },
-                                                reset: () => {
-                                                    const defaults = Data.defaults.cpuFanCurveWmi2;
-                                                    fanTab.setNodes(defaults);
-                                                    EcchanClient.cpuFanCurveWmi2 = defaults;
-                                                    Data.profile.state.cpuFanCurveWmi2 = defaults;
-                                                    Data.profilesChanged();
-                                                }
+                                                sliders: 7
                                             },
                                             {
                                                 isAction: false,
@@ -1732,22 +1740,7 @@ PluginComponent {
                                                 min: 0,
                                                 max: 100,
                                                 color: Theme.primary,
-                                                sliders: 7,
-                                                set: () => {
-                                                    Data.profile.state.cpuTempCurveWmi2 = fanTab.getNodes();
-                                                    Data.profilesChanged();
-
-                                                    if (EcchanClient.fanMode === "Advanced") {
-                                                        EcchanClient.cpuTempCurveWmi2 = fanTab.getNodes();
-                                                    }
-                                                },
-                                                reset: () => {
-                                                    const defaults = Data.defaults.cpuTempCurveWmi2;
-                                                    fanTab.setNodes(defaults);
-                                                    EcchanClient.cpuTempCurveWmi2 = defaults;
-                                                    Data.profile.state.cpuTempCurveWmi2 = defaults;
-                                                    Data.profilesChanged();
-                                                }
+                                                sliders: 7
                                             },
                                             {
                                                 isAction: false,
@@ -1759,22 +1752,7 @@ PluginComponent {
                                                 min: 0,
                                                 max: 10,
                                                 color: Theme.primary,
-                                                sliders: 6,
-                                                set: () => {
-                                                    Data.profile.state.cpuHysteresisCurveWmi2 = fanTab.getNodes();
-                                                    Data.profilesChanged();
-
-                                                    if (EcchanClient.fanMode === "Advanced") {
-                                                        EcchanClient.cpuHysteresisCurveWmi2 = fanTab.getNodes();
-                                                    }
-                                                },
-                                                reset: () => {
-                                                    const defaults = Data.defaults.cpuHysteresisCurveWmi2;
-                                                    fanTab.setNodes(defaults);
-                                                    EcchanClient.cpuHysteresisCurveWmi2 = defaults;
-                                                    Data.profile.state.cpuHysteresisCurveWmi2 = defaults;
-                                                    Data.profilesChanged();
-                                                }
+                                                sliders: 6
                                             },
                                             {
                                                 isAction: false,
@@ -1786,22 +1764,7 @@ PluginComponent {
                                                 min: 0,
                                                 max: EcchanClient.fanMax,
                                                 color: Theme.secondary,
-                                                sliders: 7,
-                                                set: () => {
-                                                    Data.profile.state.gpuFanCurveWmi2 = fanTab.getNodes();
-                                                    Data.profilesChanged();
-
-                                                    if (EcchanClient.fanMode === "Advanced") {
-                                                        EcchanClient.gpuFanCurveWmi2 = fanTab.getNodes();
-                                                    }
-                                                },
-                                                reset: () => {
-                                                    const defaults = Data.defaults.gpuFanCurveWmi2;
-                                                    fanTab.setNodes(defaults);
-                                                    EcchanClient.gpuFanCurveWmi2 = defaults;
-                                                    Data.profile.state.gpuFanCurveWmi2 = defaults;
-                                                    Data.profilesChanged();
-                                                }
+                                                sliders: 7
                                             },
                                             {
                                                 isAction: false,
@@ -1813,22 +1776,7 @@ PluginComponent {
                                                 min: 0,
                                                 max: 100,
                                                 color: Theme.secondary,
-                                                sliders: 7,
-                                                set: () => {
-                                                    Data.profile.state.gpuTempCurveWmi2 = fanTab.getNodes();
-                                                    Data.profilesChanged();
-
-                                                    if (EcchanClient.fanMode === "Advanced") {
-                                                        EcchanClient.gpuTempCurveWmi2 = fanTab.getNodes();
-                                                    }
-                                                },
-                                                reset: () => {
-                                                    const defaults = Data.defaults.gpuTempCurveWmi2;
-                                                    fanTab.setNodes(defaults);
-                                                    EcchanClient.gpuTempCurveWmi2 = defaults;
-                                                    Data.profile.state.gpuTempCurveWmi2 = defaults;
-                                                    Data.profilesChanged();
-                                                }
+                                                sliders: 7
                                             },
                                             {
                                                 isAction: false,
@@ -1840,22 +1788,7 @@ PluginComponent {
                                                 min: 0,
                                                 max: 10,
                                                 color: Theme.secondary,
-                                                sliders: 6,
-                                                set: value => () => {
-                                                    Data.profile.state.gpuHysteresisCurveWmi2 = fanTab.getNodes();
-                                                    Data.profilesChanged();
-
-                                                    if (EcchanClient.fanMode === "Advanced") {
-                                                        EcchanClient.gpuHysteresisCurveWmi2 = fanTab.getNodes();
-                                                    }
-                                                },
-                                                reset: () => {
-                                                    const defaults = Data.defaults.gpuHysteresisCurveWmi2;
-                                                    fanTab.setNodes(defaults);
-                                                    EcchanClient.gpuHysteresisCurveWmi2 = defaults;
-                                                    Data.profile.state.gpuHysteresisCurveWmi2 = defaults;
-                                                    Data.profilesChanged();
-                                                }
+                                                sliders: 6
                                             },
                                         ]
 
@@ -1881,7 +1814,7 @@ PluginComponent {
 
                                                 backgroundColor: "transparent"
 
-                                                onClicked: fanTab.item.reset()
+                                                onClicked: fanTab.resetNodes()
 
                                                 DankIcon {
                                                     anchors.centerIn: parent
@@ -1905,7 +1838,7 @@ PluginComponent {
                                                         value: fanTab.n1,
                                                         set: value => {
                                                             fanTab.n1 = value;
-                                                            fanTab.item.set();
+                                                            fanTab.persistNodes();
                                                         },
                                                         show: fanTab.item.sliders >= 1
                                                     },
@@ -1913,7 +1846,7 @@ PluginComponent {
                                                         value: fanTab.n2,
                                                         set: value => {
                                                             fanTab.n2 = value;
-                                                            fanTab.item.set();
+                                                            fanTab.persistNodes();
                                                         },
                                                         show: fanTab.item.sliders >= 2
                                                     },
@@ -1921,7 +1854,7 @@ PluginComponent {
                                                         value: fanTab.n3,
                                                         set: value => {
                                                             fanTab.n3 = value;
-                                                            fanTab.item.set();
+                                                            fanTab.persistNodes();
                                                         },
                                                         show: fanTab.item.sliders >= 3
                                                     },
@@ -1929,7 +1862,7 @@ PluginComponent {
                                                         value: fanTab.n4,
                                                         set: value => {
                                                             fanTab.n4 = value;
-                                                            fanTab.item.set();
+                                                            fanTab.persistNodes();
                                                         },
                                                         show: fanTab.item.sliders >= 4
                                                     },
@@ -1937,7 +1870,7 @@ PluginComponent {
                                                         value: fanTab.n5,
                                                         set: value => {
                                                             fanTab.n5 = value;
-                                                            fanTab.item.set();
+                                                            fanTab.persistNodes();
                                                         },
                                                         show: fanTab.item.sliders >= 5
                                                     },
@@ -1945,7 +1878,7 @@ PluginComponent {
                                                         value: fanTab.n6,
                                                         set: value => {
                                                             fanTab.n6 = value;
-                                                            fanTab.item.set();
+                                                            fanTab.persistNodes();
                                                         },
                                                         show: fanTab.item.sliders >= 6
                                                     },
@@ -1953,7 +1886,7 @@ PluginComponent {
                                                         value: fanTab.n7,
                                                         set: value => {
                                                             fanTab.n7 = value;
-                                                            fanTab.item.set();
+                                                            fanTab.persistNodes();
                                                         },
                                                         show: fanTab.item.sliders >= 7
                                                     }
