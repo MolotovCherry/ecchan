@@ -19,6 +19,5 @@ QtObject {
     property bool init: true
 
     // fan tab index
-    property bool fanTabInit: true
     property int fanTabCurrentIndex: 0
 }

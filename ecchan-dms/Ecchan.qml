@@ -1664,13 +1664,13 @@ PluginComponent {
 
                                         readonly property var curves: Data.profile.state[item.key]
                                         readonly property var item: model[currentIndex] || modelConfig[0]
-                                        property int n1: 0
-                                        property int n2: 0
-                                        property int n3: 0
-                                        property int n4: 0
-                                        property int n5: 0
-                                        property int n6: 0
-                                        property int n7: 0
+                                        property int n1: curves[0]
+                                        property int n2: curves[1]
+                                        property int n3: curves[2]
+                                        property int n4: curves[3]
+                                        property int n5: curves[4]
+                                        property int n6: curves[5]
+                                        property int n7: curves[6] || 0
 
                                         function setNodes(arr) {
                                             n1 = arr[0];
@@ -1691,13 +1691,6 @@ PluginComponent {
 
                                             function onSelectedProfileChanged() {
                                                 fanTab.setNodes(fanTab.curves);
-                                            }
-
-                                            function onProfilesChanged() {
-                                                if (Data.fanTabInit) {
-                                                    Data.fanTabinit = false;
-                                                    fanTab.setNodes(fanTab.curves);
-                                                }
                                             }
                                         }
 
