@@ -21,13 +21,6 @@ PluginComponent {
         EcchanClient.disconnect();
     }
 
-    property var profilesModel: []
-    property int selectedProfile: 0
-    property var profiles: []
-    property var defaults: ({})
-    property var profile: profiles[selectedProfile]
-    property string gpuPciBusId: ""
-
     Connections {
         target: root.pluginService
 
@@ -52,9 +45,10 @@ PluginComponent {
             }
 
             const gpuPciBusId = root._loadPluginData("gpuPciBusId", "");
-            const shouldReInitGpu = gpuPciBusId !== root.gpuPciBusId && gpuPciBusId.length > 0;
+            const shouldReInitGpu = gpuPciBusId !== Data.gpuPciBusId && gpuPciBusId.length > 0;
             if (shouldReInitGpu) {
-                EcchanClient.gpuInit(root.gpuPciBusId);
+                Data.gpuPciBusId = gpuPciBusId;
+                EcchanClient.gpuInit(Data.gpuPciBusId);
             }
         }
 
@@ -68,27 +62,24 @@ PluginComponent {
                 EcchanClient.connect();
             }
 
-            root.selectedProfile = root._loadPluginData("selectedProfile", 0);
-            root.selectedProfileChanged();
+            Data.selectedProfile = root._loadPluginData("selectedProfile", 0);
+            Data.selectedProfileChanged();
 
-            root.defaults = root._loadPluginData("defaults", {});
-            root.defaultsChanged();
+            Data.defaults = root._loadPluginData("defaults", {});
+            Data.defaultsChanged();
 
-            root.profiles = root._loadPluginData("profiles", [
+            Data.profiles = root._loadPluginData("profiles", [
                 {
                     name: "Default",
                     state: {}
                 }
             ]);
-            root.profilesChanged();
+            Data.profilesChanged();
         }
     }
 
     Connections {
         target: EcchanClient
-
-        property bool blocked: true
-        property bool init: true
 
         function onInitStateChanged(state) {
             const finished = !state;
@@ -99,14 +90,14 @@ PluginComponent {
                 // this must be done before the first apply is done
                 root.saveDefaults();
 
-                EcchanClient.apply(root.profile.state);
+                EcchanClient.apply(Data.profile.state);
                 EcchanClient.callLater(() => {
-                    blocked = false;
-                    root.profile.state = EcchanClient.serialize();
-                    profileWriteTimer.restart();
+                    Data.blocked = false;
+                    Data.profile.state = EcchanClient.serialize();
+                    Data.profileWriteTimer.restart();
 
-                    if (init) {
-                        init = false;
+                    if (Data.init) {
+                        Data.init = false;
 
                         let refs = ["cpuRtTemp"];
 
@@ -140,7 +131,7 @@ PluginComponent {
         }
 
         function onStateChanged(key) {
-            if (blocked) {
+            if (Data.blocked) {
                 return;
             }
 
@@ -148,7 +139,7 @@ PluginComponent {
                 return;
             }
 
-            profileWriteTimer.restart();
+            Data.profileWriteTimer.restart();
         }
 
         function onConnectedChanged() {
@@ -156,9 +147,9 @@ PluginComponent {
                 return;
             }
 
-            root.gpuPciBusId = root._loadPluginData("gpuPciBusId", "");
-            if (root.gpuPciBusId.length > 0) {
-                EcchanClient.gpuInit(root.gpuPciBusId);
+            Data.gpuPciBusId = root._loadPluginData("gpuPciBusId", "");
+            if (Data.gpuPciBusId.length > 0) {
+                EcchanClient.gpuInit(Data.gpuPciBusId);
             }
         }
     }
@@ -166,15 +157,15 @@ PluginComponent {
     function saveDefaults() {
         // https://stackoverflow.com/a/32108184/9423933
         let isEmpty = true;
-        for (var prop in defaults) {
-            if (Object.prototype.hasOwnProperty.call(defaults, prop)) {
+        for (var prop in Data.defaults) {
+            if (Object.prototype.hasOwnProperty.call(Data.defaults, prop)) {
                 isEmpty = false;
                 break;
             }
         }
 
         if (isEmpty) {
-            defaults = {
+            Data.defaults = {
                 cpuFanCurveWmi2: EcchanClient.cpuFanCurveWmi2,
                 cpuTempCurveWmi2: EcchanClient.cpuTempCurveWmi2,
                 cpuHysteresisCurveWmi2: EcchanClient.cpuHysteresisCurveWmi2,
@@ -199,56 +190,62 @@ PluginComponent {
                 "gpuFanCurveWmi2", "gpuTempCurveWmi2", "gpuHysteresisCurveWmi2"
             ];
             curveKeys.forEach(key => {
-                if (root.profile.state && root.profile.state[key] != null) {
-                    state[key] = root.profile.state[key];
+                if (Data.profile.state && Data.profile.state[key] != null) {
+                    state[key] = Data.profile.state[key];
                 }
             });
 
-            root.profile.state = state;
-            root.profilesChanged();
+            Data.profile.state = state;
+            Data.profilesChanged();
         }
     }
 
-    onProfilesChanged: {
-        profilesModel = profiles.map(item => item.name);
+    Connections {
+        target: Data
 
-        if (root.pluginService) {
-            _savePluginData("profiles", profiles);
+        function onProfilesChanged() {
+            Data.profilesModel = Data.profiles.map(item => item.name);
+
+            if (root.pluginService) {
+                _savePluginData("profiles", Data.profiles);
+            }
+
+            Data.profileChanged();
         }
 
-        root.profileChanged();
-    }
+        function onSelectedProfileChanged() {
+            if (root.pluginService) {
+                _savePluginData("selectedProfile", Data.selectedProfile);
+            }
 
-    onSelectedProfileChanged: {
-        if (root.pluginService) {
-            _savePluginData("selectedProfile", selectedProfile);
+            Data.profileChanged();
         }
 
-        root.profileChanged();
-    }
+        function onDefaultsChanged() {
+            if (root.pluginService) {
+                _savePluginData("defaults", Data.defaults);
+            }
 
-    onDefaultsChanged: {
-        if (root.pluginService) {
-            _savePluginData("defaults", defaults);
+            Data.profileChanged();
         }
     }
 
     // Settings fns
 
     function _loadPluginData(key, defaultValue) {
-        return root.pluginService.loadPluginData("ecchan", key, defaultValue);
+        return root.pluginService.loadPluginData(root.layerNamespacePlugin, key, defaultValue);
     }
 
     function _savePluginData(key, value) {
-        root.pluginService.savePluginData("ecchan", key, value);
+        root.pluginService.savePluginData(root.layerNamespacePlugin, key, value);
     }
 
     function _getGlobalVar(key, defaultValue) {
-        return root.pluginService.setGlobalVar("ecchan", key, defaultValue);
+        return root.pluginService.setGlobalVar(root.layerNamespacePlugin, key, defaultValue);
     }
 
     function _setGlobalVar(key, value) {
-        root.pluginService.setGlobalVar("ecchan", key, value);
+        root.pluginService.setGlobalVar(root.layerNamespacePlugin, key, value);
     }
 
     horizontalBarPill: Component {
@@ -371,7 +368,7 @@ PluginComponent {
             // selected profile
             StyledText {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.profile?.name ?? "Default"
+                text: Data.profile?.name ?? "Default"
                 font.pixelSize: Theme.fontSizeSmall
             }
 
@@ -462,7 +459,6 @@ PluginComponent {
     // --
 
     signal areaClicked
-    property int currentTab: 0
 
     popoutContent: Component {
         PopoutComponent {
@@ -499,7 +495,7 @@ PluginComponent {
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: {
-                                    root.currentTab = 99;
+                                    Data.currentTab = 99;
                                 }
                             }
                         }
@@ -551,13 +547,13 @@ PluginComponent {
                         }
 
                         DankEditableDropdown {
-                            currentIdx: root.selectedProfile
-                            options: root.profilesModel
+                            currentIdx: Data.selectedProfile
+                            options: Data.profilesModel
                             addNewTextEntry: "Add Profile"
 
                             onValueDeleted: (idx, name) => {
-                                root.profiles.splice(idx, 1);
-                                root.profilesChanged();
+                                Data.profiles.splice(idx, 1);
+                                Data.profilesChanged();
                             }
 
                             onValueChanged: (idx, name, isSame) => {
@@ -567,12 +563,12 @@ PluginComponent {
                                 }
 
                                 if (isSame) {
-                                    root.selectedProfile = idx;
+                                    Data.selectedProfile = idx;
                                     return;
                                 }
 
                                 // clone it so we don't alter the real copy
-                                const state = Object.assign({}, root.profiles[idx].state);
+                                const state = Object.assign({}, Data.profiles[idx].state);
 
                                 // when switching profiles DO NOT set custom curves UNLESS
                                 // fanMode is at advanced
@@ -582,7 +578,7 @@ PluginComponent {
                                         "gpuFanCurveWmi2", "gpuTempCurveWmi2", "gpuHysteresisCurveWmi2"
                                     ];
                                     curveKeys.forEach(key => {
-                                        state[key] = root.defaults[key];
+                                        state[key] = Data.defaults[key];
                                     });
                                 }
 
@@ -590,23 +586,23 @@ PluginComponent {
 
                                 EcchanClient.callLater(() => {
                                     // only visibly apply profile once api calls have finished
-                                    root.selectedProfile = idx;
+                                    Data.selectedProfile = idx;
                                 });
                             }
 
                             onValueAdded: (idx, name) => {
                                 // explicit reassign so signals fire
-                                const clone = Object.assign({}, root.profile);
+                                const clone = Object.assign({}, Data.profile);
                                 clone.name = name;
 
-                                root.profiles = [...root.profiles, clone];
+                                Data.profiles = [...Data.profiles, clone];
 
-                                root.selectedProfile = idx;
+                                Data.selectedProfile = idx;
                             }
 
                             onValueEdited: (idx, name) => {
-                                root.profiles[idx].name = name;
-                                root.profilesChanged();
+                                Data.profiles[idx].name = name;
+                                Data.profilesChanged();
                             }
                         }
                     }
@@ -663,9 +659,9 @@ PluginComponent {
                                     width: tabRowContent.implicitWidth + Theme.spacingS * 2
                                     height: Math.round(Theme.fontSizeSmall * 3.1)
                                     radius: Theme.cornerRadius
-                                    color: root.currentTab === row.index ? Theme.primaryPressed : (tabMouseArea.containsMouse ? Theme.primaryHoverLight : "transparent")
-                                    border.color: root.currentTab === row.index ? Theme.primary : "transparent"
-                                    border.width: root.currentTab === row.index ? 1 : 0
+                                    color: Data.currentTab === row.index ? Theme.primaryPressed : (tabMouseArea.containsMouse ? Theme.primaryHoverLight : "transparent")
+                                    border.color: Data.currentTab === row.index ? Theme.primary : "transparent"
+                                    border.width: Data.currentTab === row.index ? 1 : 0
 
                                     Row {
                                         id: tabRowContent
@@ -675,8 +671,8 @@ PluginComponent {
                                         DankIcon {
                                             name: row.icon
                                             size: Theme.iconSize - 2
-                                            color: root.currentTab === row.index ? Theme.primary : Theme.surfaceText
-                                            opacity: root.currentTab === row.index ? 1 : 0.7
+                                            color: Data.currentTab === row.index ? Theme.primary : Theme.surfaceText
+                                            opacity: Data.currentTab === row.index ? 1 : 0.7
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
 
@@ -684,7 +680,7 @@ PluginComponent {
                                             text: row.text
                                             font.pixelSize: Theme.fontSizeMedium
                                             font.weight: Font.Medium
-                                            color: root.currentTab === row.index ? Theme.primary : Theme.surfaceText
+                                            color: Data.currentTab === row.index ? Theme.primary : Theme.surfaceText
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
                                     }
@@ -694,7 +690,7 @@ PluginComponent {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.currentTab = row.index
+                                        onClicked: Data.currentTab = row.index
                                     }
 
                                     Behavior on color {
@@ -725,7 +721,7 @@ PluginComponent {
                             // which removes refs that were already added
                             Component.onCompleted: page1.visibleChanged()
 
-                            visible: root.currentTab === 0
+                            visible: Data.currentTab === 0
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -792,7 +788,7 @@ PluginComponent {
                                         function onVisibleChanged() {
                                             const refs = ["gpuRtTemp"];
 
-                                            if (root.gpuPciBusId.length > 0) {
+                                            if (Data.gpuPciBusId.length > 0) {
                                                 gpuGauge.isUtilization = true;
                                                 refs.push("gpuUtilizationRates");
                                             }
@@ -1053,7 +1049,7 @@ PluginComponent {
                         ColumnLayout {
                             id: page2
 
-                            visible: root.currentTab === 1
+                            visible: Data.currentTab === 1
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -1364,7 +1360,7 @@ PluginComponent {
                         ColumnLayout {
                             id: page3
 
-                            visible: root.currentTab === 2
+                            visible: Data.currentTab === 2
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -1515,7 +1511,7 @@ PluginComponent {
                         ColumnLayout {
                             id: page4
 
-                            visible: root.currentTab === 3
+                            visible: Data.currentTab === 3
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -1552,12 +1548,12 @@ PluginComponent {
                                                     supported: EcchanClient.fanModes.includes("Auto"),
                                                     setMode: () => {
                                                         EcchanClient.fanMode = "Auto"
-                                                        EcchanClient.cpuFanCurveWmi2 = root.defaults.cpuFanCurveWmi2;
-                                                        EcchanClient.cpuTempCurveWmi2 = root.defaults.cpuTempCurveWmi2;
-                                                        EcchanClient.cpuHysteresisCurveWmi2 = root.defaults.cpuHysteresisCurveWmi2;
-                                                        EcchanClient.gpuFanCurveWmi2 = root.defaults.gpuFanCurveWmi2;
-                                                        EcchanClient.gpuTempCurveWmi2 = root.defaults.gpuTempCurveWmi2;
-                                                        EcchanClient.gpuHysteresisCurveWmi2 = root.defaults.gpuHysteresisCurveWmi2;
+                                                        EcchanClient.cpuFanCurveWmi2 = Data.defaults.cpuFanCurveWmi2;
+                                                        EcchanClient.cpuTempCurveWmi2 = Data.defaults.cpuTempCurveWmi2;
+                                                        EcchanClient.cpuHysteresisCurveWmi2 = Data.defaults.cpuHysteresisCurveWmi2;
+                                                        EcchanClient.gpuFanCurveWmi2 = Data.defaults.gpuFanCurveWmi2;
+                                                        EcchanClient.gpuTempCurveWmi2 = Data.defaults.gpuTempCurveWmi2;
+                                                        EcchanClient.gpuHysteresisCurveWmi2 = Data.defaults.gpuHysteresisCurveWmi2;
                                                     }
                                                 },
                                                 {
@@ -1568,12 +1564,12 @@ PluginComponent {
                                                     supported: EcchanClient.fanModes.includes("Advanced"),
                                                     setMode: () => {
                                                         EcchanClient.fanMode = "Advanced";
-                                                        EcchanClient.cpuFanCurveWmi2 = root.profile.state.cpuFanCurveWmi2;
-                                                        EcchanClient.cpuTempCurveWmi2 = root.profile.state.cpuTempCurveWmi2;
-                                                        EcchanClient.cpuHysteresisCurveWmi2 = root.profile.state.cpuHysteresisCurveWmi2;
-                                                        EcchanClient.gpuFanCurveWmi2 = root.profile.state.gpuFanCurveWmi2;
-                                                        EcchanClient.gpuTempCurveWmi2 = root.profile.state.gpuTempCurveWmi2;
-                                                        EcchanClient.gpuHysteresisCurveWmi2 = root.profile.state.gpuHysteresisCurveWmi2;
+                                                        EcchanClient.cpuFanCurveWmi2 = Data.profile.state.cpuFanCurveWmi2;
+                                                        EcchanClient.cpuTempCurveWmi2 = Data.profile.state.cpuTempCurveWmi2;
+                                                        EcchanClient.cpuHysteresisCurveWmi2 = Data.profile.state.cpuHysteresisCurveWmi2;
+                                                        EcchanClient.gpuFanCurveWmi2 = Data.profile.state.gpuFanCurveWmi2;
+                                                        EcchanClient.gpuTempCurveWmi2 = Data.profile.state.gpuTempCurveWmi2;
+                                                        EcchanClient.gpuHysteresisCurveWmi2 = Data.profile.state.gpuHysteresisCurveWmi2;
                                                     }
                                                 },
                                                 {
@@ -1584,12 +1580,12 @@ PluginComponent {
                                                     supported: EcchanClient.fanModes.includes("Silent"),
                                                     setMode: () => {
                                                         EcchanClient.fanMode = "Silent";
-                                                        EcchanClient.cpuFanCurveWmi2 = root.defaults.cpuFanCurveWmi2;
-                                                        EcchanClient.cpuTempCurveWmi2 = root.defaults.cpuTempCurveWmi2;
-                                                        EcchanClient.cpuHysteresisCurveWmi2 = root.defaults.cpuHysteresisCurveWmi2;
-                                                        EcchanClient.gpuFanCurveWmi2 = root.defaults.gpuFanCurveWmi2;
-                                                        EcchanClient.gpuTempCurveWmi2 = root.defaults.gpuTempCurveWmi2;
-                                                        EcchanClient.gpuHysteresisCurveWmi2 = root.defaults.gpuHysteresisCurveWmi2;
+                                                        EcchanClient.cpuFanCurveWmi2 = Data.defaults.cpuFanCurveWmi2;
+                                                        EcchanClient.cpuTempCurveWmi2 = Data.defaults.cpuTempCurveWmi2;
+                                                        EcchanClient.cpuHysteresisCurveWmi2 = Data.defaults.cpuHysteresisCurveWmi2;
+                                                        EcchanClient.gpuFanCurveWmi2 = Data.defaults.gpuFanCurveWmi2;
+                                                        EcchanClient.gpuTempCurveWmi2 = Data.defaults.gpuTempCurveWmi2;
+                                                        EcchanClient.gpuHysteresisCurveWmi2 = Data.defaults.gpuHysteresisCurveWmi2;
                                                     }
                                                 },
                                                 {
@@ -1659,15 +1655,14 @@ PluginComponent {
 
                                         tabColor: item.color
 
+                                        currentIndex: Data.fanTabCurrentIndex
+
                                         onTabClicked: index => {
-                                            currentIndex = index;
-                                            setNodes(getCurves());
+                                            Data.fanTabCurrentIndex = index;
+                                            setNodes(curves);
                                         }
 
-                                        function getCurves() {
-                                            return root.profile.state[item.key];
-                                        }
-
+                                        readonly property var curves: Data.profile.state[item.key]
                                         readonly property var item: model[currentIndex] || modelConfig[0]
                                         property int n1: 0
                                         property int n2: 0
@@ -1692,18 +1687,16 @@ PluginComponent {
                                         }
 
                                         Connections {
-                                            target: root
-
-                                            property bool init: true
+                                            target: Data
 
                                             function onSelectedProfileChanged() {
-                                                fanTab.setNodes(fanTab.getCurves());
+                                                fanTab.setNodes(fanTab.curves);
                                             }
 
                                             function onProfilesChanged() {
-                                                if (init) {
-                                                    init = false;
-                                                    fanTab.setNodes(fanTab.getCurves());
+                                                if (Data.fanTabInit) {
+                                                    Data.fanTabinit = false;
+                                                    fanTab.setNodes(fanTab.curves);
                                                 }
                                             }
                                         }
@@ -1721,19 +1714,19 @@ PluginComponent {
                                                 color: Theme.primary,
                                                 sliders: 7,
                                                 set: () => {
-                                                    root.profile.state.cpuFanCurveWmi2 = fanTab.getNodes();
-                                                    root.profilesChanged();
+                                                    Data.profile.state.cpuFanCurveWmi2 = fanTab.getNodes();
+                                                    Data.profilesChanged();
 
                                                     if (EcchanClient.fanMode === "Advanced") {
                                                         EcchanClient.cpuFanCurveWmi2 = fanTab.getNodes();
                                                     }
                                                 },
                                                 reset: () => {
-                                                    const defaults = root.defaults.cpuFanCurveWmi2;
+                                                    const defaults = Data.defaults.cpuFanCurveWmi2;
                                                     fanTab.setNodes(defaults);
                                                     EcchanClient.cpuFanCurveWmi2 = defaults;
-                                                    root.profile.state.cpuFanCurveWmi2 = defaults;
-                                                    root.profilesChanged();
+                                                    Data.profile.state.cpuFanCurveWmi2 = defaults;
+                                                    Data.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1748,19 +1741,19 @@ PluginComponent {
                                                 color: Theme.primary,
                                                 sliders: 7,
                                                 set: () => {
-                                                    root.profile.state.cpuTempCurveWmi2 = fanTab.getNodes();
-                                                    root.profilesChanged();
+                                                    Data.profile.state.cpuTempCurveWmi2 = fanTab.getNodes();
+                                                    Data.profilesChanged();
 
                                                     if (EcchanClient.fanMode === "Advanced") {
                                                         EcchanClient.cpuTempCurveWmi2 = fanTab.getNodes();
                                                     }
                                                 },
                                                 reset: () => {
-                                                    const defaults = root.defaults.cpuTempCurveWmi2;
+                                                    const defaults = Data.defaults.cpuTempCurveWmi2;
                                                     fanTab.setNodes(defaults);
                                                     EcchanClient.cpuTempCurveWmi2 = defaults;
-                                                    root.profile.state.cpuTempCurveWmi2 = defaults;
-                                                    root.profilesChanged();
+                                                    Data.profile.state.cpuTempCurveWmi2 = defaults;
+                                                    Data.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1775,19 +1768,19 @@ PluginComponent {
                                                 color: Theme.primary,
                                                 sliders: 6,
                                                 set: () => {
-                                                    root.profile.state.cpuHysteresisCurveWmi2 = fanTab.getNodes();
-                                                    root.profilesChanged();
+                                                    Data.profile.state.cpuHysteresisCurveWmi2 = fanTab.getNodes();
+                                                    Data.profilesChanged();
 
                                                     if (EcchanClient.fanMode === "Advanced") {
                                                         EcchanClient.cpuHysteresisCurveWmi2 = fanTab.getNodes();
                                                     }
                                                 },
                                                 reset: () => {
-                                                    const defaults = root.defaults.cpuHysteresisCurveWmi2;
+                                                    const defaults = Data.defaults.cpuHysteresisCurveWmi2;
                                                     fanTab.setNodes(defaults);
                                                     EcchanClient.cpuHysteresisCurveWmi2 = defaults;
-                                                    root.profile.state.cpuHysteresisCurveWmi2 = defaults;
-                                                    root.profilesChanged();
+                                                    Data.profile.state.cpuHysteresisCurveWmi2 = defaults;
+                                                    Data.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1802,19 +1795,19 @@ PluginComponent {
                                                 color: Theme.secondary,
                                                 sliders: 7,
                                                 set: () => {
-                                                    root.profile.state.gpuFanCurveWmi2 = fanTab.getNodes();
-                                                    root.profilesChanged();
+                                                    Data.profile.state.gpuFanCurveWmi2 = fanTab.getNodes();
+                                                    Data.profilesChanged();
 
                                                     if (EcchanClient.fanMode === "Advanced") {
                                                         EcchanClient.gpuFanCurveWmi2 = fanTab.getNodes();
                                                     }
                                                 },
                                                 reset: () => {
-                                                    const defaults = root.defaults.gpuFanCurveWmi2;
+                                                    const defaults = Data.defaults.gpuFanCurveWmi2;
                                                     fanTab.setNodes(defaults);
                                                     EcchanClient.gpuFanCurveWmi2 = defaults;
-                                                    root.profile.state.gpuFanCurveWmi2 = defaults;
-                                                    root.profilesChanged();
+                                                    Data.profile.state.gpuFanCurveWmi2 = defaults;
+                                                    Data.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1829,19 +1822,19 @@ PluginComponent {
                                                 color: Theme.secondary,
                                                 sliders: 7,
                                                 set: () => {
-                                                    root.profile.state.gpuTempCurveWmi2 = fanTab.getNodes();
-                                                    root.profilesChanged();
+                                                    Data.profile.state.gpuTempCurveWmi2 = fanTab.getNodes();
+                                                    Data.profilesChanged();
 
                                                     if (EcchanClient.fanMode === "Advanced") {
                                                         EcchanClient.gpuTempCurveWmi2 = fanTab.getNodes();
                                                     }
                                                 },
                                                 reset: () => {
-                                                    const defaults = root.defaults.gpuTempCurveWmi2;
+                                                    const defaults = Data.defaults.gpuTempCurveWmi2;
                                                     fanTab.setNodes(defaults);
                                                     EcchanClient.gpuTempCurveWmi2 = defaults;
-                                                    root.profile.state.gpuTempCurveWmi2 = defaults;
-                                                    root.profilesChanged();
+                                                    Data.profile.state.gpuTempCurveWmi2 = defaults;
+                                                    Data.profilesChanged();
                                                 }
                                             },
                                             {
@@ -1856,19 +1849,19 @@ PluginComponent {
                                                 color: Theme.secondary,
                                                 sliders: 6,
                                                 set: value => () => {
-                                                    root.profile.state.gpuHysteresisCurveWmi2 = fanTab.getNodes();
-                                                    root.profilesChanged();
+                                                    Data.profile.state.gpuHysteresisCurveWmi2 = fanTab.getNodes();
+                                                    Data.profilesChanged();
 
                                                     if (EcchanClient.fanMode === "Advanced") {
                                                         EcchanClient.gpuHysteresisCurveWmi2 = fanTab.getNodes();
                                                     }
                                                 },
                                                 reset: () => {
-                                                    const defaults = root.defaults.gpuHysteresisCurveWmi2;
+                                                    const defaults = Data.defaults.gpuHysteresisCurveWmi2;
                                                     fanTab.setNodes(defaults);
                                                     EcchanClient.gpuHysteresisCurveWmi2 = defaults;
-                                                    root.profile.state.gpuHysteresisCurveWmi2 = defaults;
-                                                    root.profilesChanged();
+                                                    Data.profile.state.gpuHysteresisCurveWmi2 = defaults;
+                                                    Data.profilesChanged();
                                                 }
                                             },
                                         ]
@@ -2071,7 +2064,7 @@ PluginComponent {
                         ColumnLayout {
                             id: page5
 
-                            visible: root.currentTab === 4 && EcchanClient.batteryChargeModeSupported
+                            visible: Data.currentTab === 4 && EcchanClient.batteryChargeModeSupported
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 
@@ -2094,14 +2087,14 @@ PluginComponent {
                             property int customChargeModeValue: 100
 
                             function updateCustom() {
-                                customChargeModeEnabled = root.profile?.customBatteryChargeModeEnabled || typeof (EcchanClient.batteryChargeMode) === "number";
-                                customChargeModeValue = modeToInt(root.profile?.customBatteryChargeModeValue) || modeToInt(EcchanClient.batteryChargeMode);
+                                customChargeModeEnabled = Data.profile?.customBatteryChargeModeEnabled || typeof (EcchanClient.batteryChargeMode) === "number";
+                                customChargeModeValue = modeToInt(Data.profile?.customBatteryChargeModeValue) || modeToInt(EcchanClient.batteryChargeMode);
                             }
 
                             Component.onCompleted: updateCustom()
 
                             Connections {
-                                target: root
+                                target: Data
 
                                 function onSelectedProfileChanged() {
                                     page5.updateCustom();
@@ -2118,15 +2111,15 @@ PluginComponent {
 
                             onCustomChargeModeEnabledChanged: {
                                 if (root.pluginService) {
-                                    root.profile.customBatteryChargeModeEnabled = customChargeModeEnabled;
-                                    root.profilesChanged();
+                                    Data.profile.customBatteryChargeModeEnabled = customChargeModeEnabled;
+                                    Data.profilesChanged();
                                 }
                             }
 
                             onCustomChargeModeValueChanged: {
                                 if (root.pluginService) {
-                                    root.profile.customBatteryChargeModeValue = customChargeModeValue;
-                                    root.profilesChanged();
+                                    Data.profile.customBatteryChargeModeValue = customChargeModeValue;
+                                    Data.profilesChanged();
                                 }
                             }
 
@@ -2302,7 +2295,7 @@ PluginComponent {
                         ColumnLayout {
                             id: page99
 
-                            visible: root.currentTab === 99
+                            visible: Data.currentTab === 99
                             Layout.fillWidth: true
                             Layout.fillHeight: true
 

@@ -2,3 +2,4 @@ module Services
 
 singleton EcchanClient 1.0 EcchanClient.qml
 singleton Update 1.0 Update.qml
+singleton Data 1.0 Data.qml
