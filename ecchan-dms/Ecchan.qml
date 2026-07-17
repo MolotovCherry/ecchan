@@ -94,7 +94,7 @@ PluginComponent {
                 EcchanClient.callLater(() => {
                     Data.blocked = false;
                     Data.profile.state = EcchanClient.serialize();
-                    Data.profileWriteTimer.restart();
+                    profileWriteTimer.restart();
 
                     if (Data.init) {
                         Data.init = false;
@@ -139,7 +139,7 @@ PluginComponent {
                 return;
             }
 
-            Data.profileWriteTimer.restart();
+            profileWriteTimer.restart();
         }
 
         function onConnectedChanged() {
